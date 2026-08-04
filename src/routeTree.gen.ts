@@ -12,9 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as ClubsRouteImport } from './routes/clubs'
+import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ExamsRouteImport } from './routes/exams'
+import { Route as FacultyRouteImport } from './routes/faculty'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MessRouteImport } from './routes/mess'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as RoleRouteImport } from './routes/role'
 import { Route as TimetableRouteImport } from './routes/timetable'
@@ -34,6 +38,16 @@ const CalendarRoute = CalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClubsRoute = ClubsRouteImport.update({
+  id: '/clubs',
+  path: '/clubs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoursesRoute = CoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -44,9 +58,19 @@ const ExamsRoute = ExamsRouteImport.update({
   path: '/exams',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FacultyRoute = FacultyRouteImport.update({
+  id: '/faculty',
+  path: '/faculty',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessRoute = MessRouteImport.update({
+  id: '/mess',
+  path: '/mess',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -69,9 +93,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/calendar': typeof CalendarRoute
+  '/clubs': typeof ClubsRoute
+  '/courses': typeof CoursesRoute
   '/dashboard': typeof DashboardRoute
   '/exams': typeof ExamsRoute
+  '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
+  '/mess': typeof MessRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
   '/timetable': typeof TimetableRoute
@@ -80,9 +108,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/calendar': typeof CalendarRoute
+  '/clubs': typeof ClubsRoute
+  '/courses': typeof CoursesRoute
   '/dashboard': typeof DashboardRoute
   '/exams': typeof ExamsRoute
+  '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
+  '/mess': typeof MessRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
   '/timetable': typeof TimetableRoute
@@ -92,9 +124,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/calendar': typeof CalendarRoute
+  '/clubs': typeof ClubsRoute
+  '/courses': typeof CoursesRoute
   '/dashboard': typeof DashboardRoute
   '/exams': typeof ExamsRoute
+  '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
+  '/mess': typeof MessRoute
   '/onboarding': typeof OnboardingRoute
   '/role': typeof RoleRoute
   '/timetable': typeof TimetableRoute
@@ -105,9 +141,13 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/calendar'
+    | '/clubs'
+    | '/courses'
     | '/dashboard'
     | '/exams'
+    | '/faculty'
     | '/login'
+    | '/mess'
     | '/onboarding'
     | '/role'
     | '/timetable'
@@ -116,9 +156,13 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/calendar'
+    | '/clubs'
+    | '/courses'
     | '/dashboard'
     | '/exams'
+    | '/faculty'
     | '/login'
+    | '/mess'
     | '/onboarding'
     | '/role'
     | '/timetable'
@@ -127,9 +171,13 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/calendar'
+    | '/clubs'
+    | '/courses'
     | '/dashboard'
     | '/exams'
+    | '/faculty'
     | '/login'
+    | '/mess'
     | '/onboarding'
     | '/role'
     | '/timetable'
@@ -139,9 +187,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiRoute: typeof AiRoute
   CalendarRoute: typeof CalendarRoute
+  ClubsRoute: typeof ClubsRoute
+  CoursesRoute: typeof CoursesRoute
   DashboardRoute: typeof DashboardRoute
   ExamsRoute: typeof ExamsRoute
+  FacultyRoute: typeof FacultyRoute
   LoginRoute: typeof LoginRoute
+  MessRoute: typeof MessRoute
   OnboardingRoute: typeof OnboardingRoute
   RoleRoute: typeof RoleRoute
   TimetableRoute: typeof TimetableRoute
@@ -170,6 +222,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/clubs': {
+      id: '/clubs'
+      path: '/clubs'
+      fullPath: '/clubs'
+      preLoaderRoute: typeof ClubsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/courses': {
+      id: '/courses'
+      path: '/courses'
+      fullPath: '/courses'
+      preLoaderRoute: typeof CoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -184,11 +250,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExamsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faculty': {
+      id: '/faculty'
+      path: '/faculty'
+      fullPath: '/faculty'
+      preLoaderRoute: typeof FacultyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mess': {
+      id: '/mess'
+      path: '/mess'
+      fullPath: '/mess'
+      preLoaderRoute: typeof MessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -219,9 +299,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiRoute: AiRoute,
   CalendarRoute: CalendarRoute,
+  ClubsRoute: ClubsRoute,
+  CoursesRoute: CoursesRoute,
   DashboardRoute: DashboardRoute,
   ExamsRoute: ExamsRoute,
+  FacultyRoute: FacultyRoute,
   LoginRoute: LoginRoute,
+  MessRoute: MessRoute,
   OnboardingRoute: OnboardingRoute,
   RoleRoute: RoleRoute,
   TimetableRoute: TimetableRoute,
