@@ -10,11 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ClubsRouteImport } from './routes/clubs'
 import { Route as CoursesRouteImport } from './routes/courses'
+import { Route as CrRouteImport } from './routes/cr'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as ExamsRouteImport } from './routes/exams'
@@ -25,12 +27,18 @@ import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RoleRouteImport } from './routes/role'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimetableRouteImport } from './routes/timetable'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AiRoute = AiRouteImport.update({
@@ -56,6 +64,11 @@ const ClubsRoute = ClubsRouteImport.update({
 const CoursesRoute = CoursesRouteImport.update({
   id: '/courses',
   path: '/courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrRoute = CrRouteImport.update({
+  id: '/cr',
+  path: '/cr',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -108,6 +121,11 @@ const RoleRoute = RoleRouteImport.update({
   path: '/role',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -121,11 +139,13 @@ const TimetableRoute = TimetableRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/ai': typeof AiRoute
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
   '/clubs': typeof ClubsRoute
   '/courses': typeof CoursesRoute
+  '/cr': typeof CrRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
   '/exams': typeof ExamsRoute
@@ -136,16 +156,19 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/role': typeof RoleRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/ai': typeof AiRoute
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
   '/clubs': typeof ClubsRoute
   '/courses': typeof CoursesRoute
+  '/cr': typeof CrRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
   '/exams': typeof ExamsRoute
@@ -156,17 +179,20 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/role': typeof RoleRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/ai': typeof AiRoute
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
   '/clubs': typeof ClubsRoute
   '/courses': typeof CoursesRoute
+  '/cr': typeof CrRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
   '/exams': typeof ExamsRoute
@@ -177,6 +203,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/role': typeof RoleRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
 }
@@ -184,11 +211,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/ai'
     | '/announcements'
     | '/calendar'
     | '/clubs'
     | '/courses'
+    | '/cr'
     | '/dashboard'
     | '/documents'
     | '/exams'
@@ -199,16 +228,19 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/role'
+    | '/search'
     | '/settings'
     | '/timetable'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/ai'
     | '/announcements'
     | '/calendar'
     | '/clubs'
     | '/courses'
+    | '/cr'
     | '/dashboard'
     | '/documents'
     | '/exams'
@@ -219,16 +251,19 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/role'
+    | '/search'
     | '/settings'
     | '/timetable'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/ai'
     | '/announcements'
     | '/calendar'
     | '/clubs'
     | '/courses'
+    | '/cr'
     | '/dashboard'
     | '/documents'
     | '/exams'
@@ -239,17 +274,20 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/role'
+    | '/search'
     | '/settings'
     | '/timetable'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   AiRoute: typeof AiRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   CalendarRoute: typeof CalendarRoute
   ClubsRoute: typeof ClubsRoute
   CoursesRoute: typeof CoursesRoute
+  CrRoute: typeof CrRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRoute
   ExamsRoute: typeof ExamsRoute
@@ -260,6 +298,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
   RoleRoute: typeof RoleRoute
+  SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   TimetableRoute: typeof TimetableRoute
 }
@@ -271,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ai': {
@@ -306,6 +352,13 @@ declare module '@tanstack/react-router' {
       path: '/courses'
       fullPath: '/courses'
       preLoaderRoute: typeof CoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cr': {
+      id: '/cr'
+      path: '/cr'
+      fullPath: '/cr'
+      preLoaderRoute: typeof CrRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -378,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RoleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -397,11 +457,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   AiRoute: AiRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   CalendarRoute: CalendarRoute,
   ClubsRoute: ClubsRoute,
   CoursesRoute: CoursesRoute,
+  CrRoute: CrRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRoute,
   ExamsRoute: ExamsRoute,
@@ -412,6 +474,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
   RoleRoute: RoleRoute,
+  SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   TimetableRoute: TimetableRoute,
 }
