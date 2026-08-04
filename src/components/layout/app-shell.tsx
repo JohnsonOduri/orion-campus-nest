@@ -74,7 +74,7 @@ const accountNav: NavItem[] = [
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
-function NavLinks({ items, collapsed, onNavigate }: { items: NavItem[]; collapsed: boolean; onNavigate?: () => void }) {
+function NavLinks({ items, collapsed, onNavigate }: { items: NavItem[]; collapsed: boolean; onNavigate?: (() => void) | undefined }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <nav className="space-y-1">
@@ -107,7 +107,7 @@ function NavLinks({ items, collapsed, onNavigate }: { items: NavItem[]; collapse
   );
 }
 
-function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: (() => void) | undefined }) {
   return (
     <div className="flex h-full flex-col">
       <div className={cn("flex items-center gap-2.5 px-4 py-4", collapsed && "justify-center px-2")}>
