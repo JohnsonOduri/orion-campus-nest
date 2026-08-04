@@ -10,33 +10,297 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AiRouteImport } from './routes/ai'
+import { Route as AnnouncementsRouteImport } from './routes/announcements'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as ClubsRouteImport } from './routes/clubs'
+import { Route as CoursesRouteImport } from './routes/courses'
+import { Route as CrRouteImport } from './routes/cr'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DocumentsRouteImport } from './routes/documents'
+import { Route as ExamsRouteImport } from './routes/exams'
+import { Route as FacultyRouteImport } from './routes/faculty'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MessRouteImport } from './routes/mess'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as RoleRouteImport } from './routes/role'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as TimetableRouteImport } from './routes/timetable'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnnouncementsRoute = AnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClubsRoute = ClubsRouteImport.update({
+  id: '/clubs',
+  path: '/clubs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoursesRoute = CoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrRoute = CrRouteImport.update({
+  id: '/cr',
+  path: '/cr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExamsRoute = ExamsRouteImport.update({
+  id: '/exams',
+  path: '/exams',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacultyRoute = FacultyRouteImport.update({
+  id: '/faculty',
+  path: '/faculty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessRoute = MessRouteImport.update({
+  id: '/mess',
+  path: '/mess',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoleRoute = RoleRouteImport.update({
+  id: '/role',
+  path: '/role',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TimetableRoute = TimetableRouteImport.update({
+  id: '/timetable',
+  path: '/timetable',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/ai': typeof AiRoute
+  '/announcements': typeof AnnouncementsRoute
+  '/calendar': typeof CalendarRoute
+  '/clubs': typeof ClubsRoute
+  '/courses': typeof CoursesRoute
+  '/cr': typeof CrRoute
+  '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
+  '/exams': typeof ExamsRoute
+  '/faculty': typeof FacultyRoute
+  '/login': typeof LoginRoute
+  '/mess': typeof MessRoute
+  '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/role': typeof RoleRoute
+  '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
+  '/timetable': typeof TimetableRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/ai': typeof AiRoute
+  '/announcements': typeof AnnouncementsRoute
+  '/calendar': typeof CalendarRoute
+  '/clubs': typeof ClubsRoute
+  '/courses': typeof CoursesRoute
+  '/cr': typeof CrRoute
+  '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
+  '/exams': typeof ExamsRoute
+  '/faculty': typeof FacultyRoute
+  '/login': typeof LoginRoute
+  '/mess': typeof MessRoute
+  '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/role': typeof RoleRoute
+  '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
+  '/timetable': typeof TimetableRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/ai': typeof AiRoute
+  '/announcements': typeof AnnouncementsRoute
+  '/calendar': typeof CalendarRoute
+  '/clubs': typeof ClubsRoute
+  '/courses': typeof CoursesRoute
+  '/cr': typeof CrRoute
+  '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
+  '/exams': typeof ExamsRoute
+  '/faculty': typeof FacultyRoute
+  '/login': typeof LoginRoute
+  '/mess': typeof MessRoute
+  '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/role': typeof RoleRoute
+  '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
+  '/timetable': typeof TimetableRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/ai'
+    | '/announcements'
+    | '/calendar'
+    | '/clubs'
+    | '/courses'
+    | '/cr'
+    | '/dashboard'
+    | '/documents'
+    | '/exams'
+    | '/faculty'
+    | '/login'
+    | '/mess'
+    | '/notifications'
+    | '/onboarding'
+    | '/profile'
+    | '/role'
+    | '/search'
+    | '/settings'
+    | '/timetable'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/ai'
+    | '/announcements'
+    | '/calendar'
+    | '/clubs'
+    | '/courses'
+    | '/cr'
+    | '/dashboard'
+    | '/documents'
+    | '/exams'
+    | '/faculty'
+    | '/login'
+    | '/mess'
+    | '/notifications'
+    | '/onboarding'
+    | '/profile'
+    | '/role'
+    | '/search'
+    | '/settings'
+    | '/timetable'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/ai'
+    | '/announcements'
+    | '/calendar'
+    | '/clubs'
+    | '/courses'
+    | '/cr'
+    | '/dashboard'
+    | '/documents'
+    | '/exams'
+    | '/faculty'
+    | '/login'
+    | '/mess'
+    | '/notifications'
+    | '/onboarding'
+    | '/profile'
+    | '/role'
+    | '/search'
+    | '/settings'
+    | '/timetable'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AiRoute: typeof AiRoute
+  AnnouncementsRoute: typeof AnnouncementsRoute
+  CalendarRoute: typeof CalendarRoute
+  ClubsRoute: typeof ClubsRoute
+  CoursesRoute: typeof CoursesRoute
+  CrRoute: typeof CrRoute
+  DashboardRoute: typeof DashboardRoute
+  DocumentsRoute: typeof DocumentsRoute
+  ExamsRoute: typeof ExamsRoute
+  FacultyRoute: typeof FacultyRoute
+  LoginRoute: typeof LoginRoute
+  MessRoute: typeof MessRoute
+  NotificationsRoute: typeof NotificationsRoute
+  OnboardingRoute: typeof OnboardingRoute
+  ProfileRoute: typeof ProfileRoute
+  RoleRoute: typeof RoleRoute
+  SearchRoute: typeof SearchRoute
+  SettingsRoute: typeof SettingsRoute
+  TimetableRoute: typeof TimetableRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +312,172 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/announcements': {
+      id: '/announcements'
+      path: '/announcements'
+      fullPath: '/announcements'
+      preLoaderRoute: typeof AnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clubs': {
+      id: '/clubs'
+      path: '/clubs'
+      fullPath: '/clubs'
+      preLoaderRoute: typeof ClubsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/courses': {
+      id: '/courses'
+      path: '/courses'
+      fullPath: '/courses'
+      preLoaderRoute: typeof CoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cr': {
+      id: '/cr'
+      path: '/cr'
+      fullPath: '/cr'
+      preLoaderRoute: typeof CrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/exams': {
+      id: '/exams'
+      path: '/exams'
+      fullPath: '/exams'
+      preLoaderRoute: typeof ExamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faculty': {
+      id: '/faculty'
+      path: '/faculty'
+      fullPath: '/faculty'
+      preLoaderRoute: typeof FacultyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mess': {
+      id: '/mess'
+      path: '/mess'
+      fullPath: '/mess'
+      preLoaderRoute: typeof MessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/role': {
+      id: '/role'
+      path: '/role'
+      fullPath: '/role'
+      preLoaderRoute: typeof RoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/timetable': {
+      id: '/timetable'
+      path: '/timetable'
+      fullPath: '/timetable'
+      preLoaderRoute: typeof TimetableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AiRoute: AiRoute,
+  AnnouncementsRoute: AnnouncementsRoute,
+  CalendarRoute: CalendarRoute,
+  ClubsRoute: ClubsRoute,
+  CoursesRoute: CoursesRoute,
+  CrRoute: CrRoute,
+  DashboardRoute: DashboardRoute,
+  DocumentsRoute: DocumentsRoute,
+  ExamsRoute: ExamsRoute,
+  FacultyRoute: FacultyRoute,
+  LoginRoute: LoginRoute,
+  MessRoute: MessRoute,
+  NotificationsRoute: NotificationsRoute,
+  OnboardingRoute: OnboardingRoute,
+  ProfileRoute: ProfileRoute,
+  RoleRoute: RoleRoute,
+  SearchRoute: SearchRoute,
+  SettingsRoute: SettingsRoute,
+  TimetableRoute: TimetableRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
