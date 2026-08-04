@@ -17,7 +17,7 @@ export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
-const groups: { title: string; items: { label: string; hint: string; on?: boolean }[] }[] = [
+const groups: { title: string; items: { label: string; hint: string; on: boolean }[] }[] = [
   {
     title: "Notifications",
     items: [
