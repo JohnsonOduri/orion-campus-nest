@@ -38,11 +38,14 @@
 - UI complete (`src/routes/dashboard.tsx`) with today's classes, attendance charts, announcements — **all from mock data**, not live queries.
 - **Needed:** wire dashboard's "today's classes" to the already-live `orion_day_timetable` RPC; announcements panel needs the `announcements` table populated + queried (table exists, 0 rows).
 
-### 1.3 AI Chat — ⬜ **Not started (no RAG)**
-- `src/components/ai/ai-chat.tsx` is a floating panel with hardcoded/canned responses.
-- No query router, no LLM call, no embeddings pipeline, no context assembly, no citation handling — none of AGENTS.md §16/README §8-9 is implemented.
-- **DB is ready for this**: `document_chunks` table has a `vector` column (pgvector 0.8.2 installed under `extensions` schema) with an HNSW index (`chunks_embedding_hnsw_idx`, currently unused/empty) and a `metadata` JSONB GIN index — the storage layer for RAG exists but is **empty and unconnected**.
-- **Needed:** backend routing/orchestration layer (structured vs semantic vs hybrid per AGENTS.md §4), embedding generation + population of `document_chunks`, retrieval + reranking, LLM call, citation/validation step, wiring into `/ai` route and the chat panel.
+### 1.3 AI Chat — 🟡 **Partial (routing/retrieval/context wired to the live UI, still no LLM)** — updated 2026-09-11
+- `src/components/ai/ai-chat.tsx` now calls a real backend (`askOrion` server function, `src/lib/chat-api.ts`) instead of a canned 1.1s-delay response. Still **no LLM call anywhere** — the chat renders the `GroundedContext` directly (facts, cited snippets, honest warnings), per the explicit instruction that created this layer.
+- **New:** `src/lib/query/` — a TypeScript port of `backend/query/` (router/retrieval/context), since the frontend is a Node/Vite app that can't call into a Python process per-request. Verified numerically equivalent to the Python implementation (embeddings match to 6+ decimal places; identical similarity scores on the same live queries). Query-time embeddings run in Node via `@huggingface/transformers` (`Xenova/all-MiniLM-L6-v2`, server-side only, confirmed absent from the client bundle).
+- **Verified in a real headless-Chromium browser session** (Playwright, `npm run dev`), not just curl/unit tests: all three required queries sent through the actual chat UI produced the correct route badge (`STRUCTURED · LIVE DB` / `SEMANTIC · DOCUMENTS` / `HYBRID · FACULTY + SCHEDULE`), the correct grounded content, and the honest office-hours warnings — zero console errors, zero failed (`>=400`) network requests.
+- **Temporary auth scaffolding** (`getTestStudentClient` in `chat-api.ts`): there is still no login flow anywhere in the app (§1.1 below), so a browser request never carries a real JWT. The chat signs in as the already-provisioned test student (`scripts/create_test_students.py`) to exercise the router against real data instead of only ever demo mode — never a client-identity shortcut (the browser doesn't choose who this resolves to; RLS/`orion_resolve_user` still governs everything), but it must be replaced once real auth exists. Every such response is flagged and the UI shows an explicit "test student session" badge, matching the existing demo-mode transparency rule.
+- Full write-up: `docs/query-router.md` §7.
+- **Fix (2026-09-11, post-deploy user testing):** real usage surfaced that "tell me what my classes are on monday" fell through to UNSUPPORTED — the router only recognized "today"/"this week", not a named weekday. Added `DAY_OF_WEEK_TIMETABLE` intent (both `backend/query/` and `src/lib/query/`, kept in lockstep): resolves the nearest upcoming occurrence of the named weekday and calls the existing `orion_day_timetable` RPC for that date — no new RPC, no hard-coded weekday. Also verified as part of this fix: a user typing their own academic context into the message ("I am from batch 3 2024 BCS 66") has zero effect on routing or retrieval — personalization still comes only from the authenticated profile (new test: `test_client_supplied_batch_is_never_parsed_into_the_plan`). The generic UNSUPPORTED message was also made less cold (suggests the three supported question types instead of a bare "no information" reply). Re-verified live in a real browser with the user's exact reported queries — 0 console errors, 0 failed requests, correct output.
+- **Needed next:** wire `backend/query/llm_client.py`/a TS equivalent into the flow for actual grounded generation with citation rendering (still deliberately not done); replace the test-student auth scaffolding with real session lookup once §1.1 (Authentication) exists; apply the authenticated student's cohort to `semanticSearch` instead of leaving it unfiltered.
 
 ### 1.4 PostgreSQL — ✅ **Done (schema layer)**
 - Live Supabase Postgres 17.6 project provisioned, `pgvector` extension installed.
@@ -50,7 +53,12 @@
 - RLS enabled on every table. `orion_resolve_user` identity pattern (never trust client-supplied user ids) implemented and used throughout the timetable RPCs.
 - ⚠️ Migrations are **only tracked as raw files in `supabase/migrations/`** — `list_migrations` against the live project returns empty, meaning the migration history table itself isn't in sync/recorded on the hosted project (schema was applied via the Management API / SQL runner per `docs/timetable.md` §13, not `supabase db push`). Worth reconciling so future `supabase migration` commands don't drift.
 
-### 1.5 Basic RAG — ⬜ **Not started** (see 1.3 — same gap, DB scaffolding ready, no pipeline)
+### 1.5 Basic RAG — 🟡 **Partial** — updated 2026-09-11
+- Document corpus (17 docs, 1269 chunks, see 2.4) is live and semantically searchable.
+- **New:** Query Router / Retrieval / Context layer (`backend/query/`) — deterministic STRUCTURED/SEMANTIC/HYBRID/UNSUPPORTED routing (no LLM), retrieval wrapping the existing `orion_*` RPCs and the `document_chunks` pgvector corpus via a new `match_document_chunks` RPC, and a grounding-ready `GroundedContext` builder. Full write-up: `docs/query-router.md`.
+- Verified end-to-end against live Supabase with a real authenticated test-student JWT (request-scoped client, RLS-enforced — never service-role): "What is my next class?" (STRUCTURED), "What are the attendance requirements?" (SEMANTIC), "Which faculty work in NLP and when can I meet them?" (HYBRID) — all three grounded in real, cited data. Run: `.venv/bin/python scripts/verify_query_router.py`.
+- 17 new offline pytest tests (router classification + context has-answer invariant), part of the standard suite (104 total, was 87).
+- **Not done:** no LLM/generation call anywhere in this layer by design (this slice stops at `GroundedContext`); `llm_client.py` scaffolds a cost-conscious Gemini integration (`gemini-2.0-flash-lite`, small `max_output_tokens`, refuses to call when there's nothing to ground on) but is not imported by anything yet. Cohort filtering exists in `semantic_search` but nothing calls it with a real student's cohort yet. No reranking step.
 
 ### 1.6 Timetable — ✅ **Done (Semesters 3, 5, 7)** — updated 2026-09-11
 - Full vertical slice: PDF → layout-aware extraction (pdfplumber) → normalization → strict validation → preview JSON → idempotent Supabase import → authenticated RPC queries → REST API.
@@ -93,46 +101,38 @@
 
 ## Phase 2 — CR Upload, OCR, Admin Approval, Document Ingestion, Mess Schedules, Academic Calendar, Exams
 
-### 2.4 Document Ingestion (vector KB) — ✅ **Done (initial corpus)** — updated 2026-09-11
-- New pipeline `scripts/ingest_documents.py`: extract (text layer or OCR) → sensitive-data screen → chunk → embed → Supabase, following README §6/AGENTS.md §9.
-- **Embeddings:** no embedding-capable API key was configured anywhere in `.env` (only Supabase + Google OAuth keys) — rather than block or fabricate, switched to a local, free model: `sentence-transformers/all-MiniLM-L6-v2` (384-dim). `document_chunks.embedding` was originally a fixed `vector(1536)` (OpenAI's dimension); resized via migration `20260911010000_document_chunks_embedding_384_local_model.sql` (table was empty, so a safe in-place type change, not a data migration). Verified with a live cosine-similarity query — top hit for "What is the attendance requirement?" was exactly `R.6.0 Attendance, Condonation and Course Feedback` at 66.5% similarity.
-- **OCR:** `tesseract` is installed locally; used for the 3 scanned anti-ragging PDFs (no text layer). Only the `eng` tessdata is installed — the bilingual `UGC Regulations- Anti-Ragging - 2009.pdf` has Hindi-language pages that OCR as gibberish through the English model (verified: Hindi pages score 34-43% confidence vs 82-93% for English pages on the same document). Per-chunk OCR confidence is stored in `confidence_score`; anything below 60% is **excluded from the corpus entirely** rather than stored as noise — pages 3-29 of that document were dropped this way. **Known gap:** that document's Hindi content is not searchable; a real answer needs the source PDF directly. No `hin.traineddata` is installed and none was added (would need a `brew`/manual install decision).
-- **Sensitive data:** the committee-roster OM (`OM-Anti Ragging Committee-Squad-Jan2024.pdf`) is flagged `sensitive_data_flag=true` and passed through phone-number redaction (regex on 10-digit Indian mobile numbers) before storage; that particular document had no matching numbers in its OCR'd text, so redaction was a verified no-op, not a false negative. Names/designations of committee members are kept (public governance-role info, not personal data, per AGENTS.md §11's minimum-data principle).
-- **Cohort-aware metadata:** every chunk carries `document_type, category, programme, specialisation, cohort, department, classification, valid_from, valid_until` in `metadata` JSONB. Verified live: the 9 curriculum PDFs split cleanly into `cohort='ADM2026'` (5 programmes, 798 chunks) vs `cohort='21-25'` (4 programmes, 376 chunks) — a 2026-cohort student's query and a 21-25 cohort's query hit disjoint chunk sets, per CLAUDE.md §20's cohort-isolation rule. No retrieval/query-router logic consumes this filter yet (that's Phase 4, not built) — the data is ready for it.
-- **Live: 17 documents, 17 versions, 1269 chunks.** Idempotent (upsert on `(document_id, version_id, chunk_index)`), audited via `ingestion_runs`.
-- **Deliberately excluded:** `recruiterscorner.pdf` (14MB placement/marketing deck) — `Data/analysis.md` flagged it as needing a product-owner decision; applied README §12's default ("pure advertisements should not enter the searchable institutional knowledge base") rather than decide unilaterally. Not ingested; can be added later with an explicit decision.
-- **Corpus indexed:** 9 curriculum/syllabi (CSE/AI&DS/ECE/BMC/Cyber, both ADM2026 and 21-25 cohorts where applicable), 2 UG Regulations books (26-onwards and 21-25), 2 procedures (transcript verification, educational verification), 3 anti-ragging documents (2009 UGC regs [English portion only], the circular letter, the Jan-2024 committee OM), and Hostel Rules and Regulations (July 2026) — the latter pulled from `Data/Structured/` since it's prose, not a table, despite living in that folder.
-- **Not yet built:** the retrieval/reranking/grounding layer that actually answers a user's question from these chunks (Phase 4/5 — query router, hybrid retrieval, citation handling). The corpus is ready; nothing consumes it yet.
-
 ### 2.1 CR Upload workflow — ⬜ **Not started**
-- DB scaffolding exists and matches AGENTS.md §8 exactly: `documents` (with `extraction_status`, `extraction_confidence`, `sensitive_data_flag`, `submitted_by`, `status` pending→active/superseded/expired/rejected/archived), `approval_requests` (approval_status pending/approved/rejected, `rejection_reason`, `reviewed_by`), `ingestion_jobs` (job_type, status, attempts, error_message), `document_versions`, `audit_logs` — **all present, all 0 rows.**
+- DB scaffolding exists and matches AGENTS.md §8 exactly: `documents` (with `extraction_status`, `extraction_confidence`, `sensitive_data_flag`, `submitted_by`, `status` pending→active/superseded/expired/rejected/archived), `approval_requests` (approval_status pending/approved/rejected, `rejection_reason`, `reviewed_by`), `ingestion_jobs` (job_type, status, attempts, error_message), `document_versions`, `audit_logs` — **all present**; `documents`/`document_versions` are now populated (§2.4) but only via trusted server-side scripts, never through this (still nonexistent) CR upload path. `approval_requests`/`ingestion_jobs`/`audit_logs` remain 0 rows.
 - `src/routes/cr.tsx` (CR dashboard) is mock-data UI only; no upload form, no OCR preview screen, no submission-history screen wired to `documents`/`approval_requests`.
 - **Needed:** file upload (Supabase Storage bucket not yet created — see Storage below), OCR pipeline trigger, preview UI, submit → `approval_requests` insert, CR upload-history view.
 
-### 2.2 OCR — ⬜ **Not started**
-- No OCR code in the repo (`backend/` only has `timetable/`, which uses text-layer extraction via pdfplumber, not image OCR).
-- `Data/analysis.md` §4.4 identifies the OCR pilot corpus: 3 scanned anti-ragging PDFs (~57 pages) plus fallback for `august_menu.pdf` / `Wardens Team...pdf` (CID/UTF-16-encoded text layers, not scans, but need a real PDF text library rather than OCR).
-- **Needed:** Tesseract/PaddleOCR integration (per README §16), confidence scoring + low-confidence flagging (AGENTS.md §10), wire into `ingestion_jobs`.
+### 2.2 OCR — 🟡 **Partial (tooling proven, not wired into a CR pipeline)** — updated 2026-09-11
+- `tesseract` (via `pytesseract`) is installed locally and used in `scripts/ingest_documents.py` for the 3 scanned anti-ragging PDFs — confidence-scored per chunk, low-confidence content (<60%) excluded rather than stored as noise (see §2.4). This proves the OCR path end-to-end but only as a one-off trusted-admin script, not a CR-facing pipeline.
+- **Needed:** wire into `ingestion_jobs` (status tracking, retries), a CR-facing upload → OCR → preview flow, and a Hindi (`hin.traineddata`) or other non-English language pack if that corpus gap (§2.4) needs closing.
 
 ### 2.3 Admin Approval — ⬜ **Not started**
 - `src/routes/admin.tsx` (admin dashboard) is mock-data UI only; no approval-queue screen wired to `approval_requests`.
 - Backend logic for approve/reject (with reason, audit log write) does not exist yet — only the timetable pipeline has an analogous manual `--approved-by` CLI gate (`ingestion_runs`), not a UI-driven queue.
 - **Needed:** admin approval-queue UI, approve/reject actions writing to `approval_requests` + `audit_logs`, publish step that flips `documents.status` and (for structured content) writes into the relevant table.
 
-### 2.4 Document Ingestion (vector KB) — ⬜ **Not started**
-- Target tables ready (`documents`, `document_versions`, `document_chunks` w/ pgvector + HNSW index) but **empty**.
-- None of the 27 PDFs in `Data/Unstructured/` or the non-timetable `Data/Structured/` files have been ingested. `Data/analysis.md` has already scoped exactly what should happen per file (chunking strategy, cohort/programme metadata, sensitive-data screening for the anti-ragging OM).
-- **Needed:** chunking + embedding pipeline, metadata enrichment (cohort/programme/department/doc_type/validity), sensitive-data redaction step, load into `document_chunks`.
+### 2.4 Document Ingestion (vector KB) — ✅ **Done (initial corpus)** — updated 2026-09-11
+- New pipeline `scripts/ingest_documents.py`: extract (text layer or OCR) → sensitive-data screen → chunk → embed → Supabase, following README §6/AGENTS.md §9.
+- **Embeddings:** no embedding-capable API key was configured anywhere in `.env` (only Supabase + Google OAuth keys) — rather than block or fabricate, switched to a local, free model: `sentence-transformers/all-MiniLM-L6-v2` (384-dim). `document_chunks.embedding` was originally a fixed `vector(1536)` (OpenAI's dimension); resized via migration `20260911010000_document_chunks_embedding_384_local_model.sql` (table was empty, so a safe in-place type change, not a data migration). Verified with a live cosine-similarity query — top hit for "What is the attendance requirement?" was exactly `R.6.0 Attendance, Condonation and Course Feedback` at 66.5% similarity.
+- **OCR:** used for the 3 scanned anti-ragging PDFs (no text layer). Only the `eng` tessdata is installed — the bilingual `UGC Regulations- Anti-Ragging - 2009.pdf` has Hindi-language pages that OCR as gibberish through the English model (verified: Hindi pages score 34-43% confidence vs 82-93% for English pages on the same document). Per-chunk OCR confidence is stored in `confidence_score`; anything below 60% is **excluded from the corpus entirely** rather than stored as noise — pages 3-29 of that document were dropped this way. **Known gap:** that document's Hindi content is not searchable; a real answer needs the source PDF directly. No `hin.traineddata` is installed and none was added (would need a `brew`/manual install decision).
+- **Sensitive data:** the committee-roster OM (`OM-Anti Ragging Committee-Squad-Jan2024.pdf`) is flagged `sensitive_data_flag=true` and passed through phone-number redaction (regex on 10-digit Indian mobile numbers) before storage; that particular document had no matching numbers in its OCR'd text, so redaction was a verified no-op, not a false negative. Names/designations of committee members are kept (public governance-role info, not personal data, per AGENTS.md §11's minimum-data principle).
+- **Cohort-aware metadata:** every chunk carries `document_type, category, programme, specialisation, cohort, department, classification, valid_from, valid_until` in `metadata` JSONB. Verified live: the 9 curriculum PDFs split cleanly into `cohort='ADM2026'` (5 programmes, 798 chunks) vs `cohort='21-25'` (4 programmes, 376 chunks) — a 2026-cohort student's query and a 21-25 cohort's query hit disjoint chunk sets, per CLAUDE.md §20's cohort-isolation rule.
+- **Live: 17 documents, 17 versions, 1269 chunks.** Idempotent (upsert on `(document_id, version_id, chunk_index)`), audited via `ingestion_runs`.
+- **Deliberately excluded:** `recruiterscorner.pdf` (14MB placement/marketing deck) — `Data/analysis.md` flagged it as needing a product-owner decision; applied README §12's default ("pure advertisements should not enter the searchable institutional knowledge base") rather than decide unilaterally. Not ingested; can be added later with an explicit decision.
+- **Corpus indexed:** 9 curriculum/syllabi (CSE/AI&DS/ECE/BMC/Cyber, both ADM2026 and 21-25 cohorts where applicable), 2 UG Regulations books (26-onwards and 21-25), 2 procedures (transcript verification, educational verification), 3 anti-ragging documents (2009 UGC regs [English portion only], the circular letter, the Jan-2024 committee OM), and Hostel Rules and Regulations (July 2026) — the latter pulled from `Data/Structured/` since it's prose, not a table, despite living in that folder.
+- The retrieval/grounding layer now exists and is tested (`backend/query/`, `src/lib/query/`, §1.5) — semantic retrieval wraps this corpus via `match_document_chunks`. Reranking and citation-rendered generation are still not built.
 
-### 2.5 Mess Schedules — ⬜ **Not started**
-- `mess_menus` table exists (menu_date, meal, items, valid_from/until, status, source_id) — **0 rows**.
-- Source file `Data/Structured/august_menu .pdf` is CID/UTF-16 encoded — naive extraction fails; needs `pdfplumber`/`PyMuPDF` (per `Data/analysis.md` §2.6) or OCR fallback.
-- `src/routes/mess.tsx` is mock-data UI only.
+### 2.5 Mess Schedules — ✅ **Done (August 2026 only)** — updated 2026-09-11
+- `Data/Structured/august_menu .pdf` ingested via new `scripts/ingest_mess_menu.py` (text layer extracted cleanly with pdfplumber — the CID/UTF-16 concern originally flagged for this file in `Data/analysis.md` did not materialize). Source table is one row per weekday (a recurring weekly pattern); materialized onto every actual calendar date in August 2026 by weekday match (mechanical `calendar` arithmetic, not a guess) since `mess_menus.menu_date` has no day-of-week/recurrence column. Live: **124 rows** (31 days × 4 meals: breakfast/lunch/snacks/dinner). Idempotent, audited.
+- Only August 2026 exists; no other month's menu PDF is in `Data/Structured/`. `src/routes/mess.tsx` still needs wiring to live data (still mock-data UI).
 
-### 2.6 Academic Calendar — ⬜ **Not started**
-- `academic_calendar` table exists (event_name, event_date, event_type, applies_to_semester, valid_from/until, status) — **0 rows**.
-- Source `Data/Structured/Odd 2026-27_academic_calendar.pdf` needs a month-grid-aware parser (positional layout, per `Data/analysis.md` §2.4).
-- `src/routes/calendar.tsx` is mock-data UI only.
+### 2.6 Academic Calendar — ✅ **Done** — updated 2026-09-11
+- `Data/Structured/Odd 2026-27_academic_calendar.pdf` ingested via new `scripts/ingest_academic_calendar.py`. The page's single pdfplumber table has two parts: a Jul–Dec month grid (merged cells, ambiguous multi-event cells — deliberately not parsed) and a clean "Sl No | Academic Highlights | Dates" summary with exact DD-MM-YYYY dates already printed — used as the sole source of truth. Live: **30 events** (2026-07-10 through 2027-01-04), `event_type` assigned by mechanical keyword match on the printed name (exam/registration/meeting/deadline/etc., nullable — never invented), `applies_to_semester` left `NULL` since the calendar's own title covers three semesters at once ("Sem III,V,VII") and the column can only hold one. Idempotent, audited.
+- `src/routes/calendar.tsx` still needs wiring to live data (still mock-data UI).
 
 ### 2.7 Exams — ⬜ **Not started**
 - `exams` table exists (course_id FK, exam_type, exam_date, start/end_time, room_id FK, semester, batch, valid_from/until, status) — **0 rows**, fully joined to the already-live `courses`/`rooms` tables.
@@ -142,20 +142,14 @@
 ### 2.8 Rooms / Classroom allocation — ✅ **Done** — updated 2026-09-11
 - `Data/Structured/Classroom Details_ODD_Sem _July_Nov_2026.pdf` ingested via new `scripts/ingest_classroom_details.py` (single clean pdfplumber table, no naive text dump). Live: **30 rooms** (`room_type` = `large_classroom`/`small_classroom`/`lab`, no capacity printed in source so left `NULL`), **26 room_allocations** (large classrooms keyed by numeric `batch` "1".."5" exactly as printed — *not* converted to the timetable's Roman-numeral batch notation, since the two documents were never shown to use the same scheme; small classrooms keyed by `department` instead, no batch given for those rows). Idempotent (fetch→diff on natural keys), audited via `ingestion_runs`.
 - One PDF annotation ("BC 302 (Temporary)") was stripped from the room identity rather than treated as a second physical room — `room_no` is unique and the schema has no field to carry a "temporary" note; flagged as a preview warning instead of silently dropped.
-- Not yet wired into "where is my next class" — `timetable_entries.room_id` is still `NULL` for all 956 entries (the timetable PDFs print no room per class period; only this separate classroom-details document has room data, at batch/department granularity, not per class).
+- Not yet wired into "where is my next class" — `timetable_entries.room_id` is still `NULL` for all 988 entries (the timetable PDFs print no room per class period; only this separate classroom-details document has room data, at batch/department granularity, not per class).
 
-### 2.8b Academic Calendar — ✅ **Done** — updated 2026-09-11
-- `Data/Structured/Odd 2026-27_academic_calendar.pdf` ingested via new `scripts/ingest_academic_calendar.py`. The page's single pdfplumber table has two parts: a Jul–Dec month grid (merged cells, ambiguous multi-event cells — deliberately not parsed) and a clean "Sl No | Academic Highlights | Dates" summary with exact DD-MM-YYYY dates already printed — used as the sole source of truth. Live: **30 events** in `academic_calendar` (2026-07-10 through 2027-01-04), `event_type` assigned by mechanical keyword match on the printed name (exam/registration/meeting/deadline/etc., nullable — never invented), `applies_to_semester` left `NULL` since the calendar's own title covers three semesters at once ("Sem III,V,VII") and the column can only hold one. Idempotent, audited.
-
-### 2.8c Mess Menu — ✅ **Done (August 2026 only)** — updated 2026-09-11
-- `Data/Structured/august_menu .pdf` ingested via new `scripts/ingest_mess_menu.py` (text layer extracted cleanly with pdfplumber — the CID/UTF-16 concern noted elsewhere in this doc did not materialize for this file). Source table is one row per weekday (a recurring weekly pattern); materialized onto every actual calendar date in August 2026 by weekday match (mechanical `calendar` arithmetic, not a guess) since `mess_menus.menu_date` has no day-of-week/recurrence column. Live: **124 rows** (31 days × 4 meals: breakfast/lunch/snacks/dinner). Idempotent, audited.
-- Only August 2026 exists; no other month's menu PDF is in `Data/Structured/`.
-
-### 2.8d Hostel Wardens — ✅ **Done** — added 2026-09-11
+### 2.9 Hostel Wardens — ✅ **Done** — added 2026-09-11
 - New table `public.hostel_wardens` (migration `20260911000001_add_hostel_wardens.sql`) — not in the original schema; added specifically for this PDF on request, since README §3 lists hostel administration as out of scope "unless explicitly added." One row per (person, hall) pair (a warden team commonly covers 2-4 halls).
 - `Data/Structured/Wardens Team July 2026 - Students Copy.pdf` ingested via new `scripts/ingest_hostel_wardens.py`. Live: **78 rows** across all 16 halls (hostel_warden/standby_warden/assistant_warden per hall, plus chief_warden/associate_dean/hostel_manager/security_officer with no hall). The page's "Important E-Mail address" block (IT Support / Outpass — bare addresses, no named person) is explicitly skipped rather than fabricated into a person row. Idempotent, audited.
+- Not yet exposed anywhere in the UI or the query router — no "who is the warden for hall X" intent exists yet.
 
-### 2.9 Data quality pass on already-live tables — done 2026-09-11
+### 2.10 Data quality pass on already-live tables — done 2026-09-11
 Triggered by "test supabase and refine the data" — found and fixed real defects, not just added new data:
 - **Semester 5's Cyber Security batch was silently dropped on the first import.** Its title prints "...BATCH [Adm-2024]" with no trailing batch letter (only one batch exists for that branch), which didn't match `SECTION_HEADER_RE`. Fixed (`model.py`): a bare "BATCH" now defaults `batch="1"` — not a guess, since there's only one batch to label. Recovered 32 real entries (Sem 5: 170 → 202 imported).
 - The `page.crop().extract_text()` boundary-corruption bug fixed earlier for header cells was also present in day-grid **body** cells (`_extract_cells`) — caused a genuine "Coding Club Activities" cell to read as "Coding Club **B** Activities" on one row (bled a stray break-column letter), which in turn made two real activity records look like an overlap conflict and get wrongly rejected. Fixed by switching `_extract_cells` to the same word-based extraction as the header path.
@@ -199,7 +193,7 @@ All ⬜ **Not started.**
 | Migration history reconciliation | 🟡 | Local `supabase/migrations/*.sql` files exist and match the live schema in substance, but `list_migrations` on the hosted project is empty — hosted schema was applied via direct SQL/Management API, not `supabase db push`, so migration tracking is out of sync |
 | Security advisors (from `get_advisors`) | 🟡 | 1) `ingestion_runs` has RLS enabled but **no policies** (currently inaccessible to all non-service roles — likely intentional but should be confirmed/documented); 2) `handle_new_user()` is `SECURITY DEFINER` and publicly executable via RPC (`anon`+`authenticated`) — should be reviewed, it's meant to run only via the `auth.users` insert trigger, not be directly callable; 3) leaked-password protection is disabled in Supabase Auth settings — should be enabled |
 | Performance advisors | 🟡 | `student_profiles` RLS policy re-evaluates `auth.<fn>()` per row (should wrap in `(select auth.<fn>())`); 29 unused indexes (expected — tables are still empty, will resolve once populated); `documents` table has two overlapping SELECT policies for `authenticated` role (`public_documents_select` + `submitter_view_own_documents`) — worth consolidating |
-| Testing (non-timetable) | ⬜ | AGENTS.md §25 requires tests for auth, role permissions, expiry handling, announcement filtering, CR approval/rejection, OCR normalization, sensitive-data filtering, RAG retrieval filters, faculty availability — **none of these exist yet**; only the timetable slice is tested (87 tests) |
+| Testing (non-timetable) | 🟡 | AGENTS.md §25 requires tests for auth, role permissions, expiry handling, announcement filtering, CR approval/rejection, OCR normalization, sensitive-data filtering, RAG retrieval filters, faculty availability. Query-router tests now exist (17, offline — routing rules + grounding invariant); still missing: auth/role/expiry/announcement/CR/OCR-normalization/sensitive-data tests. 107 Python tests total. |
 | `docs/decisions/` ADR log | ⬜ | AGENTS.md §31 asks for architecture decisions to be recorded here; directory doesn't exist yet |
 
 ---
@@ -216,8 +210,50 @@ Extensions installed: `pgvector` (0.8.2), `pgcrypto`, `uuid-ossp`, `pg_stat_stat
 
 ## Immediate Verification Tasks (before further build-out)
 
-These aren't new features — they're checks needed to know the true state of Phase 1 UI wiring, since this audit was done from static code + DB inspection, not a running app:
+These aren't new features — they're checks needed to know the true state of Phase 1 UI wiring, since most of this audit was done from static code + DB inspection, not a running app (the AI chat panel is now the exception — verified live, §1.3):
 
-1. Confirm `src/routes/timetable.tsx`, `faculty.tsx`, `courses.tsx` actually call `src/lib/timetable-api.ts` / equivalent live queries rather than only `mock-data.ts` (the API layer exists and works per `docs/timetable.md`, but route-level wiring wasn't traced file-by-file in this audit).
-2. Run `npm run dev` and click through `/dashboard`, `/timetable`, `/faculty`, `/courses` to see whether real Supabase data (15 courses, 37 faculty, 608 entries) or mock data renders.
+1. Confirm `src/routes/timetable.tsx`, `faculty.tsx`, `courses.tsx` actually call `src/lib/timetable-api.ts` / equivalent live queries rather than only `mock-data.ts` (the API layer exists and works per `docs/timetable.md`, but route-level wiring wasn't traced file-by-file in this audit) — same gap as before, still unverified. `mess.tsx` and `calendar.tsx` now have live data to wire to as well (§2.5, §2.6).
+2. Run `npm run dev` and click through `/dashboard`, `/timetable`, `/faculty`, `/courses` to see whether real Supabase data (41 courses, 61 faculty, 988 entries) or mock data renders.
 3. Decide and document (in `docs/decisions/`) whether `ingestion_runs`' policy-less RLS is intentional (service-role-only access) before it's flagged again by advisors.
+
+---
+
+## What Should Be Implemented Next (prioritized, as of 2026-09-11)
+
+Ordered by what unblocks the most other work, not by original CLAUDE.md §36 sequence (structured data + RAG corpus + query router are now done, changing what's next).
+
+### 1. Real authentication (highest priority — everything else is scaffolding until this exists)
+- Wire Supabase Auth (email/password or OTP) into `/login`, `/onboarding`, `/role`.
+- Replace `src/lib/chat-api.ts`'s `getTestStudentClient()` test-student scaffolding with a real session lookup once login exists — it's clearly flagged (`usedTestStudent`/"test student session" badge) but is not a permanent solution.
+- Route guards per role (STUDENT/FACULTY/CR/ADMIN); replace the Zustand store's simulated role with the authenticated user's `profiles.role`.
+- Unblocks: personalized dashboard, CR upload attribution, admin approval actor tracking, RLS actually mattering client-side, cohort-aware semantic search (below).
+
+### 2. Grounded generation (the LLM step deliberately not built yet)
+- Wire `backend/query/llm_client.py` (Python reference) / a TS equivalent into the query flow. The scaffolding already exists: cheapest-tier Gemini model, small token cap, refuses to call when `has_answer` is False.
+- Render citations properly in the generated answer (not just as a bullet-pointed fact list, which is what the chat shows today).
+- Add a grounding-validation step (does the generated text actually stay within the retrieved facts/snippets?) before returning it.
+
+### 3. Cohort-aware filtering wired to real students
+- `semanticSearch`/`semantic_search` already accept `cohort`/`category`/`document_type` filters — nothing calls them with a real value yet. Once auth exists, pass the authenticated student's own cohort (`ADM2026` vs `21-25`) so a "What are the attendance requirements?" query returns one cohort's answer, not both (current, unfiltered behavior — correct for an unfiltered call, but not the final product behavior).
+
+### 4. CR upload → OCR → admin approval workflow (Phase 2, entirely unbuilt)
+- File upload UI + Supabase Storage bucket (doesn't exist yet).
+- OCR pipeline trigger reusing the now-proven `tesseract`/`pytesseract` path from `scripts/ingest_documents.py`, wired into `ingestion_jobs` instead of being a one-off admin script.
+- Admin approval-queue UI writing to `approval_requests` + `audit_logs`.
+- This is the only way non-engineers (CRs/admins) can add data going forward — everything live today was loaded by an engineer running a script.
+
+### 5. Remaining structured-data gaps
+- Two blocked timetable conflicts still need institutional confirmation before ~25 more Semester 5/7 records can import: the `IEG 311` code naming two different electives, and the `CSS 411`/`ICS 411` mismatch on Semester 7 Batch III (docs/timetable.md-adjacent, see §1.6 above).
+- `exams` — no source PDF exists at all; needs a data source before any ingestion can start.
+- `departments` table (0 rows) — deferred because populating it means resolving the same ambiguity as the `timetable_entries.department` spelling variants (§2.10) that the user chose to leave alone; revisit together.
+- Room/timetable join — `timetable_entries.room_id` is `NULL` for all 988 entries (source PDFs print no room per class period); would need either a new room-per-class data source or accepting batch/department-level room info as a lower-precision answer.
+
+### 6. Remaining document-ingestion gaps
+- `recruiterscorner.pdf` — needs an explicit product-owner decision (marketing content), not a default.
+- Hindi-language pages of the 2009 UGC anti-ragging regulations are unsearchable (only `eng` tessdata installed) — install `hin.traineddata` and re-run `scripts/ingest_documents.py --only "UGC Regulations"` if that content matters.
+- Reranking step (README §9) doesn't exist — single-pass cosine similarity only.
+
+### 7. Testing and process debt
+- No tests yet for auth, role permissions, expiry handling, announcement filtering, CR approval/rejection, OCR normalization, sensitive-data filtering, faculty availability (AGENTS.md §25) — most of these can't be written meaningfully until the features they cover exist (items 1 and 4 above).
+- `docs/decisions/` ADR log doesn't exist — AGENTS.md §31 asks for architecture decisions to be recorded there (e.g. the local-embeddings-instead-of-API decision, the test-student auth scaffolding decision, both made this session without a formal ADR).
+- Security/performance advisor items in the Cross-Cutting Gaps table above are still open (`ingestion_runs` policy-less RLS, `handle_new_user()` SECURITY DEFINER reachability, leaked-password protection, `student_profiles` RLS per-row re-evaluation, overlapping `documents` SELECT policies).

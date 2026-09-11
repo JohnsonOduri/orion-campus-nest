@@ -5,9 +5,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PixelBadge, PixelSprite, SPRITES } from "@/components/pixel/pixel-art";
-import { aiSuggestions } from "@/lib/mock-data";
+import { askOrion, type ChatResponse } from "@/lib/chat-api";
 
-export type ChatMessage = { id: number; role: "user" | "ai"; text: string };
+// One example per implemented route (docs/query-router.md) so the three
+// backend cases are easy to try from the UI.
+const aiSuggestions = [
+  "What is my next class?",
+  "What are the attendance requirements?",
+  "Which faculty work in NLP and when can I meet them?",
+];
+
+export type ChatMessage = {
+  id: number;
+  role: "user" | "ai";
+  text: string;
+  route?: ChatResponse["route"];
+  usedTestStudent?: boolean;
+  demo?: boolean;
+};
+
+const ROUTE_LABEL: Record<ChatResponse["route"], string> = {
+  structured: "structured · live DB",
+  semantic: "semantic · documents",
+  hybrid: "hybrid · faculty + schedule",
+  unsupported: "unsupported",
+};
 
 export function ChatBubble({ msg }: { msg: ChatMessage }) {
   const isUser = msg.role === "user";
@@ -25,15 +47,35 @@ export function ChatBubble({ msg }: { msg: ChatMessage }) {
       >
         {isUser ? <span className="text-xs font-bold">AM</span> : <Bot className="size-4" />}
       </span>
-      <div
-        className={cn(
-          "max-w-[80%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed",
-          isUser
-            ? "rounded-tr-sm bg-secondary text-secondary-foreground"
-            : "rounded-tl-sm border border-border bg-card",
-        )}
-      >
-        {msg.text}
+      <div className={cn("max-w-[80%] space-y-1.5", isUser && "flex flex-col items-end")}>
+        {!isUser && (msg.route || msg.demo) ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {msg.route ? (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                {ROUTE_LABEL[msg.route]}
+              </span>
+            ) : null}
+            {msg.demo ? (
+              <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                demo mode
+              </span>
+            ) : msg.usedTestStudent ? (
+              <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                test student session
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        <div
+          className={cn(
+            "rounded-xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line",
+            isUser
+              ? "rounded-tr-sm bg-secondary text-secondary-foreground"
+              : "rounded-tl-sm border border-border bg-card",
+          )}
+        >
+          {msg.text}
+        </div>
       </div>
     </motion.div>
   );
@@ -58,26 +100,45 @@ export function TypingIndicator() {
   );
 }
 
-const CANNED =
-  "Here's what I found: you have 3 classes left today, CS306 is running now in LH-2, and your ML assignment is due in 2 days. Want me to draft a revision plan?";
-
 export function AiChatPanel({ compact = false }: { compact?: boolean }) {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 1, role: "ai", text: "Hi Aarav! I'm ORION. Ask me anything about classes, mess, faculty or deadlines." },
+    {
+      id: 1,
+      role: "ai",
+      text: "Hi! I'm ORION. Ask me about your next class, attendance regulations, or which faculty work on a topic.",
+    },
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
 
-  function send(text: string) {
+  async function send(text: string) {
     if (!text.trim()) return;
     const id = Date.now();
     setMessages((m) => [...m, { id, role: "user", text }]);
     setInput("");
     setTyping(true);
-    setTimeout(() => {
+    try {
+      const res = await askOrion({ data: { query: text } });
+      setMessages((m) => [
+        ...m,
+        {
+          id: id + 1,
+          role: "ai",
+          text: res.text,
+          route: res.route,
+          usedTestStudent: res.usedTestStudent,
+          demo: res.demo,
+        },
+      ]);
+    } catch (error) {
+      console.error("[ai-chat] askOrion failed", error);
+      setMessages((m) => [
+        ...m,
+        { id: id + 1, role: "ai", text: "Sorry, something went wrong reaching ORION's backend." },
+      ]);
+    } finally {
       setTyping(false);
-      setMessages((m) => [...m, { id: id + 1, role: "ai", text: CANNED }]);
-    }, 1100);
+    }
   }
 
   return (

@@ -1,0 +1,144 @@
+"""Typed contracts for the ORION query router / retrieval / context layer.
+
+This module has no side effects and no Supabase/embedding dependency —
+router.py produces these types, retrieval.py fills them, context.py
+consumes them. Keeping them here lets each stage be tested independently.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Optional
+
+
+class RouteType(str, Enum):
+    """AGENTS.md §4 / README §8: the router must not send every question to
+    vector search — classify first, then pick the source of truth."""
+
+    STRUCTURED = "structured"
+    SEMANTIC = "semantic"
+    HYBRID = "hybrid"
+    UNSUPPORTED = "unsupported"
+
+
+class StructuredIntent(str, Enum):
+    NEXT_CLASS = "next_class"
+    DAY_TIMETABLE = "day_timetable"
+    WEEK_TIMETABLE = "week_timetable"
+    DAY_OF_WEEK_TIMETABLE = "day_of_week_timetable"
+    FACULTY_FOR_COURSE = "faculty_for_course"
+    NONE = "none"
+
+
+@dataclass(frozen=True)
+class QueryPlan:
+    """The router's output: what kind of question this is and how to answer
+    it — never the answer itself. `reasoning` is for audit/debug logs only,
+    never shown to the user as a fact."""
+
+    raw_query: str
+    route: RouteType
+    structured_intent: StructuredIntent = StructuredIntent.NONE
+    # free-text extracted from the query to drive semantic search / faculty
+    # topic matching (e.g. "attendance requirements", "NLP")
+    topic_text: Optional[str] = None
+    # a course code detected in the query, for FACULTY_FOR_COURSE
+    course_code: Optional[str] = None
+    # optional explicit filters the query text itself implied (rare — cohort
+    # etc. normally comes from the authenticated user's academic context,
+    # never from free-text query parsing, per AGENTS.md §17)
+    semantic_filters: dict[str, str] = field(default_factory=dict)
+    reasoning: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "raw_query": self.raw_query,
+            "route": self.route.value,
+            "structured_intent": self.structured_intent.value,
+            "topic_text": self.topic_text,
+            "course_code": self.course_code,
+            "semantic_filters": self.semantic_filters,
+            "reasoning": self.reasoning,
+        }
+
+
+@dataclass
+class StructuredFact:
+    """One deterministic fact pulled from PostgreSQL, always carrying where
+    it came from so the context builder never has to guess provenance."""
+
+    claim: str
+    data: dict[str, Any]
+    source: str  # e.g. "orion_next_class RPC (live timetable)"
+    source_id: Optional[str] = None  # the timetable/document source_id, if any
+
+
+@dataclass
+class SemanticSnippet:
+    """One retrieved chunk, always carrying its citation and validity so the
+    context builder can filter/attribute without re-querying."""
+
+    content: str
+    document_title: str
+    section_title: Optional[str]
+    page_start: Optional[int]
+    page_end: Optional[int]
+    similarity: float
+    cohort: Optional[str]
+    category: Optional[str]
+    document_type: Optional[str]
+    valid_from: Optional[str]
+    valid_until: Optional[str]
+
+
+@dataclass
+class RetrievalResult:
+    plan: QueryPlan
+    facts: list[StructuredFact] = field(default_factory=list)
+    snippets: list[SemanticSnippet] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+
+@dataclass
+class GroundedContext:
+    """The grounding-ready payload for an eventual LLM call. Nothing in here
+    is generated text — it's exactly what was retrieved, with citations,
+    ready to hand to a generator or to render directly when no LLM is
+    involved (AGENTS.md §16: bypass generation when a structured answer is
+    sufficient)."""
+
+    query: str
+    route: RouteType
+    facts: list[StructuredFact]
+    snippets: list[SemanticSnippet]
+    warnings: list[str]
+    has_answer: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "query": self.query,
+            "route": self.route.value,
+            "has_answer": self.has_answer,
+            "facts": [
+                {"claim": f.claim, "data": f.data, "source": f.source, "source_id": f.source_id}
+                for f in self.facts
+            ],
+            "snippets": [
+                {
+                    "content": s.content,
+                    "document_title": s.document_title,
+                    "section_title": s.section_title,
+                    "page_start": s.page_start,
+                    "page_end": s.page_end,
+                    "similarity": s.similarity,
+                    "cohort": s.cohort,
+                    "category": s.category,
+                    "document_type": s.document_type,
+                    "valid_from": s.valid_from,
+                    "valid_until": s.valid_until,
+                }
+                for s in self.snippets
+            ],
+            "warnings": self.warnings,
+        }
