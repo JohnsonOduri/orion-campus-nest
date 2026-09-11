@@ -255,6 +255,15 @@ def normalize_section(section: Section, source_id: str) -> NormalizationResult:
                 entry_type = entry_type_from_cell(text, has_lab)
                 if kind == "other":
                     entry_type = "other"
+                legend_entry = section.legend.by_code(course_code) if course_code else None
+                if entry_type == "class" and legend_entry and re.search(
+                    r"\bB\.?\s?TECH\.?\s?PROJECT\b|\bBTP\b|\bPROJECT\b",
+                    legend_entry.course_name,
+                    re.IGNORECASE,
+                ):
+                    # legend names the course itself a project (e.g. "BTP-I"):
+                    # individually supervised, legitimately no fixed faculty.
+                    entry_type = "project"
                 faculty_initials, faculty_names = _resolve_faculty(
                     text, course_code, section, result
                 )

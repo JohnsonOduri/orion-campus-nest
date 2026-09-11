@@ -22,11 +22,12 @@ unambiguous initials match against official names is accepted.
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from typing import Any, Optional
+
+from .model import initials_from_name
 
 PEOPLE_JSON = Path("Data/processed/people.json")
 
@@ -51,19 +52,6 @@ def _date(s: Optional[str]) -> Optional[date]:
     return date.fromisoformat(s) if s else None
 
 
-_HONORIFICS = {"dr", "dr.", "prof", "prof.", "mr", "ms", "mrs"}
-
-
-def _person_initials(name: str) -> str:
-    """Deterministic initials from an official faculty name.
-
-    "Dr. Lidiya Lilly Thampi" -> "LLT"; "Dr. Bakkyaraj T" -> "BT".
-    Honorifics are excluded.
-    """
-    tokens = [t for t in re.findall(r"[A-Za-z]+", name) if t.lower().rstrip(".") not in _HONORIFICS]
-    return "".join(t[0].upper() for t in tokens if t)
-
-
 def load_people_initials() -> dict[str, str]:
     """Map deterministic initials -> official full name from people.json.
 
@@ -79,7 +67,7 @@ def load_people_initials() -> dict[str, str]:
         name = (p.get("name") or "").strip()
         if not name:
             continue
-        ini = _person_initials(name)
+        ini = initials_from_name(name)
         if not ini:
             continue
         if ini in seen and seen[ini] != name:

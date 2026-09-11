@@ -1,0 +1,307 @@
+{
+  "source_id": "Odd 2026-27_academic_calendar.pdf",
+  "events": [
+    {
+      "event_name": "Registration starts online for Odd semester 2026-27",
+      "event_date": "2026-07-10",
+      "event_type": "registration",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Physical reporting at Hostel",
+      "event_date": "2026-07-17",
+      "event_type": "administrative",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Last date of fee payment without fine",
+      "event_date": "2026-07-19",
+      "event_type": "deadline",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Class begins : 1st Instructional Day",
+      "event_date": "2026-07-20",
+      "event_type": "term_milestone",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Last day for course drop",
+      "event_date": "2026-07-30",
+      "event_type": "deadline",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "First Class Committee Meeting for S3, S5 & S7",
+      "event_date": "2026-08-07",
+      "event_type": "meeting",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "B.Tech BTP / MS project first review",
+      "event_date": "2026-08-17",
+      "event_type": "review",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Submission of Mid attendance list to HoD",
+      "event_date": "2026-08-28",
+      "event_type": "deadline",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Mid Semester Examination Starts",
+      "event_date": "2026-09-02",
+      "event_type": "exam",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Last day for submission of mid sem exam marks",
+      "event_date": "2026-09-21",
+      "event_type": "exam",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Second Class Committee Meeting (S3, S5 & S7)",
+      "event_date": "2026-09-23",
+      "event_type": "meeting",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Second Class Committee Meeting (S3, S5 & S7)",
+      "event_date": "2026-09-24",
+      "event_type": "meeting",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Sports Meet Starts",
+      "event_date": "2026-09-25",
+      "event_type": "event",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Sports Meet Ends",
+      "event_date": "2026-09-27",
+      "event_type": "event",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "B.Tech BTP / Honours / MS project final review",
+      "event_date": "2026-10-19",
+      "event_type": "review",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Submission of final attendance list to HoD",
+      "event_date": "2026-10-21",
+      "event_type": "deadline",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Course Evaluation",
+      "event_date": "2026-10-22",
+      "event_type": "evaluation",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Class Ends",
+      "event_date": "2026-10-26",
+      "event_type": "term_milestone",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "End Semester Examination Starts",
+      "event_date": "2026-10-28",
+      "event_type": "exam",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "End Semester Exam Ends & Semester Ends",
+      "event_date": "2026-11-13",
+      "event_type": "exam",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Last day for submission of grades",
+      "event_date": "2026-11-25",
+      "event_type": "deadline",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Final Class Committee Meeting",
+      "event_date": "2026-11-27",
+      "event_type": "meeting",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Result Publication",
+      "event_date": "2026-12-03",
+      "event_type": "result",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Registration starts online for Even Sem 2026-27",
+      "event_date": "2026-12-14",
+      "event_type": "registration",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Repeat Examination Starts",
+      "event_date": "2026-12-17",
+      "event_type": "exam",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Physical reporting at Hostel",
+      "event_date": "2026-12-18",
+      "event_type": "administrative",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Last date of fee payment without fine for Even Sem",
+      "event_date": "2026-12-20",
+      "event_type": "deadline",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Even Semester 2026\u201327 Classes Begin",
+      "event_date": "2026-12-21",
+      "event_type": "term_milestone",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Last day for submission of grades for repeat exam.",
+      "event_date": "2026-12-28",
+      "event_type": "exam",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    },
+    {
+      "event_name": "Result of Repeat Examination",
+      "event_date": "2027-01-04",
+      "event_type": "exam",
+      "applies_to_semester": null,
+      "status": "active",
+      "source_id": "Odd 2026-27_academic_calendar.pdf",
+      "valid_from": "2026-07-01",
+      "valid_until": "2027-01-04"
+    }
+  ],
+  "warnings": [],
+  "validation_issues": []
+}

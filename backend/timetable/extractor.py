@@ -39,6 +39,7 @@ from .model import (
     DocumentMetadata,
     PeriodHeader,
     document_metadata,
+    initials_from_name,
     parse_day_row,
     parse_period_header,
 )
@@ -168,12 +169,31 @@ def _cell_text(page, bbox) -> str:
         return ""
 
 
+def _words_cell_text(words, x0: float, top: float, x1: float, bottom: float) -> str:
+    """Cell text built from whole-word centers, not `page.crop()`.
+
+    Cropping to a cell bbox can split a word's glyphs across the boundary
+    (narrow adjacent break/lunch columns bleed a stray letter into the next
+    header cell; digits at a boundary can duplicate/merge, e.g. "4:25" -> "4:625").
+    Selecting whole words by center point avoids both classes of corruption.
+    """
+    found = [
+        (w["top"], w["x0"], w["text"])
+        for w in words
+        if x0 - 1 <= (w["x0"] + w["x1"]) / 2 <= x1 + 1
+        and top - 1 <= (w["top"] + w["bottom"]) / 2 <= bottom + 1
+    ]
+    found.sort()
+    return " ".join(t for _, _, t in found)
+
+
 # ------------------------------------------------------------ column parsing
 
 
 def _parse_columns(page, grid) -> tuple[list[PeriodColumn], list[str]]:
     """Resolve period/break columns from the grid's header geometry."""
     warnings: list[str] = []
+    words = page.extract_words()
 
     # 1. Find day-label rows to know where the header ends. Day labels live in
     #    a narrow left column; header rows are everything above the first one.
@@ -185,7 +205,7 @@ def _parse_columns(page, grid) -> tuple[list[PeriodColumn], list[str]]:
                 continue
             x0, top, x1, bottom = cell
             if (x1 - x0) < 80:
-                text = _cell_text(page, cell)
+                text = _words_cell_text(words, x0, top, x1, bottom)
                 if parse_day_row(text):
                     label_cells.append((x0, top, x1, bottom, text))
                     if first_day_top is None or top < first_day_top:
@@ -202,7 +222,7 @@ def _parse_columns(page, grid) -> tuple[list[PeriodColumn], list[str]]:
             x0, top, x1, bottom = cell
             if top >= first_day_top:
                 continue
-            text = _cell_text(page, cell)
+            text = _words_cell_text(words, x0, top, x1, bottom)
             if text:
                 header_cells.append((x0, top, x1, bottom, text))
 
@@ -378,7 +398,42 @@ def _extract_legend(page) -> Legend:
             entry = _parse_legend_row(row[0], row[1] if len(row) > 1 else None)
             if entry:
                 entries.append(entry)
-    return Legend(page=page.page_number, entries=tuple(entries))
+    return Legend(page=page.page_number, entries=tuple(_backfill_legend_initials(entries)))
+
+
+def _backfill_legend_initials(entries: list[LegendEntry]) -> list[LegendEntry]:
+    """Derive initials for a legend row that names a faculty member but
+    prints no parenthesized initials (e.g. "Dr. Amit Kumar Roy" with no
+    "(AKR)"). Mechanical transform of the printed name (see
+    `model.initials_from_name`) — never a guess. Dropped entirely if two
+    different names on the same page's legend would collide on the same
+    derived initials, so resolution never silently picks the wrong person.
+    """
+    derived: dict[int, str] = {}
+    for i, e in enumerate(entries):
+        if e.faculty_initials or not e.faculty_names or not e.faculty_names[0]:
+            continue
+        ini = initials_from_name(e.faculty_names[0])
+        if ini:
+            derived[i] = ini
+    by_ini: dict[str, set[str]] = {}
+    for i, ini in derived.items():
+        by_ini.setdefault(ini, set()).add(entries[i].faculty_names[0])
+    ambiguous = {ini for ini, names in by_ini.items() if len(names) > 1}
+
+    out: list[LegendEntry] = []
+    for i, e in enumerate(entries):
+        ini = derived.get(i)
+        if ini and ini not in ambiguous:
+            e = LegendEntry(
+                course_code=e.course_code,
+                course_name=e.course_name,
+                credits_raw=e.credits_raw,
+                faculty_initials=(ini,),
+                faculty_names=e.faculty_names,
+            )
+        out.append(e)
+    return out
 
 
 def _parse_legend_row(
@@ -504,4 +559,60 @@ def extract_document(pdf_path: str | Path) -> TimetableDocument:
                 doc.warnings.append(f"page {idx}: section-like header but no grid extracted")
                 continue
             doc.sections.append(section)
+    _backfill_missing_period_times(doc)
     return doc
+
+
+def _backfill_missing_period_times(doc: TimetableDocument) -> None:
+    """Some pages of a multi-batch timetable print no time for a slot that
+    IS printed on other pages of the same document (one institutional period
+    schedule, reprinted per batch). Backfill a missing per-page time only
+    when every page of this document that DOES print the slot agrees exactly
+    — never invent a time that isn't evidenced verbatim somewhere in the
+    source PDF. Backfilled columns are flagged "[derived]", same as an
+    intra-page shared range.
+    """
+    canonical: dict[int, tuple[str, str]] = {}
+    conflicting: set[int] = set()
+    for section in doc.sections:
+        for col in section.periods:
+            if col.is_break or col.header.start is None:
+                continue
+            slot = col.header.slot_index
+            value = (col.header.start, col.header.end)
+            if slot in canonical and canonical[slot] != value:
+                conflicting.add(slot)
+            canonical.setdefault(slot, value)
+    for slot in conflicting:
+        canonical.pop(slot, None)
+    if not canonical:
+        return
+
+    for section in doc.sections:
+        backfilled = False
+        new_periods: list[PeriodColumn] = []
+        for col in section.periods:
+            value = canonical.get(col.header.slot_index)
+            if not col.is_break and col.header.start is None and value is not None:
+                start, end = value
+                new_periods.append(
+                    PeriodColumn(
+                        x0=col.x0,
+                        x1=col.x1,
+                        header=PeriodHeader(
+                            col.header.slot_index,
+                            start,
+                            end,
+                            "teaching",
+                            raw=col.header.raw + " [derived]",
+                        ),
+                    )
+                )
+                backfilled = True
+            else:
+                new_periods.append(col)
+        if backfilled:
+            section.periods = new_periods
+            section.warnings.append(
+                "backfilled missing period time(s) from sibling pages of the same source"
+            )

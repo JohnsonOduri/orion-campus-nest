@@ -7,6 +7,7 @@ it only accepts or rejects, and produces a human-readable report.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -226,7 +227,56 @@ def validate_records(
             report.passed.append(rec)
 
     _check_overlaps(report)
+    _check_course_code_consistency(report)
     return report
+
+
+def _check_course_code_consistency(report: ValidationReport) -> None:
+    """Reject records whose course_code maps to more than one course_name.
+
+    `courses` is keyed by code alone; a code that names two different courses
+    in the source PDF (e.g. an elective slot reused for a different subject
+    per batch) would silently corrupt whichever course loses the race to be
+    imported first. Never guess which name is "right" — reject every record
+    for that code and surface it for human review instead.
+    """
+    def norm(name: str) -> str:
+        # Punctuation/whitespace-only variance across pages ("...STATISTICS,
+        # AND..." vs "...STATISTICS AND...") is the same course, not a
+        # conflict — normalize before comparing.
+        return re.sub(r"[^A-Z0-9]+", " ", name.upper()).strip()
+
+    names_by_code: dict[str, set[str]] = {}
+    for rec in report.passed:
+        if rec.course_code and rec.course_name:
+            names_by_code.setdefault(rec.course_code, set()).add(rec.course_name)
+    conflicting = {
+        code for code, names in names_by_code.items() if len({norm(n) for n in names}) > 1
+    }
+    if not conflicting:
+        return
+
+    still_passed: list[TimetableRecord] = []
+    for rec in report.passed:
+        if rec.course_code in conflicting:
+            d = rec.to_dict()
+            report.failed.append(
+                (
+                    rec,
+                    [
+                        ValidationIssue(
+                            "course_code_conflict",
+                            f"course code {rec.course_code!r} names multiple different "
+                            f"courses in this source: {sorted(names_by_code[rec.course_code])}",
+                            d,
+                            d,
+                        )
+                    ],
+                )
+            )
+        else:
+            still_passed.append(rec)
+    report.passed = still_passed
 
 
 def _check_overlaps(report: ValidationReport) -> None:

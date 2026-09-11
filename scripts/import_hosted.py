@@ -121,8 +121,33 @@ def reconcile(
     return {"inserted": len(to_insert), "updated": len(to_update), "unchanged": unchanged}
 
 
+def _load_validation_failed_uids(preview_path: str) -> set[str]:
+    """The preview JSON lists every extracted record regardless of validation
+    outcome (it's the human-inspectable audit trail); only ingest_timetable's
+    validation JSON says which ones actually passed. Never import a record
+    the validator rejected — load its sibling *_validation.json (same stem)
+    and return the source_uids to exclude. Missing file -> nothing to
+    exclude (caller still requires the preview to already be 100% valid).
+    """
+    p = Path(preview_path)
+    validation_path = p.with_name(p.name.replace("_preview.json", "_validation.json"))
+    if not validation_path.exists():
+        return set()
+    validation = json.loads(validation_path.read_text())
+    return {f["record"]["source_uid"] for f in validation.get("failed", []) if f.get("record")}
+
+
 def import_preview(preview_path: str, approved_by: str) -> dict:
     preview = load_preview(preview_path)
+    failed_uids = _load_validation_failed_uids(preview_path)
+    if failed_uids:
+        before = len(preview["records"])
+        preview["records"] = [r for r in preview["records"] if r.get("source_uid") not in failed_uids]
+        print(
+            f"excluding {before - len(preview['records'])} record(s) that failed "
+            f"validation (see the matching *_validation.json) — importing only "
+            f"validated records"
+        )
     adapted = adapt_preview(preview)
     source_id = preview["source"]["source_id"]
     recs = preview["records"]

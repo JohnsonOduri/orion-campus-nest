@@ -12,6 +12,21 @@ from typing import Optional
 
 # ---------------------------------------------------------------- constants
 
+_HONORIFICS = {"dr", "dr.", "prof", "prof.", "mr", "ms", "mrs"}
+
+
+def initials_from_name(name: str) -> str:
+    """Deterministic initials from an official faculty name.
+
+    "Dr. Lidiya Lilly Thampi" -> "LLT"; "Dr. Bakkyaraj T" -> "BT".
+    Honorifics are excluded. Used only where a full name is verbatim from a
+    trusted source (PDF legend, faculty directory) and initials are absent —
+    a mechanical transform of given text, never an invented value.
+    """
+    tokens = [t for t in re.findall(r"[A-Za-z]+", name) if t.lower().rstrip(".") not in _HONORIFICS]
+    return "".join(t[0].upper() for t in tokens if t)
+
+
 WEEKDAYS: dict[str, int] = {
     "Monday": 1,
     "Tuesday": 2,
@@ -51,11 +66,11 @@ TIME_RANGE_RE = re.compile(
 
 COURSE_CODE_RE = re.compile(r"\b([IUE][A-Z]{2}\s?\d{3}|[A-Z]{2,4}\s?\d{3})\b")
 
-CREDITS_RE = re.compile(r"\[(\d+)-(\d+)-(\d+)\]\s*(\d+)")
+CREDITS_RE = re.compile(r"\[\s*(\d+)\s*-\s*(\d+)\s*-\s*(\d+)\s*\]\s*(\d+)")
 
 SECTION_HEADER_RE = re.compile(
     r"SEMESTER\s+(?P<semester>[IVX]+|\d+)\s+(?P<branch>.+?)\s+"
-    r"BATCH\s*[-–—]\s*(?P<batch>[IVX]+|\d+)\s*(?:\[(?P<adm>[^\]]+)\])?",
+    r"BATCH\s*[-–—]?\s*(?P<batch>[IVX]+|\d+)\s*(?:\[(?P<adm>[^\]]+)\])?",
     re.IGNORECASE,
 )
 

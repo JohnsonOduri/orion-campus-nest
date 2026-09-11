@@ -342,23 +342,16 @@
             "derived": false
           },
           {
-            "slot_index": 0,
-            "start_time": null,
-            "end_time": null,
-            "kind": "break",
-            "derived": false
-          },
-          {
             "slot_index": 8,
-            "start_time": "17:00",
-            "end_time": "19:00",
+            "start_time": "05:00",
+            "end_time": "07:00",
             "kind": "teaching",
             "derived": true
           },
           {
             "slot_index": 9,
-            "start_time": "17:00",
-            "end_time": "19:00",
+            "start_time": "05:00",
+            "end_time": "07:00",
             "kind": "teaching",
             "derived": true
           }
@@ -620,15 +613,15 @@
           },
           {
             "slot_index": 8,
-            "start_time": "17:00",
-            "end_time": "19:00",
+            "start_time": "05:00",
+            "end_time": "07:00",
             "kind": "teaching",
             "derived": true
           },
           {
             "slot_index": 9,
-            "start_time": "17:00",
-            "end_time": "19:00",
+            "start_time": "05:00",
+            "end_time": "07:00",
             "kind": "teaching",
             "derived": true
           }
@@ -692,13 +685,6 @@
             "start_time": "16:00",
             "end_time": "16:55",
             "kind": "teaching",
-            "derived": false
-          },
-          {
-            "slot_index": 0,
-            "start_time": null,
-            "end_time": null,
-            "kind": "break",
             "derived": false
           },
           {
@@ -1062,23 +1048,16 @@
             "derived": false
           },
           {
-            "slot_index": 0,
-            "start_time": null,
-            "end_time": null,
-            "kind": "break",
-            "derived": false
-          },
-          {
             "slot_index": 8,
-            "start_time": "17:00",
-            "end_time": "19:00",
+            "start_time": "05:00",
+            "end_time": "07:00",
             "kind": "teaching",
             "derived": true
           },
           {
             "slot_index": 9,
-            "start_time": "17:00",
-            "end_time": "19:00",
+            "start_time": "05:00",
+            "end_time": "07:00",
             "kind": "teaching",
             "derived": true
           }
@@ -1319,15 +1298,15 @@
           },
           {
             "slot_index": 8,
-            "start_time": "17:00",
-            "end_time": "19:00",
+            "start_time": "05:00",
+            "end_time": "07:00",
             "kind": "teaching",
             "derived": true
           },
           {
             "slot_index": 9,
-            "start_time": "17:00",
-            "end_time": "19:00",
+            "start_time": "05:00",
+            "end_time": "07:00",
             "kind": "teaching",
             "derived": true
           }
@@ -1355,13 +1334,6 @@
             "slot_index": 2,
             "start_time": "10:00",
             "end_time": "10:55",
-            "kind": "teaching",
-            "derived": false
-          },
-          {
-            "slot_index": 1,
-            "start_time": null,
-            "end_time": null,
             "kind": "teaching",
             "derived": false
           },
@@ -1398,13 +1370,6 @@
             "start_time": "16:00",
             "end_time": "16:55",
             "kind": "teaching",
-            "derived": false
-          },
-          {
-            "slot_index": 0,
-            "start_time": null,
-            "end_time": null,
-            "kind": "break",
             "derived": false
           },
           {
@@ -4694,8 +4659,8 @@
       "faculty_names": [],
       "day": "Monday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -4709,7 +4674,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 4,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d1|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d1|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -4718,8 +4683,8 @@
       "faculty_names": [],
       "day": "Monday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -4733,7 +4698,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 4,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d1|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d1|p9|05:00|none|club_activity"
     },
     {
       "course_code": "IEC 211",
@@ -4886,8 +4851,8 @@
       ],
       "day": "Tuesday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -4901,7 +4866,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 4,
       "source_text": "IPT 211 PT",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d2|p8|17:00|IPT 211|class"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d2|p8|05:00|IPT 211|class"
     },
     {
       "course_code": "IEC 213",
@@ -5078,8 +5043,8 @@
       "faculty_names": [],
       "day": "Wednesday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -5093,7 +5058,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 4,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d3|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d3|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -5102,8 +5067,8 @@
       "faculty_names": [],
       "day": "Wednesday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -5117,7 +5082,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 4,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d3|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d3|p9|05:00|none|club_activity"
     },
     {
       "course_code": "IEC 215",
@@ -5322,8 +5287,8 @@
       "faculty_names": [],
       "day": "Thursday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -5337,7 +5302,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 4,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d4|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d4|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -5346,8 +5311,8 @@
       "faculty_names": [],
       "day": "Thursday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -5361,7 +5326,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 4,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d4|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d4|p9|05:00|none|club_activity"
     },
     {
       "course_code": "IEC 211",
@@ -5526,8 +5491,8 @@
       "faculty_names": [],
       "day": "Friday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -5541,7 +5506,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 4,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d5|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d5|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -5550,8 +5515,8 @@
       "faculty_names": [],
       "day": "Friday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -5565,7 +5530,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 4,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d5|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bI|I|d5|p9|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -7734,8 +7699,8 @@
       "faculty_names": [],
       "day": "Monday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -7749,7 +7714,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 7,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d1|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d1|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -7758,8 +7723,8 @@
       "faculty_names": [],
       "day": "Monday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -7773,7 +7738,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 7,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d1|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d1|p9|05:00|none|club_activity"
     },
     {
       "course_code": "ICS 212",
@@ -7922,8 +7887,8 @@
       ],
       "day": "Tuesday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -7937,7 +7902,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 7,
       "source_text": "IPT 211 PT",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d2|p9|17:00|IPT 211|class"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d2|p9|05:00|IPT 211|class"
     },
     {
       "course_code": "ICS 213",
@@ -8086,8 +8051,8 @@
       "faculty_names": [],
       "day": "Wednesday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -8101,7 +8066,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 7,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d3|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d3|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -8110,8 +8075,8 @@
       "faculty_names": [],
       "day": "Wednesday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -8125,7 +8090,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 7,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d3|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d3|p9|05:00|none|club_activity"
     },
     {
       "course_code": "ICS 211",
@@ -8330,8 +8295,8 @@
       "faculty_names": [],
       "day": "Thursday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -8345,7 +8310,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 7,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d4|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d4|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -8354,8 +8319,8 @@
       "faculty_names": [],
       "day": "Thursday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -8369,7 +8334,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 7,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d4|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d4|p9|05:00|none|club_activity"
     },
     {
       "course_code": "ICS 211",
@@ -8562,8 +8527,8 @@
       "faculty_names": [],
       "day": "Friday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -8577,7 +8542,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 7,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d5|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d5|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -8586,8 +8551,8 @@
       "faculty_names": [],
       "day": "Friday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -8601,7 +8566,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 7,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d5|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bII|II|d5|p9|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -12798,8 +12763,8 @@
       "faculty_names": [],
       "day": "Monday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -12813,7 +12778,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 12,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d1|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d1|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -12822,8 +12787,8 @@
       "faculty_names": [],
       "day": "Monday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -12837,7 +12802,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 12,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d1|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d1|p9|05:00|none|club_activity"
     },
     {
       "course_code": "IEC 211",
@@ -12990,8 +12955,8 @@
       ],
       "day": "Tuesday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -13005,7 +12970,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 12,
       "source_text": "IPT 211 PT",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d2|p8|17:00|IPT 211|class"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d2|p8|05:00|IPT 211|class"
     },
     {
       "course_code": "IEC 213",
@@ -13184,8 +13149,8 @@
       "faculty_names": [],
       "day": "Wednesday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -13199,7 +13164,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 12,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d3|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d3|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -13208,8 +13173,8 @@
       "faculty_names": [],
       "day": "Wednesday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -13223,7 +13188,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 12,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d3|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d3|p9|05:00|none|club_activity"
     },
     {
       "course_code": "IEC 215",
@@ -13432,8 +13397,8 @@
       "faculty_names": [],
       "day": "Thursday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -13447,7 +13412,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 12,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d4|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d4|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -13456,8 +13421,8 @@
       "faculty_names": [],
       "day": "Thursday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -13471,7 +13436,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 12,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d4|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d4|p9|05:00|none|club_activity"
     },
     {
       "course_code": "IEC 211",
@@ -13638,8 +13603,8 @@
       "faculty_names": [],
       "day": "Friday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -13653,7 +13618,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 12,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d5|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d5|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -13662,8 +13627,8 @@
       "faculty_names": [],
       "day": "Friday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -13677,7 +13642,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 12,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d5|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|ELECTRONICS AND COMMUNICATION ENGINEERING|bIII|III|d5|p9|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -15041,7 +15006,7 @@
     },
     {
       "course_code": "ICS 212",
-      "course_name": "THEORY OF COMPUTATION [3-1- 0] 4",
+      "course_name": "THEORY OF COMPUTATION",
       "faculty_initials": [
         "JSJ"
       ],
@@ -15153,7 +15118,7 @@
     },
     {
       "course_code": "ICS 215",
-      "course_name": "DATA STRUCTURES II [1-0- 2] 2",
+      "course_name": "DATA STRUCTURES II",
       "faculty_initials": [
         "SBK"
       ],
@@ -15257,7 +15222,7 @@
     },
     {
       "course_code": "ICS 212",
-      "course_name": "THEORY OF COMPUTATION [3-1- 0] 4",
+      "course_name": "THEORY OF COMPUTATION",
       "faculty_initials": [
         "JSJ"
       ],
@@ -15369,7 +15334,7 @@
     },
     {
       "course_code": "ICS 212",
-      "course_name": "THEORY OF COMPUTATION [3-1- 0] 4",
+      "course_name": "THEORY OF COMPUTATION",
       "faculty_initials": [
         "JSJ"
       ],
@@ -15529,7 +15494,7 @@
     },
     {
       "course_code": "ICS 212",
-      "course_name": "THEORY OF COMPUTATION [3-1- 0] 4",
+      "course_name": "THEORY OF COMPUTATION",
       "faculty_initials": [
         "JSJ"
       ],
@@ -15557,7 +15522,7 @@
     },
     {
       "course_code": "ICS 215",
-      "course_name": "DATA STRUCTURES II [1-0- 2] 2",
+      "course_name": "DATA STRUCTURES II",
       "faculty_initials": [
         "SBK"
       ],
@@ -15846,8 +15811,8 @@
       "faculty_names": [],
       "day": "Monday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -15861,7 +15826,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 15,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d1|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d1|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -15870,8 +15835,8 @@
       "faculty_names": [],
       "day": "Monday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -15885,7 +15850,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 15,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d1|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d1|p9|05:00|none|club_activity"
     },
     {
       "course_code": "ICS 211",
@@ -16010,8 +15975,8 @@
       ],
       "day": "Tuesday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -16025,7 +15990,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 15,
       "source_text": "IPT 211 PT",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d2|p9|17:00|IPT 211|class"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d2|p9|05:00|IPT 211|class"
     },
     {
       "course_code": "ICS 212",
@@ -16202,8 +16167,8 @@
       "faculty_names": [],
       "day": "Wednesday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -16217,7 +16182,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 15,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d3|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d3|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -16226,8 +16191,8 @@
       "faculty_names": [],
       "day": "Wednesday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -16241,7 +16206,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 15,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d3|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d3|p9|05:00|none|club_activity"
     },
     {
       "course_code": "ICS 212",
@@ -16418,8 +16383,8 @@
       "faculty_names": [],
       "day": "Thursday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -16433,7 +16398,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 15,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d4|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d4|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -16442,8 +16407,8 @@
       "faculty_names": [],
       "day": "Thursday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -16457,7 +16422,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 15,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d4|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d4|p9|05:00|none|club_activity"
     },
     {
       "course_code": "ICS 213",
@@ -16650,8 +16615,8 @@
       "faculty_names": [],
       "day": "Friday",
       "slot_index": 8,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -16665,7 +16630,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 15,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d5|p8|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d5|p8|05:00|none|club_activity"
     },
     {
       "course_code": null,
@@ -16674,8 +16639,8 @@
       "faculty_names": [],
       "day": "Friday",
       "slot_index": 9,
-      "start_time": "17:00",
-      "end_time": "19:00",
+      "start_time": "05:00",
+      "end_time": "07:00",
       "room": null,
       "semester": 3,
       "programme": "B.Tech",
@@ -16689,7 +16654,7 @@
       "source_id": "Semester 3_TimeTable_Odd_2026.pdf",
       "source_page": 15,
       "source_text": "CODING CLUB ACTIVITIES",
-      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d5|p9|17:00|none|club_activity"
+      "source_uid": "Semester 3_TimeTable_Odd_2026.pdf|s3|CSE WITH SPECIALISATION IN AI AND DATA SCIENCE|bIV|IV|d5|p9|05:00|none|club_activity"
     },
     {
       "course_code": null,

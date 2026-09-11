@@ -1,0 +1,477 @@
+{
+  "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf",
+  "rooms": [
+    {
+      "room_no": "AA 103",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AA 111",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AA 126",
+      "room_type": "small_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AA 127",
+      "room_type": "small_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AB 201",
+      "room_type": "small_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AB 202",
+      "room_type": "small_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AB 203",
+      "room_type": "lab",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AB 211",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AB 226",
+      "room_type": "small_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AB 227",
+      "room_type": "small_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AC 306",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "AC 322",
+      "room_type": "small_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BA 101C",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BB 201A",
+      "room_type": "small_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BB 201B",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BB 202",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BB 204",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BB 218",
+      "room_type": "lab",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BC 301A",
+      "room_type": "small_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BC 301B",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BC 302",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BC 303",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BC 304",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BC 318",
+      "room_type": "lab",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BD 401",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BD 402",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BD 403",
+      "room_type": "lab",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BD 404",
+      "room_type": "large_classroom",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "BD 418",
+      "room_type": "lab",
+      "capacity": null,
+      "status": "active"
+    },
+    {
+      "room_no": "CAB 108",
+      "room_type": "lab",
+      "capacity": null,
+      "status": "active"
+    }
+  ],
+  "allocations": [
+    {
+      "room_no": "BB 204",
+      "semester": 7,
+      "batch": "1",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BC 304",
+      "semester": 7,
+      "batch": "2",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BD 404",
+      "semester": 7,
+      "batch": "3",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AB 201",
+      "semester": 7,
+      "batch": null,
+      "department": "ECE",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AC 322",
+      "semester": 7,
+      "batch": null,
+      "department": "CSY",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AA 126",
+      "semester": 7,
+      "batch": null,
+      "department": "AI & DS",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AA 111",
+      "semester": 5,
+      "batch": "1",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AA 103",
+      "semester": 5,
+      "batch": "2",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AC 306",
+      "semester": 5,
+      "batch": "3",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AB 211",
+      "semester": 5,
+      "batch": "4",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BB 201A",
+      "semester": 5,
+      "batch": null,
+      "department": "ECE",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AA 127",
+      "semester": 5,
+      "batch": null,
+      "department": "CSY",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AB 202",
+      "semester": 5,
+      "batch": null,
+      "department": "AI&DS",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BC 302",
+      "semester": 3,
+      "batch": "1",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BD 401",
+      "semester": 3,
+      "batch": "2",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BD 402",
+      "semester": 3,
+      "batch": "3",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BA 101C",
+      "semester": 3,
+      "batch": "4",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AB 227",
+      "semester": 3,
+      "batch": null,
+      "department": "ECE",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AB 202",
+      "semester": 3,
+      "batch": null,
+      "department": "CSY",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "AB 226",
+      "semester": 3,
+      "batch": null,
+      "department": "AI&DS",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BC 301B",
+      "semester": 1,
+      "batch": "1",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BC 302",
+      "semester": 1,
+      "batch": "2",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BC 303",
+      "semester": 1,
+      "batch": "3",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BB 201B",
+      "semester": 1,
+      "batch": "4",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BB 202",
+      "semester": 1,
+      "batch": "5",
+      "department": null,
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    },
+    {
+      "room_no": "BC 301A",
+      "semester": 1,
+      "batch": null,
+      "department": "ECE",
+      "section": null,
+      "valid_from": "2026-07-01",
+      "valid_until": "2026-11-30",
+      "status": "active",
+      "source_id": "Classroom Details_ODD_Sem _July_Nov_2026.pdf"
+    }
+  ],
+  "warnings": [
+    "room 'BC 302': dropped annotation 'Temporary' (no schema field to record it; see source PDF)"
+  ],
+  "validation_issues": []
+}

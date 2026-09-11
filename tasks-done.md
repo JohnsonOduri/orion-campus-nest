@@ -52,15 +52,27 @@
 
 ### 1.5 Basic RAG — ⬜ **Not started** (see 1.3 — same gap, DB scaffolding ready, no pipeline)
 
-### 1.6 Timetable — ✅ **Done (Semester 3 only)**
+### 1.6 Timetable — ✅ **Done (Semesters 3, 5, 7)** — updated 2026-09-11
 - Full vertical slice: PDF → layout-aware extraction (pdfplumber) → normalization → strict validation → preview JSON → idempotent Supabase import → authenticated RPC queries → REST API.
-- Live data: 608 timetable entries, 15 courses, 37 faculty, 9 periods, 430 entry↔faculty links (`timetable_entry_faculty`) — all confirmed live in Supabase right now.
+- Live data: **956** timetable entries (608 S3 + 170 S5 + 178 S7), **34** courses, **55** faculty, **26** periods, **614** entry↔faculty links — confirmed live in Supabase.
+- Extractor/normalizer/validator hardened while processing S5/S7 (see `docs/timetable.md` §14 update and commit history):
+  - header-cell text now comes from whole pdfplumber words (center-point match), not `page.crop().extract_text()` — the crop path was silently corrupting boundary text (a stray column letter bleeding into the next header cell; digits merging, e.g. "4:25" → "4:625"). Fixes apply to every source, not just S5.
+  - a slot missing its printed time on one page is backfilled only from an identical time printed for the same slot elsewhere in the *same* document (never invented) — flagged `[derived]` same as an intra-page shared range.
+  - `SECTION_HEADER_RE` now accepts "BATCH I" (no dash) alongside "BATCH-I" (S7's title style).
+  - `CREDITS_RE` tolerates a stray space inside "[n-n- n]" (was leaking the credits string into one course's name).
+  - a course named "BTP-I" in the legend classifies as `entry_type='project'` (no faculty required) instead of misclassified `'class'`.
+  - a legend row with a name but no parenthesized initials now derives initials deterministically from the name (same mechanical transform `hosted_adapter.py` already used from `people.json`, now shared via `model.initials_from_name`), guarded against same-page collisions.
+  - **new validator rule** `course_code_conflict`: rejects (never silently first-wins) every record whose course_code names two genuinely different courses in one source — catches real institutional data errors instead of corrupting the `courses` table on import. Punctuation/whitespace-only variants (comma differences across pages) are normalized first so this doesn't false-positive.
+  - **new safety fix in `scripts/import_hosted.py`**: it previously read the preview JSON's full record list (every extracted record, valid or not) with no validation filter at all — a real gap that only stayed invisible because S3 had zero rejects. It now loads the sibling `*_validation.json` and excludes every failed `source_uid` before import.
 - RPCs: `orion_resolve_user`, `orion_student_context`, `orion_active_entries`, `orion_day_timetable`, `orion_week_timetable`, `orion_next_class` — all `security invoker`.
 - API: `/api/timetable`, `/api/timetable/today`, `/api/timetable/week`, `/api/timetable/next` (`src/routes/api/timetable/$.tsx`).
-- 87 passing Python tests (`tests/test_*.py`) covering extraction, normalization, validation, idempotency, service queries.
+- 87 passing Python tests (`tests/test_*.py`); re-verified after every extractor/validator change above, plus S3's 608/608 re-extraction confirmed byte-identical to the already-live data (no regression).
 - Full write-up: `docs/timetable.md`.
 - **Gap:** `src/routes/timetable.tsx` (the actual UI page) — needs verification it's wired to `timetable-api.ts` and not still mock-only (see Verification Tasks below). `student_profiles` only has 2 rows (test students) — no real student onboarding populates it yet.
-- **Not done:** Semester 5 and Semester 7 timetables (PDFs present in `Data/Structured/`, never run through the pipeline — see Phase 2).
+- **Known data-quality holdouts requiring a human/institutional decision (not imported, not guessed):**
+  - **Semester 5** (15 records excluded): course code `IEG 311` legitimately names two different electives across batches in the source PDF — "DIGITAL SIGNAL PROCESSING" (Batch I) vs "QUANTUM COMPUTING for ENGINEERS" (Batch III), each with different faculty. `courses` is keyed by code alone; importing either name would silently mask the other. Needs the institution to confirm the correct distinct codes.
+  - **Semester 7** (22 records excluded): on Batch III pages, the grid cells print course code "CSS 411" but that same page's own legend defines "ICS 411" for the identical subject ("Cryptography and Network Security", Dr. Goutam Mali). Needs confirmation of which code is correct before those Batch III Cryptography sessions can be imported.
+  - Both are flagged by the new `course_code_conflict` / `course_resolves` validator rules and listed in the respective `*_validation.json` reports; nothing was guessed or silently repaired.
 
 ### 1.7 Faculty — 🟡 Partial
 - `faculty` table live with 37 rows (name, initials, department_id, email, office_location, office_hours, research_interests, status) — populated **only as a side-effect of timetable ingestion** (faculty legend resolution), not as a standalone faculty-directory ingestion.
@@ -116,8 +128,17 @@
 - No source exam-schedule PDF currently in `Data/` — needs a data source before ingestion can start.
 - `src/routes/exams.tsx` is mock-data UI only.
 
-### 2.8 Rooms / Classroom allocation — ⬜ **Not started (table ready)**
-- `rooms` and `room_allocations` tables exist (both 0 rows) — same shape as `Data/analysis.md` §2.5 describes for `Classroom Details_ODD_Sem_July_Nov_2026.pdf`. Not yet ingested; would directly improve "where is my next class" answers once joined with timetable.
+### 2.8 Rooms / Classroom allocation — ✅ **Done** — updated 2026-09-11
+- `Data/Structured/Classroom Details_ODD_Sem _July_Nov_2026.pdf` ingested via new `scripts/ingest_classroom_details.py` (single clean pdfplumber table, no naive text dump). Live: **30 rooms** (`room_type` = `large_classroom`/`small_classroom`/`lab`, no capacity printed in source so left `NULL`), **26 room_allocations** (large classrooms keyed by numeric `batch` "1".."5" exactly as printed — *not* converted to the timetable's Roman-numeral batch notation, since the two documents were never shown to use the same scheme; small classrooms keyed by `department` instead, no batch given for those rows). Idempotent (fetch→diff on natural keys), audited via `ingestion_runs`.
+- One PDF annotation ("BC 302 (Temporary)") was stripped from the room identity rather than treated as a second physical room — `room_no` is unique and the schema has no field to carry a "temporary" note; flagged as a preview warning instead of silently dropped.
+- Not yet wired into "where is my next class" — `timetable_entries.room_id` is still `NULL` for all 956 entries (the timetable PDFs print no room per class period; only this separate classroom-details document has room data, at batch/department granularity, not per class).
+
+### 2.8b Academic Calendar — ✅ **Done** — updated 2026-09-11
+- `Data/Structured/Odd 2026-27_academic_calendar.pdf` ingested via new `scripts/ingest_academic_calendar.py`. The page's single pdfplumber table has two parts: a Jul–Dec month grid (merged cells, ambiguous multi-event cells — deliberately not parsed) and a clean "Sl No | Academic Highlights | Dates" summary with exact DD-MM-YYYY dates already printed — used as the sole source of truth. Live: **30 events** in `academic_calendar` (2026-07-10 through 2027-01-04), `event_type` assigned by mechanical keyword match on the printed name (exam/registration/meeting/deadline/etc., nullable — never invented), `applies_to_semester` left `NULL` since the calendar's own title covers three semesters at once ("Sem III,V,VII") and the column can only hold one. Idempotent, audited.
+
+### 2.8c Mess Menu — ✅ **Done (August 2026 only)** — updated 2026-09-11
+- `Data/Structured/august_menu .pdf` ingested via new `scripts/ingest_mess_menu.py` (text layer extracted cleanly with pdfplumber — the CID/UTF-16 concern noted elsewhere in this doc did not materialize for this file). Source table is one row per weekday (a recurring weekly pattern); materialized onto every actual calendar date in August 2026 by weekday match (mechanical `calendar` arithmetic, not a guess) since `mess_menus.menu_date` has no day-of-week/recurrence column. Live: **124 rows** (31 days × 4 meals: breakfast/lunch/snacks/dinner). Idempotent, audited.
+- Only August 2026 exists; no other month's menu PDF is in `Data/Structured/`.
 
 ---
 
@@ -159,11 +180,11 @@ All ⬜ **Not started.**
 
 ---
 
-## Supabase Schema Snapshot (live project "ORION", `dgklugpgrnxhyjkvnacp`)
+## Supabase Schema Snapshot (live project "ORION", `dgklugpgrnxhyjkvnacp`) — updated 2026-09-11
 
-Populated tables: `profiles` (2), `faculty` (37), `courses` (15), `timetable_entries` (608), `timetable_entry_faculty` (430), `timetable_periods` (9), `student_profiles` (2), `ingestion_runs` (3).
+Populated tables: `profiles` (2), `faculty` (55), `courses` (34), `timetable_entries` (956), `timetable_entry_faculty` (614), `timetable_periods` (26), `student_profiles` (2), `ingestion_runs` (12), `rooms` (30), `room_allocations` (26), `academic_calendar` (30), `mess_menus` (124).
 
-Empty (schema-ready, 0 rows): `departments`, `rooms`, `room_allocations`, `academic_calendar`, `exams`, `mess_menus`, `announcements`, `documents`, `document_versions`, `document_chunks`, `ingestion_jobs`, `approval_requests`, `audit_logs`.
+Empty (schema-ready, 0 rows): `departments`, `exams`, `announcements`, `documents`, `document_versions`, `document_chunks`, `ingestion_jobs`, `approval_requests`, `audit_logs`.
 
 Extensions installed: `pgvector` (0.8.2), `pgcrypto`, `uuid-ossp`, `pg_stat_statements`, `supabase_vault`, `plpgsql`. RLS is enabled on every table listed above.
 
