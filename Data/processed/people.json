@@ -1,0 +1,3416 @@
+[
+  {
+    "name": "Dr. Ananth A",
+    "roles": [
+      "",
+      "HOD (Electronics & Communication Engineering),Faculty In-Charge (Sports Club)",
+      "Assistant Professor",
+      "Post Doctoral Fellow-University of Saskatchewan, Saskatoon, Canada"
+    ],
+    "areas": [
+      "HOD (Electronics & Communication Engineering)",
+      "Wireless Communications",
+      "Cooperative Communications",
+      "MIMO Communication Systems",
+      "Index Modulation OFDM Systems",
+      "Orthogonal Time Frequency Space",
+      "Reconfigurable Intelligent Surfaces"
+    ],
+    "qualification": "Post Doctoral Fellow-University of Saskatchewan, Saskatoon, Canada",
+    "phone": "+91 (0) 482-2202191 | +91 (0) 482-2202176",
+    "room": "\nRoom No: AB 208 / AC 313",
+    "email": "ananth@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/ananth.jpeg",
+    "main_roles": [
+      "Head of Department",
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Jayakrushna Sahoo",
+    "roles": [
+      "",
+      "HOD (Computer Science & Engineering-1)",
+      "Assistant Professor",
+      "PhD from IIT-Kharagpur, MTech from IIIT-B, Former faculty of NIT Jamshedpur"
+    ],
+    "areas": [
+      "HOD(Computer Science & Engineering-1)",
+      "Data Mining",
+      "Machine Learning",
+      "Cryptography (Digital Water Marking)"
+    ],
+    "qualification": "PhD from IIT-Kharagpur, MTech from IIIT-B, Former faculty of NIT Jamshedpur",
+    "phone": "+91 (0) 482-2202190 | +91 (0) 482-2202164",
+    "room": "\nRoom No: AA 108 / AA 123",
+    "email": "jsahoo@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/sahoo.jpg",
+    "main_roles": [
+      "Head of Department",
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Rubell Marion Lincy G",
+    "roles": [
+      "",
+      "HOD(Computer Science & Engineering-2),Faculty In-Charge(Students Grievance),Faculty In-Charge(Grievance Cell), Associate Faculty In-Charge-(UG (Academics)),Faculty In-Charge(Mess Committee)",
+      "Assistant Professor",
+      "PhD from NIT Calicut"
+    ],
+    "areas": [
+      "HOD(Computer Science & Engineering-2)",
+      "Stochastic Learning",
+      "Financial Decision Making",
+      "Fuzzy Expert Systems",
+      "Artificial Intelligence – Reinforcement Learning",
+      "Machine Learning",
+      "Data Science",
+      "Deep Learning",
+      "Quantum Computing and Programming",
+      "Quantum Machine Learning"
+    ],
+    "qualification": "PhD from NIT Calicut",
+    "phone": "+91 (0) 482-2202152",
+    "room": "\nRoom No: BC 317 / AB 219",
+    "email": "lincy@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/lincy.jpeg",
+    "main_roles": [
+      "Head of Department",
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Dhanyamol M V",
+    "roles": [
+      "",
+      "HOD (Computational Science & Humanities),Faculty In-Charge (PhD Programme),Faculty In-Charge (Engineering & Estate Department),Associate Faculty In-Charge(Cultural Club)",
+      "Assistant Professor",
+      "Ph.D. from NIT Calicut"
+    ],
+    "areas": [
+      "HOD (Computational Science & Humanities)",
+      "Weighted graph theory",
+      "Interval Functions",
+      "Transit Functions",
+      "Median graphs"
+    ],
+    "qualification": "Ph.D. from NIT Calicut",
+    "phone": "+91 (0) 482-2202162",
+    "room": "\nRoom No: BC 316 / AA 119",
+    "email": "dhanya@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/dhanya.JPG",
+    "main_roles": [
+      "Head of Department",
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Panchami",
+    "roles": [
+      ""
+    ],
+    "areas": [
+      "HOD (CSE-Cyber Security)"
+    ],
+    "qualification": "",
+    "phone": "+91 (0) 482-2202151",
+    "room": "\nRoom No: AB 213 / AB 218",
+    "email": "panchamam036@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/panchami.jpg",
+    "main_roles": [
+      "Head of Department",
+      "Administration"
+    ]
+  },
+  {
+    "name": "Prof. Prasad Krishna",
+    "roles": [],
+    "areas": [
+      "Director, NIT Calicut",
+      "Director (Addl. charge), IIIT Kottayam",
+      "Room No:"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202137 | +91 0482-2202112",
+    "room": null,
+    "email": "director@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/director.jpeg",
+    "main_roles": [
+      "Administration"
+    ]
+  },
+  {
+    "name": "Dr. M Radhakrishnan",
+    "roles": [],
+    "areas": [
+      "Registrar, IIIT Kottayam",
+      "Former Registrar, IISER-TVM",
+      "Former Dy. Registrar NIT Calicut",
+      "Room No:"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202100",
+    "room": null,
+    "email": "registrar@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/registrar.jpeg",
+    "main_roles": [
+      "Administration"
+    ]
+  },
+  {
+    "name": "Prof Ashok S",
+    "roles": [
+      "Professor In-charge (Academics)\nFormer professor NIT Calicut",
+      "Adjunct Professor",
+      "PhD from Indian Institute of Technology Bombay,Former Professor National Institute of Technology Calicut"
+    ],
+    "areas": [
+      "Adjunct Professor and Professor In-charge (Academics)",
+      "Former Professor NIT Calicut",
+      "Peak Load Management",
+      "Energy Management",
+      "Energy Modelling",
+      "Renewable Energy",
+      "Harmonics and Power Quality",
+      "Regulatory Economics",
+      "Switchgear&Protection",
+      "Illumination Engg.",
+      "Industrial Automation"
+    ],
+    "qualification": "PhD from Indian Institute of Technology Bombay,Former Professor National Institute of Technology Calicut",
+    "phone": "+91 0482-2202133 | +91 0482-2202135",
+    "room": "\nRoom No: AC 307",
+    "email": "pic.academics@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Prof.Ashok_S.JPG",
+    "main_roles": [
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Ebin Deni Raj",
+    "roles": [
+      "Associate Dean (Academic Affairs)",
+      "Assistant Professor",
+      "PhD from VIT (An Institute of Eminence Status by GOI), Reviewer/Editor of Prestigious Journals, Distinguished Speaker in Data Science by ACM"
+    ],
+    "areas": [
+      "Associate Dean (Academic Affairs)",
+      "Responsible AI",
+      "Explainable Machine Learning",
+      "AI for Social Good",
+      "Fairness, Accountability and Transparency in AI",
+      "Machine Learning",
+      "Data Science",
+      "Social Computing"
+    ],
+    "qualification": "PhD from VIT (An Institute of Eminence Status by GOI), Reviewer/Editor of Prestigious Journals, Distinguished Speaker in Data Science by ACM",
+    "phone": "+91 (0) 482-2202195",
+    "room": "\nRoom No: AC 308 / AA 117",
+    "email": "ebindeniraj@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/ebin.jpeg",
+    "main_roles": [
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr Divya Sindhu Lekha",
+    "roles": [
+      "Associate Dean (Academic Affairs-PG)",
+      "Assistant Professor",
+      "Post Doc CUSAT, Ph.D. from University of Kerala, Awarded National Post-Doctoral Fellowship, SERB, DST, GOI, former employee HCL Technologies Ltd."
+    ],
+    "areas": [
+      "Associate Dean (Academic Affairs-PG)",
+      "Graph Theory",
+      "Network Science",
+      "Algorithms"
+    ],
+    "qualification": "Post Doc CUSAT, Ph.D. from University of Kerala, Awarded National Post-Doctoral Fellowship, SERB, DST, GOI, former employee HCL Technologies Ltd.",
+    "phone": "+91 (0) 482-2202161",
+    "room": "\nRoom No: BD 417 / AA 116",
+    "email": "divyaslekha@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/divya.JPG",
+    "main_roles": [
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Bakkyaraj T",
+    "roles": [
+      "Associate Dean (Hostel Affairs & Student Events)",
+      "Assistant Professor",
+      "Post Doc from ICP, University of Stuttgart, Germany, Post Doc from Institute of Mathematical Sciences Chennai, Former faculty of NIT Puducherry"
+    ],
+    "areas": [
+      "Associate Dean (Hostel Affairs & Student Events)",
+      "Lie Group Analysis of Nonlinear Differential Equations",
+      "Representation Theory and Invariant Theory",
+      "Data Science"
+    ],
+    "qualification": "Post Doc from ICP, University of Stuttgart, Germany, Post Doc from Institute of Mathematical Sciences Chennai, Former faculty of NIT Puducherry",
+    "phone": "+91 (0) 482-2202160",
+    "room": "\nRoom No: AB 212 / AA 118",
+    "email": "bakkyaraj@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/bakkyaraj.jpeg",
+    "main_roles": [
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. J. V. Bibal Benifa",
+    "roles": [
+      "Associate Dean (Students Welfare & Career Development Services),Chairperson (Disciplinary Action Committee)",
+      "Assistant Professor",
+      "PhD from Anna University (NIRF Ranking:8), Former Faculty of PG Department of Computer Science & Engineering- Anna University"
+    ],
+    "areas": [
+      "Associate Dean (Students Welfare & Career Development Services)",
+      "Cloud Computing and security",
+      "Big data analytics",
+      "Image Processing",
+      "Machine Learning"
+    ],
+    "qualification": "PhD from Anna University (NIRF Ranking:8), Former Faculty of PG Department of Computer Science & Engineering- Anna University",
+    "phone": "+91 (0) 482-2202163",
+    "room": "\nRoom No: BD 416 / AB 216",
+    "email": "benifa@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/bibal.jpg",
+    "main_roles": [
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Ragesh G K",
+    "roles": [
+      "Associate Dean (Industrial Relations & Funding),Faculty In-Charge (Public Relations & Intellectual Property Rights,Institute Innovation Cell,Gyaan Innovation Lab-IIITK,Certificate Programme)",
+      "Assistant Professor",
+      "PhD from Anna University"
+    ],
+    "areas": [
+      "Associate Dean (Industrial Relations & Funding)",
+      "Faculty In-Charge (Public Relations & Intellectual Property Rights,Institute Innovation Cell,Gyaan Innovation Lab-IIITK,Certificate Programme)",
+      "Cryptography",
+      "Cloud Computing",
+      "Internet of Things",
+      "Wireless Networks"
+    ],
+    "qualification": "PhD from Anna University",
+    "phone": "+91 (0) 482-2202175",
+    "room": "\nRoom No: CAB 103 B",
+    "email": "ragesh@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/ragesh.jpeg",
+    "main_roles": [
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Arun Cyril Jose",
+    "roles": [
+      "Institute CVO",
+      "Assistant Professor",
+      "PhD from University of Pretoria, South Africa, MS from Coventry University UK, Reviewer/Editor of Prestigious Journals"
+    ],
+    "areas": [
+      "Institute CVO",
+      "Smart Home Security",
+      "Device Fingerprinting",
+      "Logical Sensing from a Security Point of View",
+      "Behaviour Prediction from a Security Point of View",
+      "Different Surveillance Techniques",
+      "Security Based Social Engineering",
+      "Completely Anonymous Communication Over the Internet"
+    ],
+    "qualification": "PhD from University of Pretoria, South Africa, MS from Coventry University UK, Reviewer/Editor of Prestigious Journals",
+    "phone": "+91 (0) 482-2202159",
+    "room": "\nRoom No: AA 122",
+    "email": "aruncyril@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/arun.jpg",
+    "main_roles": [
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Koppala Guravaiah",
+    "roles": [
+      "Nodal/Liason Officer (SC/ST/OBC cell)",
+      "Assistant Professor",
+      "Ph.D from NIT Tiruchirappalli, Received Best paper award in Eleventh International Multi Conference on Information Processing Elsevier Procedia-Computer Science Bangalore"
+    ],
+    "areas": [
+      "Nodal/Liason Officer (SC/ST/OBC cell)",
+      "Internet of Things",
+      "Software Defined Networks",
+      "Wireless Sensor Networks",
+      "Natural Language Processing",
+      "Machine Learning and Deep Learning",
+      "Applications and Security aspects in IoT , WSN, & MANETs"
+    ],
+    "qualification": "Ph.D from NIT Tiruchirappalli, Received Best paper award in Eleventh International Multi Conference on Information Processing Elsevier Procedia-Computer Science Bangalore",
+    "phone": "+91 (0) 482-2202171",
+    "room": "\nRoom No: AA 105",
+    "email": "kguravaiah@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/kgura.jpg",
+    "main_roles": [
+      "Administration",
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Shajulin Benedict",
+    "roles": [
+      "Faculty In-Charge (R&D and International Affairs), In-charge Atal Incubation Center NITI Aayog, In-charge Upcoming MSME Incubation Center",
+      "Associate Professor",
+      "Post Docfrom TUM Germany, Visiting Professor at TUM-Germany"
+    ],
+    "areas": [
+      "Cloud Computing",
+      "IoT",
+      "Supercomputers",
+      "Parallel Compilers"
+    ],
+    "qualification": "Post Docfrom TUM Germany, Visiting Professor at TUM-Germany",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "shajulin@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/shajulin.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Kala S",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "PhD from CUSAT, Master of Science (Engineering) By Research,Centre for Nano Science and Engineering (CeNSE), Indian Institute of Science (IISc) Bengaluru,Woman Scientist Research Fellow (2018-2019), CSIR, VISID, MHRD, GARP Fellowships"
+    ],
+    "areas": [
+      "Reconfigurable Architectures",
+      "SoC Design Methodologies",
+      "FPGA and ASIC",
+      "VLSI and Embedded systems",
+      "Deep Learning Architectures",
+      "EDA and CAD tools",
+      "Secure Processor Architectures",
+      "Edge Computing",
+      "Hardware Security",
+      "Quantum Circuits and Quantum Chips"
+    ],
+    "qualification": "PhD from CUSAT, Master of Science (Engineering) By Research,Centre for Nano Science and Engineering (CeNSE), Indian Institute of Science (IISc) Bengaluru,Woman Scientist Research Fellow (2018-2019), CSIR, VISID, MHRD, GARP Fellowships",
+    "phone": null,
+    "room": "\nRoom No: AC 314",
+    "email": "kala@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/kala.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Panchami V",
+    "roles": [
+      "HOD (CSE-Cyber Security),Faculty In-Charge (ACM Student Branch)",
+      "Assistant Professor",
+      "PhD from Anna University (NIRF Ranking:8), Course Coordinator and Single Point of Contact (PoC) for the Cyber Commando Training program funded by Indian Cyber Crime Coordination Center (I4C), MHA"
+    ],
+    "areas": [
+      "Authentication and Key Agreement (AKA)",
+      "Blockchain Technology",
+      "IoT Security",
+      "Applied Cryptography",
+      "Post-Quantum Cryptography",
+      "Privacy Preserving Techniques for Federated Learning"
+    ],
+    "qualification": "PhD from Anna University (NIRF Ranking:8), Course Coordinator and Single Point of Contact (PoC) for the Cyber Commando Training program funded by Indian Cyber Crime Coordination Center (I4C), MHA",
+    "phone": null,
+    "room": "\nRoom No: AB 213 / AB 218",
+    "email": "panchamam036@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/panchami.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. P. Victer Paul",
+    "roles": [
+      "Faculty In-Charge (Technical Club and Coding Club)",
+      "Assistant Professor",
+      "Ph.D. and M.Tech from Pondicherry Central University (NIRF Ranking:48), DST INSPIRE Fellowship Holder, University Gold Medalist in M.Tech"
+    ],
+    "areas": [
+      "Data Analytics",
+      "Data Science",
+      "AI for Social Good",
+      "Cloud Computing and Optimization"
+    ],
+    "qualification": "Ph.D. and M.Tech from Pondicherry Central University (NIRF Ranking:48), DST INSPIRE Fellowship Holder, University Gold Medalist in M.Tech",
+    "phone": null,
+    "room": "\nRoom No: AC 312",
+    "email": "victerpaul@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/victer.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Manjith B.C.",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from NIT Tiruchirappalli"
+    ],
+    "areas": [
+      "Reconfigurable Computing",
+      "Hardware Security",
+      "FPGA",
+      "Cryptographic Engines",
+      "Evolvable Hardware",
+      "ML in security"
+    ],
+    "qualification": "Ph.D from NIT Tiruchirappalli",
+    "phone": null,
+    "room": "\nRoom No: AA 106",
+    "email": "manjithbc@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/manjith.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Christina Terese Joseph",
+    "roles": [
+      "Faculty In-Charge (M.Tech. for Working Professionals)",
+      "Assistant Professor",
+      "PhD from NIT Surathkal"
+    ],
+    "areas": [
+      "Machine Learning",
+      "Distributed Computing",
+      "Microservice Architectures",
+      "Cloud Computing",
+      "Resource Orchestration in distributed systems"
+    ],
+    "qualification": "PhD from NIT Surathkal",
+    "phone": null,
+    "room": "\nRoom No: AC 318",
+    "email": "christina@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/christina.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Amit Kumar Roy",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "PhD from Assam University, Former Faculty of NIT Mizoram"
+    ],
+    "areas": [
+      "Cryptography",
+      "Network Security",
+      "Information Security",
+      "Cyber Security",
+      "Wireless Security",
+      "Intrusion Detection Systems"
+    ],
+    "qualification": "PhD from Assam University, Former Faculty of NIT Mizoram",
+    "phone": null,
+    "room": "\nRoom No: BD 407",
+    "email": "amit@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/amit.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr.John Paul Martin",
+    "roles": [
+      "Associate Faculty In-Charge (Trendles Club), Faculty In-Charge (NIRF)",
+      "Assistant Professor",
+      "Ph.D. from NIT Suratkal, Former Knowledge Associate R&D Center for Development and Advanced Computing(CDAC) Noida"
+    ],
+    "areas": [
+      "Distributed Computing",
+      "Edge/Fog Computing",
+      "Cloud Computing",
+      "IoT",
+      "DevOps and MLOps",
+      "Artificial Intelligence",
+      "Machine Learning",
+      "Optimisation Algorithms"
+    ],
+    "qualification": "Ph.D. from NIT Suratkal, Former Knowledge Associate R&D Center for Development and Advanced Computing(CDAC) Noida",
+    "phone": null,
+    "room": "\nRoom No: BC 308",
+    "email": "johnpaul@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Johnpaul.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Cinu C Kiliroor",
+    "roles": [
+      "Faculty In-Charge (AI-ML Club- ENIGMA)",
+      "Assistant Professor",
+      "Ph.D. from Anna University"
+    ],
+    "areas": [
+      "Machine Learning",
+      "Data Science",
+      "AI for Social Good- Agriculture",
+      "Image Processing"
+    ],
+    "qualification": "Ph.D. from Anna University",
+    "phone": null,
+    "room": "\nRoom No: AB 222",
+    "email": "cinu@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/cinu.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Vengadeswaran S",
+    "roles": [
+      "Faculty In-Charge(Integrated M.Tech Programme,HPC Managing & Allocation)",
+      "Assistant Professor",
+      "Ph.D. from NIT Trichy, M.Tech. from College of Engineering, Guindy (CEG), Former faculty of NIT Puducherry"
+    ],
+    "areas": [
+      "Big Data",
+      "Distributed Databases",
+      "Large Scale Data Processing Frameworks",
+      "Machine Learning",
+      "Software Engineering",
+      "Data Visualisation"
+    ],
+    "qualification": "Ph.D. from NIT Trichy, M.Tech. from College of Engineering, Guindy (CEG), Former faculty of NIT Puducherry",
+    "phone": null,
+    "room": "\nRoom No: BB 210",
+    "email": "vengadesh@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/vengadesh.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Manu Madhavan",
+    "roles": [
+      "Faculty In-Charge (Library and Technology Enabled Learning Resources(TELR), Faculty In-Charge (NIRF)), Associate Faculty In-Charge(Cultural Club)",
+      "Assistant Professor",
+      "PhD from NIT Calicut"
+    ],
+    "areas": [
+      "Natural Language Processing",
+      "Bioinformatics",
+      "Machine Learning",
+      "Computational Linguistics",
+      "Deep Learning, Graph Neural Networks"
+    ],
+    "qualification": "PhD from NIT Calicut",
+    "phone": null,
+    "room": "\nRoom No: BC 307",
+    "email": "manum@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/manu.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Nandini J. Warrier",
+    "roles": [
+      "Faculty In-Charge (Institute Internship)",
+      "Assistant Professor",
+      "PhD from NIT Calicut"
+    ],
+    "areas": [
+      "Graph Theory",
+      "Operating Systems",
+      "Data Structures"
+    ],
+    "qualification": "PhD from NIT Calicut",
+    "phone": null,
+    "room": "\nRoom No: BC 312",
+    "email": "nandinijw@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/nandini.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Selvi C",
+    "roles": [
+      "Associate Faculty In-Charge (Ph.D (Academics & Admissions)),Associate Faculty In-Charge iMTech (Academics & Admissions),Associate Faculty In-Charge (Technical Club)",
+      "Assistant Professor",
+      "Ph.D. from NIT Trichy"
+    ],
+    "areas": [
+      "Recommender Systems and Transfer learning",
+      "Data Science and Machine Learning",
+      "Computer Vision and Image Processing",
+      "Natural Language Processing",
+      "Predictive Analytics",
+      "Deep Learning"
+    ],
+    "qualification": "Ph.D. from NIT Trichy",
+    "phone": null,
+    "room": "\nRoom No: BC 309",
+    "email": "selvic@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/selvi.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Goutam Mali",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D. from IIT Kharagpur,Former faculty of IIIT Ranchi"
+    ],
+    "areas": [
+      "IoT",
+      "Wireless Sensor Network",
+      "Game Theory",
+      "Security and Privacy",
+      "Intelligent Sensing and Decision Making",
+      "Machine Learning"
+    ],
+    "qualification": "Ph.D. from IIT Kharagpur,Former faculty of IIIT Ranchi",
+    "phone": null,
+    "room": "\nRoom No: BB 209",
+    "email": "goutam@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/goutam.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sivaiah Bellamkonda",
+    "roles": [
+      "Associate Faculty In-Charge (Technical Club)",
+      "Assistant Professor",
+      "PhD from NIT Tiruchirappalli"
+    ],
+    "areas": [
+      "Computer Vision",
+      "Machine Learning",
+      "Image Processing"
+    ],
+    "qualification": "PhD from NIT Tiruchirappalli",
+    "phone": null,
+    "room": "\nRoom No: AA 104",
+    "email": "sivaiah@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Sivaiah.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Suchithra M S",
+    "roles": [
+      "Faculty In-Charge (Admission-UG),Faculty In-Charge (Outreach Programs), Associate Faculty In-Charge-(UG (Academics)),Faculty In-Charge (Internal Complaints Committee)",
+      "Assistant Professor",
+      "PhD from Amrita Vishwa Vidhyapeetham (An Institute of Eminence Status by GOI)"
+    ],
+    "areas": [
+      "Data mining",
+      "Machine learning",
+      "Deep Learning",
+      "Soft computing",
+      "Computer Vision",
+      "AI in Agriculture"
+    ],
+    "qualification": "PhD from Amrita Vishwa Vidhyapeetham (An Institute of Eminence Status by GOI)",
+    "phone": null,
+    "room": "\nRoom No: AC 317",
+    "email": "suchithra@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/suchithra.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Santhos Kumar A.",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "PhD from IIITD Jabalpur"
+    ],
+    "areas": [
+      "Pattern Classification and Image Segmentation and Classification"
+    ],
+    "qualification": "PhD from IIITD Jabalpur",
+    "phone": null,
+    "room": "\nRoom No: BD 409",
+    "email": "santhos@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Santhos.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. A Balu",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from Alagappa University, Karaikudi. Former Faculty of NIT Tiruchirappalli, NIT Calicut."
+    ],
+    "areas": [
+      "Applied Cryptography",
+      "Pairing Based Cryptography",
+      "Attribute Based Encryption",
+      "Zero-Knowledge Protocol( ZK-SNARKs)"
+    ],
+    "qualification": "Ph.D from Alagappa University, Karaikudi. Former Faculty of NIT Tiruchirappalli, NIT Calicut.",
+    "phone": null,
+    "room": "\nRoom No: BB 207",
+    "email": "balu@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/balu.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Lidiya Lilly Thampi",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Post Doc from CUSAT, Ph.D from Cochin University of Science & Technology"
+    ],
+    "areas": [
+      "Machine Learning",
+      "Underwater Imaging",
+      "Medical Image Processing"
+    ],
+    "qualification": "Post Doc from CUSAT, Ph.D from Cochin University of Science & Technology",
+    "phone": null,
+    "room": "\nRoom No: AB 207",
+    "email": "lidiya@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/lidiya.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Lavanya Settipalli",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology, Tiruchirappalli"
+    ],
+    "areas": [
+      "Big Data Analytics",
+      "Natural Language Processing",
+      "Image Processing",
+      "Block Chain Technologies"
+    ],
+    "qualification": "Ph.D from National Institute of Technology, Tiruchirappalli",
+    "phone": null,
+    "room": "\nRoom No: AB 204",
+    "email": "lavanya@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/lavanya.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Susheel Kumar Joshi",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "PhD (Maths) from South Asian University (An international university established by SAARC countries) New Delhi, M.Tech. (System Analysis and Computer Applications) NIT Surathkal"
+    ],
+    "areas": [
+      "Swarm Intelligence",
+      "Nature-inspired Optimization Techniques",
+      "Evolutionary Computation",
+      "Optimization Algorithms",
+      "Soft Computing"
+    ],
+    "qualification": "PhD (Maths) from South Asian University (An international university established by SAARC countries) New Delhi, M.Tech. (System Analysis and Computer Applications) NIT Surathkal",
+    "phone": null,
+    "room": "\nRoom No: BC 310",
+    "email": "joshi@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/susheel.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. E. Silambarasan",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "PhD from NIT Trichy"
+    ],
+    "areas": [
+      "Cloud Data Security",
+      "Security Protocols",
+      "Cryptography",
+      "Web Mining",
+      "AI based Malware analysis",
+      "Privacy preserving healthcare data using federated learning"
+    ],
+    "qualification": "PhD from NIT Trichy",
+    "phone": null,
+    "room": "\nRoom No: BB 211",
+    "email": "silambarasan@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Silambarasan.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Mathew.C.D",
+    "roles": [
+      "Training & Placement Officer-cum-FIC-Training & Placement Cell",
+      "Assistant Professor",
+      ""
+    ],
+    "areas": [
+      "Management Studies"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\nRoom No: CAB 102",
+    "email": "mathewcd@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/mathew.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Gayathri G.R.",
+    "roles": [
+      "Faculty In-Charge (Cultural Club,Social Media & Branding)",
+      "Assistant Professor",
+      "Ph.D from Indian Institute of Space Science and Technology, M.A from University of Hyderabad"
+    ],
+    "areas": [
+      "Human- Centered Artificial Intelligence",
+      "Digital Humanities",
+      "Cultural Analytics",
+      "Film Studies",
+      "Critical Disability Studies",
+      "Gender Studies & Cultural Studies",
+      "English Language Teaching"
+    ],
+    "qualification": "Ph.D from Indian Institute of Space Science and Technology, M.A from University of Hyderabad",
+    "phone": null,
+    "room": "\nRoom No: AB 209 E",
+    "email": "gayathri@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/gayathri.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Josit Mariya",
+    "roles": [
+      "Faculty In-Charge(Webservices & Public Relations),Nodal Officer, AISHE,Associate Faculty In-Charge (Training & Placement Cell)",
+      "Assistant Professor",
+      "Ph.D from M.G University,Kottayam"
+    ],
+    "areas": [
+      "Proletarian Theory",
+      "Sociology",
+      "Film Studies",
+      "Comparative Studies",
+      "Prompt Engineering",
+      "Digital Humanities",
+      "Cultural studies"
+    ],
+    "qualification": "Ph.D from M.G University,Kottayam",
+    "phone": null,
+    "room": "\nRoom No: AC 304 B",
+    "email": "jositmariya@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/jositmariya.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Della Thomas",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Post Doc and Ph.D from IIT Madras"
+    ],
+    "areas": [
+      "Ocean Optics",
+      "Lasers",
+      "Spectroscopy",
+      "Embedded Systems",
+      "Optoelectronics"
+    ],
+    "qualification": "Post Doc and Ph.D from IIT Madras",
+    "phone": null,
+    "room": "\nRoom No: BC 313",
+    "email": "della@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/della.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Venkatesh S",
+    "roles": [
+      "Faculty In-Charge (Trendles Club)",
+      "Assistant Professor",
+      "Ph.D from Anna University,Chennai"
+    ],
+    "areas": [
+      "Nanotechnology",
+      "Materials Science: Polymers, composites, metal oxides etc.,",
+      "Fabrication of Nanomaterials"
+    ],
+    "qualification": "Ph.D from Anna University,Chennai",
+    "phone": null,
+    "room": "\nRoom No: BB 212",
+    "email": "svenkatesh@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/venkatesh.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Rajesh G",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology Karnataka, Surathkal"
+    ],
+    "areas": [
+      "Data modeling in Wireless Sensor Networks",
+      "Tensor decomposition algorithms",
+      "Incremental learning"
+    ],
+    "qualification": "Ph.D from National Institute of Technology Karnataka, Surathkal",
+    "phone": null,
+    "room": "\nRoom No: BB 208",
+    "email": "grajesh@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/rajesh.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Minu A Pillai",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Post Doc from CUSAT,PhD and MTech from NIT Trichy"
+    ],
+    "areas": [
+      "Acoustic Energy Harvesting",
+      "Piezoelectric Energy Harvesting",
+      "Acoustic Source Localization"
+    ],
+    "qualification": "Post Doc from CUSAT,PhD and MTech from NIT Trichy",
+    "phone": null,
+    "room": "\nRoom No: AC 305 E",
+    "email": "minupillai@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/minupillai.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Abin Oommen Philip",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from VIT Vellore"
+    ],
+    "areas": [
+      "Digital Forensics and Crime investigation",
+      "Memory Forensics",
+      "Mobile Application Forensics and Security",
+      "Intelligent Transportation and Connected Vehicles",
+      "Digital Technologies for Wildlife and Nature Conservation"
+    ],
+    "qualification": "Ph.D from VIT Vellore",
+    "phone": null,
+    "room": "\nRoom No: AC 304 D",
+    "email": "abinphilip@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/abinphilip.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr.Priyadharshini S",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology Puducherry."
+    ],
+    "areas": [
+      "Computer Vision",
+      "Deep Learning",
+      "Image Processing",
+      "Spatio-Temporal Video Summarization",
+      "Spherical Video Summarization"
+    ],
+    "qualification": "Ph.D from National Institute of Technology Puducherry.",
+    "phone": null,
+    "room": "\nRoom No: AC 305 D",
+    "email": "priyadharshini@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/priyadharshini.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Athira B",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from Cochin University of Science and Technology"
+    ],
+    "areas": [
+      "Data Mining",
+      "Natural Language Processing",
+      "Health Informatics",
+      "Machine Learning"
+    ],
+    "qualification": "Ph.D from Cochin University of Science and Technology",
+    "phone": null,
+    "room": "\nRoom No: BB 213",
+    "email": "athirab@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/athira.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Debarati Ganguly",
+    "roles": [
+      "Faculty In-Charge (IEEE Student Branch)",
+      "Assistant Professor",
+      "Post Doc IISc Bangalore, Post-Doc Royal Military College, Canada"
+    ],
+    "areas": [
+      "IoT enabled Wireless Implantable Antennas for Biomedical Telemetry",
+      "Catheter-type Microwave Ablators for Hepatic Tumors and Cardiac Arrythmia",
+      "ON-to-OFF Body Ultrawideband Channel Modelling",
+      "Antennas for 5G RF Energy Harvesting in IoT Greens"
+    ],
+    "qualification": "Post Doc IISc Bangalore, Post-Doc Royal Military College, Canada",
+    "phone": null,
+    "room": "\nRoom No: AA 112 A",
+    "email": "debarati@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Debarati.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Lakshmi N S",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology Tiruchirappalli,2022."
+    ],
+    "areas": [
+      "CMOS Radio Frequency Integrated Circuit Design",
+      "Analog Integrated Circuit Design",
+      "Design of transceiver blocks for RF front-end",
+      "Full Custom Integrated Circuit Design",
+      "VLSI Circuit Design using EDA tools"
+    ],
+    "qualification": "Ph.D from National Institute of Technology Tiruchirappalli,2022.",
+    "phone": null,
+    "room": "\nRoom No: AB 223",
+    "email": "lakshmins@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/lakshmins.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Chakradhar Padamutham",
+    "roles": [
+      "Associate Faculty In-Charge(Mess Committee)",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology, Warangal, 2021"
+    ],
+    "areas": [
+      "Graph Theory",
+      "Algorithms",
+      "Theoretical Computer Science"
+    ],
+    "qualification": "Ph.D from National Institute of Technology, Warangal, 2021",
+    "phone": null,
+    "room": "\nRoom No: BD 411",
+    "email": "chakradhar@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Chakradhar.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Emy Mariam George",
+    "roles": [
+      "Associate Faculty In-Charge(Mess Committee)",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology, Calicut, 2022"
+    ],
+    "areas": [
+      "Wireless Communication",
+      "Wireless Body Area Networks, Sensor Networks",
+      "Game Theory"
+    ],
+    "qualification": "Ph.D from National Institute of Technology, Calicut, 2022",
+    "phone": null,
+    "room": "\nRoom No: AC 305 A",
+    "email": "emy@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/emy.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sreeja M U",
+    "roles": [
+      "Associate Faculty In-Charge (PG(M.Tech))",
+      "Assistant Professor",
+      "Post Doc from CUSAT under Nava Kerala Post doctoral fellowship, 2022,Ph. D from CUSAT, 2022"
+    ],
+    "areas": [
+      "Computer Vision",
+      "Machine Learning",
+      "Deep learning",
+      "Explainable AI for healthcare",
+      "Video summarization"
+    ],
+    "qualification": "Post Doc from CUSAT under Nava Kerala Post doctoral fellowship, 2022,Ph. D from CUSAT, 2022",
+    "phone": null,
+    "room": "\nRoom No: AB 206",
+    "email": "sreeja@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/sreeja.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Kanchan Lata Kashyap",
+    "roles": [
+      "Associate Faculty In-Charge (Ph.D(Academics))",
+      "Assistant Professor",
+      "Ph.D from Indian Institute of Information Technology, Jabalpur, 2018"
+    ],
+    "areas": [
+      "Image Processing",
+      "Machine Learning",
+      "Natural Language processing"
+    ],
+    "qualification": "Ph.D from Indian Institute of Information Technology, Jabalpur, 2018",
+    "phone": null,
+    "room": "\nRoom No: BD 410",
+    "email": "kanchanlata@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/kanchanlata.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Deepak Jose",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology Calicut"
+    ],
+    "areas": [
+      "Networking Security in IoT devices",
+      "Wireless mesh networking",
+      "Device fingerprinting for cyber security",
+      "Spatial Modulation",
+      "Detection and estimation problems in IRS-assisted wireless systems.",
+      "Orthogonal time frequency space (OTFS) modulation"
+    ],
+    "qualification": "Ph.D from National Institute of Technology Calicut",
+    "phone": null,
+    "room": "\nRoom No: AB 209 B",
+    "email": "deepakjose@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/deepak.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Vineeth Palliyembil",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph. D from National Institute of Technology Tiruchirappalli, 2020."
+    ],
+    "areas": [
+      "Free Space Optics",
+      "Visible Light Communication,",
+      "Wireless Communication",
+      "Optical Communication",
+      "Photonics",
+      "Machine Learning for communication systems"
+    ],
+    "qualification": "Ph. D from National Institute of Technology Tiruchirappalli, 2020.",
+    "phone": null,
+    "room": "\nRoom No: AB 209 C",
+    "email": "vineeth@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/vineeth.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Milind Thomas Themalil",
+    "roles": [
+      "Associate Faculty In-Charge (Trendles Club)",
+      "Assistant Professor",
+      "Post-Doc, XLIM, University of Limoges, France. Ph.D from Jadavpur University, Kolkata"
+    ],
+    "areas": [
+      "RF & Microwave",
+      "MIMO for 5G and beyond networks",
+      "Microstrip antenna design for small satellite communication",
+      "Optical Wireless Communication"
+    ],
+    "qualification": "Post-Doc, XLIM, University of Limoges, France. Ph.D from Jadavpur University, Kolkata",
+    "phone": null,
+    "room": "\nRoom No: BC 311",
+    "email": "milind@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Milind.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Asha Sebastian",
+    "roles": [
+      "Nodal Officer(Internal faculty, AICTE)",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology,Tiruchirappalli ,M.Sc(Tech) in Mathematics and Scientific computing from NIT Calicut"
+    ],
+    "areas": [
+      "Geometric function theory:Radii problems, Differential subordination",
+      "Quantum Computing",
+      "Post Quantum Cryptography",
+      "AI Education",
+      "Data Science"
+    ],
+    "qualification": "Ph.D from National Institute of Technology,Tiruchirappalli ,M.Sc(Tech) in Mathematics and Scientific computing from NIT Calicut",
+    "phone": null,
+    "room": "\nRoom No: AB 217",
+    "email": "asha@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/asha.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Murugan D",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology, Tiruchirappalli"
+    ],
+    "areas": [
+      "Fluid Mechanics",
+      "Bio Fluid Mechanics",
+      "Operation Research",
+      "Data Science"
+    ],
+    "qualification": "Ph.D from National Institute of Technology, Tiruchirappalli",
+    "phone": null,
+    "room": "\nRoom No: AC 304 C",
+    "email": "murugand@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Murugan D.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Suriyapriya K",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology, Tiruchirappalli"
+    ],
+    "areas": [
+      "Fuzzy Decision making problems",
+      "Neural Computing",
+      "Fuzzy Optimization",
+      "Fuzzy Similarity measure"
+    ],
+    "qualification": "Ph.D from National Institute of Technology, Tiruchirappalli",
+    "phone": null,
+    "room": "\nRoom No: AC 311",
+    "email": "suriyapriya@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/suriyapriya.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Riyasudheen T K",
+    "roles": [
+      "Associate Faculty In-Charge (UG(Academics))",
+      "Assistant Professor",
+      "Ph.D. from NIT Calicut, Former Chief Executive Officer (CEO), MathLab Research Private Limited"
+    ],
+    "areas": [
+      "Computational Mathematics",
+      "Mathematical and Computational Finance",
+      "Fractional PDEs",
+      "Artificial Neural Network (ANN) methods for PDEs",
+      "Deep learning in Option Pricing Models"
+    ],
+    "qualification": "Ph.D. from NIT Calicut, Former Chief Executive Officer (CEO), MathLab Research Private Limited",
+    "phone": null,
+    "room": "\nRoom No: BD 412",
+    "email": "riyasudheen@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/riyasudheen.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Binu M",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology Calicut, 2019."
+    ],
+    "areas": [
+      "Network Science",
+      "Fuzzy Graph Structures",
+      "Connectivity Analysis in Weighted Networks",
+      "Reliability Parameters",
+      "Decision Making Problems"
+    ],
+    "qualification": "Ph.D from National Institute of Technology Calicut, 2019.",
+    "phone": null,
+    "room": "\nRoom No: AC 304 B",
+    "email": "binum@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/binum.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr.Jobin Jose",
+    "roles": [
+      "Associate Faculty In-Charge (UG(Academics))",
+      "Assistant Professor",
+      "Ph D from the National Institute of Technology (NIT) , Tiruchirappalli."
+    ],
+    "areas": [
+      "Cache memories and Reconfigurablity",
+      "Machine Learning for Systems",
+      "Ethical Hacking and Penetration Testing",
+      "Cyber Security",
+      "Hardware Security",
+      "Complex Networks"
+    ],
+    "qualification": "Ph D from the National Institute of Technology (NIT) , Tiruchirappalli.",
+    "phone": null,
+    "room": "\nRoom No: AB 209 G",
+    "email": "jobin@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/jobin.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Balasubramanian P",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph D from the National Institute of Technology (NIT) , Tiruchirappalli."
+    ],
+    "areas": [
+      "Machine Learning",
+      "Deep Learning",
+      "Natural Language Processing",
+      "Social Network Analysis"
+    ],
+    "qualification": "Ph D from the National Institute of Technology (NIT) , Tiruchirappalli.",
+    "phone": null,
+    "room": "\nRoom No: BD 408",
+    "email": "pbala@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/bala.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Dhakshayani J",
+    "roles": [
+      "Associate Faculty In-Charge (Social Media)",
+      "Assistant Professor",
+      "Ph.D from National Institute of Technology Puducherry, 2023"
+    ],
+    "areas": [
+      "Computer Vision",
+      "Machine Learning",
+      "Deep Learning",
+      "Image Processing",
+      "Precision Agriculture",
+      "High Throughput Phenotyping",
+      "Multimodal AI"
+    ],
+    "qualification": "Ph.D from National Institute of Technology Puducherry, 2023",
+    "phone": null,
+    "room": "\nRoom No: AB 209 F",
+    "email": "dhakshayani@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/dhakshayani.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr.S.Jai Ganesh",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from Anna University,2023"
+    ],
+    "areas": [
+      "Information Security",
+      "Artificial Intelligence for Cyber Security",
+      "Web Application Security"
+    ],
+    "qualification": "Ph.D from Anna University,2023",
+    "phone": null,
+    "room": "\nRoom No: AC 304 A",
+    "email": "jaiganesh@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/jaiganesh.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Krishnendhu S P",
+    "roles": [
+      "Associate Faculty In-Charge (PG(Academics))",
+      "Assistant Professor",
+      "Ph.D from NIT Calicut"
+    ],
+    "areas": [
+      "Intelligent Transportation Systems (ITS)",
+      "Computer Vision",
+      "Image Processing",
+      "Machine Learning and Deep Learning"
+    ],
+    "qualification": "Ph.D from NIT Calicut",
+    "phone": null,
+    "room": "\nRoom No: AA 107",
+    "email": "krishnendhu@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/krishnendhu.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Jeena Thomas",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from IIIT Kottayam, DST Woman Scientist (Recipient of WOS-A), Doctoral Fellowship from IIT Palakkad Technology IHub Foundation (IPTIF), 2025 Kusum Deep Best PhD Thesis Awardee, IIT Roorkee"
+    ],
+    "areas": [
+      "Computer Vision",
+      "Image Processing",
+      "Responsible Artificial Intelligence",
+      "Explainability",
+      "Machine Learning",
+      "Deep Learning"
+    ],
+    "qualification": "Ph.D from IIIT Kottayam, DST Woman Scientist (Recipient of WOS-A), Doctoral Fellowship from IIT Palakkad Technology IHub Foundation (IPTIF), 2025 Kusum Deep Best PhD Thesis Awardee, IIT Roorkee",
+    "phone": null,
+    "room": "\nRoom No: BA 101 C",
+    "email": "jeenathomas@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/jeena thomas.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Fasila K A",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from Cochin University of Science and Technology, 2024"
+    ],
+    "areas": [
+      "Lightweight Cryptography",
+      "IoT Security",
+      "Applied Cryptography",
+      "Ethical hacking",
+      "Cyber security"
+    ],
+    "qualification": "Ph.D from Cochin University of Science and Technology, 2024",
+    "phone": null,
+    "room": "\nRoom No: BA 101 A",
+    "email": "fasilaka@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/fasila.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Renu Mary Daniel",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "PhD from Karunya University, 2020, Doctoral Fellowship under Visvesvaraya Ph. D. Scheme for Electronics and Information Technology, MeitY, Govt. of India"
+    ],
+    "areas": [
+      "Social Network Analysis",
+      "Financial Crime Detection",
+      "Network Forensics",
+      "Design of Cryptographic Algorithms",
+      "Information Security"
+    ],
+    "qualification": "PhD from Karunya University, 2020, Doctoral Fellowship under Visvesvaraya Ph. D. Scheme for Electronics and Information Technology, MeitY, Govt. of India",
+    "phone": null,
+    "room": "\nRoom No: BA 101 B",
+    "email": "renudaniel@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Renu.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sara Renjit",
+    "roles": [
+      "Associate Faculty In-Charge-(UG (Academics))",
+      "Assistant Professor",
+      "Ph.D from Cochin University of Science and Technology, 2024"
+    ],
+    "areas": [
+      "Natural Language Processing",
+      "Software Engineering",
+      "Machine Learning",
+      "Database Management Systems",
+      "Deep Learning",
+      "Explainable AI",
+      "DevOps & Agile"
+    ],
+    "qualification": "Ph.D from Cochin University of Science and Technology, 2024",
+    "phone": null,
+    "room": "\nRoom No: CAB 202 F",
+    "email": "sararenjit@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Sara.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sushitha Susan Joseph",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from Vellore Institute of Technology, 2023"
+    ],
+    "areas": [
+      "Machine Learning",
+      "Deep Learning",
+      "Medical Image Processing"
+    ],
+    "qualification": "Ph.D from Vellore Institute of Technology, 2023",
+    "phone": null,
+    "room": "\nRoom No: CAB 202 E",
+    "email": "sushithasj@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Sushitha.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sreelakshmy I J",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from Cochin University of Science and Technology, 2024"
+    ],
+    "areas": [
+      "Computer Vision",
+      "Machine Learning",
+      "Deep Learning",
+      "Image Processing"
+    ],
+    "qualification": "Ph.D from Cochin University of Science and Technology, 2024",
+    "phone": null,
+    "room": "\nRoom No: CAB 202 G",
+    "email": "sreelakshmy@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Sreelakshmy.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Ms. Mahima Mary Mathews",
+    "roles": [
+      "",
+      "Assistant Professor",
+      ""
+    ],
+    "areas": [
+      "Cryptography - Post-Quantum Cryptography, Quantum Cryptography",
+      "Quantum Cryptanalysis",
+      "Quantum Computing and Communication",
+      "Network Security",
+      "Ethical Hacking",
+      "Digital Forensics",
+      "Delay Tolerant Network",
+      "Distributed ledger technology"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\nRoom No: AB 218",
+    "email": "mahimamm@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/mahimamm.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. R Tharaniya Sairaj",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D. from National Institute of Technology, Tiruchirappalli"
+    ],
+    "areas": [
+      "Artificial Intelligence in Education",
+      "Data Science",
+      "Machine Learning and Deep Learning",
+      "Natural Language Processing",
+      "Knowledge Models"
+    ],
+    "qualification": "Ph.D. from National Institute of Technology, Tiruchirappalli",
+    "phone": null,
+    "room": "\nRoom No: AC 301 D",
+    "email": "sairaj@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/sairaj.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Ms. Anu Maria Sebastian",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D. from Cochin University of Science and Technology"
+    ],
+    "areas": [
+      "Applied AI",
+      "Machine learning",
+      "Data imputation",
+      "Healthcare data analytics"
+    ],
+    "qualification": "Ph.D. from Cochin University of Science and Technology",
+    "phone": null,
+    "room": "\nRoom No: AB 209 C",
+    "email": "anumaria@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/anumaria.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Mr. Anandhu Mohan",
+    "roles": [
+      "",
+      "Assistant Professor",
+      ""
+    ],
+    "areas": [
+      "Graph Theory",
+      "Fuzzy Graph Theory",
+      "Network Science",
+      "Social Network Analysis"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\nRoom No: AB 209 A",
+    "email": "anandhum@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/anandhum.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Rosebell Paul",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from Sathyabama University"
+    ],
+    "areas": [
+      "Named Data Networking",
+      "Electric Vehicle charging Infrastructure",
+      "Machine Learning"
+    ],
+    "qualification": "Ph.D from Sathyabama University",
+    "phone": null,
+    "room": "\nRoom No: AC 305 C",
+    "email": "rosebell@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Rosebell.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Nayana P G",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from Amrita Vishwa Vidyapeetham, Kochi"
+    ],
+    "areas": [
+      "Graph Theory",
+      "Domination",
+      "Algorithm",
+      "Interconnection Networks",
+      "Brain Network and Network Analysis"
+    ],
+    "qualification": "Ph.D from Amrita Vishwa Vidyapeetham, Kochi",
+    "phone": null,
+    "room": "\nRoom No: BA 101 D",
+    "email": "nayanapg@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/nayanapg.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Reetha Thomas",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from IIIT Kottayam"
+    ],
+    "areas": [
+      "Physics-Informed and Graph Neural Networks",
+      "Spatio-Temporal Climate Modelling",
+      "Uncertainty Quantification",
+      "Fractional Calculus and Dynamical Systems",
+      "Mathematical modelling",
+      "Nonlinear Partial Differential Equations"
+    ],
+    "qualification": "Ph.D from IIIT Kottayam",
+    "phone": null,
+    "room": "\nRoom No: BA 100 B",
+    "email": "reethathomas@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/reethathomas.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Gayathri Varma",
+    "roles": [
+      "",
+      "Assistant Professor",
+      "Ph.D from NIT Calicut,Kerala ,2019."
+    ],
+    "areas": [
+      "Hybrid models of Fuzzy sets and their applications in data reduction",
+      "Matrix Analysis"
+    ],
+    "qualification": "Ph.D from NIT Calicut,Kerala ,2019.",
+    "phone": null,
+    "room": "\nRoom No: AC 301 E",
+    "email": "gvarma@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/gvarma.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. JALAJA M J",
+    "roles": [
+      "",
+      "Adjunct Professor",
+      "Ph.D from National Institute of Technology Calicut."
+    ],
+    "areas": [
+      "Wireless Sensor Networks and IoT",
+      "Underwater Communication",
+      "Underwater Sensor Networks",
+      "Indian Knowledge Systems",
+      "Educational Technology"
+    ],
+    "qualification": "Ph.D from National Institute of Technology Calicut.",
+    "phone": null,
+    "room": "\nRoom No: CAB 103 D",
+    "email": "jalaja@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/jalaja.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Leena Mary",
+    "roles": [
+      "",
+      "Adjunct Professor(ECE)",
+      "Ph.D from IIT Madras in 2006"
+    ],
+    "areas": [
+      "Speech Processing",
+      "Image Processing",
+      "Machine Learning",
+      "Speaker Forensics"
+    ],
+    "qualification": "Ph.D from IIT Madras in 2006",
+    "phone": null,
+    "room": "\nRoom No: CAB 103 C",
+    "email": "leena@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Leena.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sujamol S",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "Ph.D from Amrita Vishwa Vidyapeetham University."
+    ],
+    "areas": [
+      "Machine Learning",
+      "Soft Computing",
+      "Computational Biology",
+      "Bioinformatics"
+    ],
+    "qualification": "Ph.D from Amrita Vishwa Vidyapeetham University.",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "sujamol@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/sujamol.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Angel Thomas",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "Ph.D from University of Kerala, M.Phil from Sri Ramachandra University, Chennai"
+    ],
+    "areas": [
+      "Psychology"
+    ],
+    "qualification": "Ph.D from University of Kerala, M.Phil from Sri Ramachandra University, Chennai",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "email\nangelthomaspradeep at gmail.com",
+    "photo": "https://iiitkottayam.ac.in/data/images/angelthomas.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr Raghunadhan T",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      ""
+    ],
+    "areas": [
+      "Management Studies"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "email\nraghu.vaidyaratnam at gmail.com",
+    "photo": "https://iiitkottayam.ac.in/data/images/raghunadhan _t.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Alexander G",
+    "roles": [
+      "",
+      "Adjunct Faculty(CSE)",
+      ""
+    ],
+    "areas": [],
+    "qualification": "",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "alex@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/default.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sherin V. George",
+    "roles": [
+      "",
+      "Adjunct Faculty (Personality Development)",
+      ""
+    ],
+    "areas": [
+      "Psycho-Physiological Diagnostic Devices",
+      "Sport Psychology",
+      "Anomalistic Psychology"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/sherin.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sasikumaran Sreedharan",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      ""
+    ],
+    "areas": [
+      "Real Time Systems",
+      "Software Quality",
+      "Sensor Networks and Quality",
+      "Education Management"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/sasikumaran.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. S. Vinaya Kumar",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      ""
+    ],
+    "areas": [
+      "English Language"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/vinaya.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Antony Palackal",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      ""
+    ],
+    "areas": [
+      "Sociology of Science and Development",
+      "Social Movements",
+      "Cultural Dynamics and Gender and Society"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/1C36E2FE5DB85F8FECDC9C0C64700DA1.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. D Narayana",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "Former Director, Gulati Institute of Finance and Taxation, Renowned economist,researcher and statistician. He holds a PhD from Indian Statistical Institute (ISI)"
+    ],
+    "areas": [
+      "Economics"
+    ],
+    "qualification": "Former Director, Gulati Institute of Finance and Taxation, Renowned economist,researcher and statistician. He holds a PhD from Indian Statistical Institute (ISI)",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/narayana.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Oommen K Mathew",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "PhD & Post Doc in Bioinformatics from National Centre for Biological Science (NCBS) Bangalore, Computational Genomics Scientist at AgriGenome Labs Pvt. Ltd. Kochi, Kerala, Computational Biologist with experience in algorithm development, HPC, Genomics, Transcriptomics, Third-Gen Sequencing Data Analysis, Structural bioinformatics and protein interaction."
+    ],
+    "areas": [
+      "Bioinformatics"
+    ],
+    "qualification": "PhD & Post Doc in Bioinformatics from National Centre for Biological Science (NCBS) Bangalore, Computational Genomics Scientist at AgriGenome Labs Pvt. Ltd. Kochi, Kerala, Computational Biologist with experience in algorithm development, HPC, Genomics, Transcriptomics, Third-Gen Sequencing Data Analysis, Structural bioinformatics and protein interaction.",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/oommen.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr Augustine Joseph",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "Former Asst Professor of English – Govt. Arts and Science College, DURG, Chhattisgarh, Former Associate Professor - St. Thomas College, Pala"
+    ],
+    "areas": [
+      "Communication Skills"
+    ],
+    "qualification": "Former Asst Professor of English – Govt. Arts and Science College, DURG, Chhattisgarh, Former Associate Professor - St. Thomas College, Pala",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/augustine.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr Shabu B Raj",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "Defence Scientist working with DRDO, MBA in Finance & Strategic HR from FMS Delhi, Masters Degrees with Rank in Applied Psychology, and in Computer Science, PhD in Cognitive Neuroscience"
+    ],
+    "areas": [
+      "Personality Development"
+    ],
+    "qualification": "Defence Scientist working with DRDO, MBA in Finance & Strategic HR from FMS Delhi, Masters Degrees with Rank in Applied Psychology, and in Computer Science, PhD in Cognitive Neuroscience",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/shabu.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr M.K. Mathew",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "Retd. Associate Prof., HOD, Dept. of Psychology, KE College Mannanam"
+    ],
+    "areas": [
+      "Personality Development"
+    ],
+    "qualification": "Retd. Associate Prof., HOD, Dept. of Psychology, KE College Mannanam",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/default.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Sr. Lissy George",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "BST, Former Lecturer, ST. Thomas College, Pala"
+    ],
+    "areas": [
+      "German"
+    ],
+    "qualification": "BST, Former Lecturer, ST. Thomas College, Pala",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/default.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. N.K Narayanan",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "Ph.D., Cochin University of Science &Technology (CUSAT)"
+    ],
+    "areas": [
+      "Machine Learning",
+      "Soft Computing",
+      "Computer Vision",
+      "Data Science",
+      "Computational Science & Engineering",
+      "Computer Speech & Natural Language Technology"
+    ],
+    "qualification": "Ph.D., Cochin University of Science &Technology (CUSAT)",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/nkn.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr.Sarika Lohana",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "Research Officer, State Bank Institute of Innovation and Technology, Hyderabad"
+    ],
+    "areas": [
+      "Accountancy"
+    ],
+    "qualification": "Research Officer, State Bank Institute of Innovation and Technology, Hyderabad",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/default.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Karthik A",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      ""
+    ],
+    "areas": [
+      "French"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/default.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Prof. Sadanand Sadashiv Gokhale",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "Former Director of various NITs such as Kozikode, Nagpur, Raipur & Mizoram."
+    ],
+    "areas": [
+      "Big Data Analytics"
+    ],
+    "qualification": "Former Director of various NITs such as Kozikode, Nagpur, Raipur & Mizoram.",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/gokhale.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Ms. Beena Gokhale",
+    "roles": [
+      "",
+      "Adjunct Faculty",
+      "M A, M Ed. (University of Illinois, USA)"
+    ],
+    "areas": [
+      "Soft Skills & Personality Development"
+    ],
+    "qualification": "M A, M Ed. (University of Illinois, USA)",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/beena.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Akarsh K Nair",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D from IIIT Kottayam , Visiting Researcher at UiA , Norway"
+    ],
+    "areas": [
+      "Cyber Physical Systems",
+      "Federated Learning",
+      "Privacy Preservation",
+      "AI based Security"
+    ],
+    "qualification": "Ph.D from IIIT Kottayam , Visiting Researcher at UiA , Norway",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "akarshkn@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Aakarsh.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Bhanu Chander",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D. from Pondicherry University (A Central University), M. Tech (C.S.E) at Central University of Rajasthan"
+    ],
+    "areas": [
+      "Cyber Security",
+      "Network Security",
+      "IoT Security",
+      "AI & Security"
+    ],
+    "qualification": "Ph.D. from Pondicherry University (A Central University), M. Tech (C.S.E) at Central University of Rajasthan",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "bhanu@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/bhanu.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Ravi Ajmeera",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D from Jawaharlal Nehru Technological University Hyderabad,2018"
+    ],
+    "areas": [
+      "Deep Learning",
+      "IoT",
+      "Communications and Signal Processing",
+      "Optimization in Systems Engineering",
+      "Remote Sensing Applications"
+    ],
+    "qualification": "Ph.D from Jawaharlal Nehru Technological University Hyderabad,2018",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "draravi@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/raviajmeera.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Maisagalla Gopal",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D from Indian Institute of Technology Indore (IIT-Indore), 2019"
+    ],
+    "areas": [
+      "Material-Device-Circuit Co-design for Robust SRAM Cell",
+      "Advanced MOS Devices modelling and simulation",
+      "Steep Switching Devices",
+      "Digital Integrated Circuit Design",
+      "Reliable and Secure Circuits"
+    ],
+    "qualification": "Ph.D from Indian Institute of Technology Indore (IIT-Indore), 2019",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "mgopal@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/mgopal.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Mirza Ghalib",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D. from IIT Guwahati, MTech from IIT Guwahati"
+    ],
+    "areas": [
+      "Theoretical Computer Science",
+      "Data Structures",
+      "Algorithms",
+      "Graph Theoretic problems"
+    ],
+    "qualification": "Ph.D. from IIT Guwahati, MTech from IIT Guwahati",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "mirza.baig@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/mirza.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Keshab Nath",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D. from North Eastern Hill University, Shillong (A Central University)"
+    ],
+    "areas": [
+      "Data Mining",
+      "Machine Learning",
+      "Computational Biology"
+    ],
+    "qualification": "Ph.D. from North Eastern Hill University, Shillong (A Central University)",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "keshabnath@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/keshab.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sweeti Sah",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D from National Institute of Technology Puducherry"
+    ],
+    "areas": [
+      "Machine Learning",
+      "Deep Learning"
+    ],
+    "qualification": "Ph.D from National Institute of Technology Puducherry",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "sweeti@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/sweety.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Nilotpal Chakraborty",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Post Doc Aalborg University Denmark, Post Doc EMAX Group Brussels Belgium, Ph.D. IIT Patna"
+    ],
+    "areas": [
+      "Smart Grid and Electric Vehicles",
+      "Cyber-Physical Systems",
+      "Graph Theory",
+      "Computational Complexity",
+      "Optimization Techniques",
+      "Scheduling Algorithms"
+    ],
+    "qualification": "Post Doc Aalborg University Denmark, Post Doc EMAX Group Brussels Belgium, Ph.D. IIT Patna",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "nilotpal@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/nilotpal.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Gangireddy Narendra Kumar Reddy",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D from Indian Institute of Technology, Bhubaneswar"
+    ],
+    "areas": [
+      "Signal Processing-Denoising, Compression, Signal Quality Assessment and Feature Extraction",
+      "Energy-Efficient Strategies for IoT Enabled Health Monitoring",
+      "Artificial Intelligence Framework for Improving Diagnostic Accuracy and Reducing False Alarms",
+      "Compressed Sensing and Sparse Representation"
+    ],
+    "qualification": "Ph.D from Indian Institute of Technology, Bhubaneswar",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "gnkreddy@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/narendrakumar.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. T Sugirtha",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D, from National Institute of Technology, Tiruchirappalli"
+    ],
+    "areas": [
+      "Computer Vision",
+      "Deep Learning"
+    ],
+    "qualification": "Ph.D, from National Institute of Technology, Tiruchirappalli",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "sugirtha@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/Sugirtha.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Oswald C",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Post Doc IIT Kanpur, Ph.D. from IIITD&M Kancheepuram, Former employee of IBM ISL and Cognizant"
+    ],
+    "areas": [
+      "Data Mining",
+      "Machine Learning",
+      "Social Media Analytics (Computational Science for Social Good)",
+      "Data Compression",
+      "Natural Language Processing",
+      "Human Computer Interaction"
+    ],
+    "qualification": "Post Doc IIT Kanpur, Ph.D. from IIITD&M Kancheepuram, Former employee of IBM ISL and Cognizant",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "oswaldc@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/oswald.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Suresh Chavhan",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Post Doctoral Fellow from UFPI, Federal University of Piaui, Brazil, Post Doctoral Research Associate from IISc Bangalore, Ph.D. from Indian Institute of Science (IISc),Bangalore, M.Tech. from National Institute of Technology, Surathkal"
+    ],
+    "areas": [
+      "Intelligent Transportation System",
+      "Autonomous Vehicle Systems",
+      "5G",
+      "Drone Communication",
+      "Edge Intelligence with AI",
+      "3D-Networking",
+      "Zero Touch Network",
+      "Age of Information in ITS"
+    ],
+    "qualification": "Post Doctoral Fellow from UFPI, Federal University of Piaui, Brazil, Post Doctoral Research Associate from IISc Bangalore, Ph.D. from Indian Institute of Science (IISc),Bangalore, M.Tech. from National Institute of Technology, Surathkal",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "sureshc@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/chauhan.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Konjengbam Anand",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Post Doc Shizuoka University, Japan, Ph.D., MTech from IIT Hyderabad, BTech from NIT Durgapur, IT Consultant for Kawasaki Solar Warehousing, Japan"
+    ],
+    "areas": [
+      "Sentiment Analysis",
+      "NLP",
+      "Information Management and Business Intelligence",
+      "Data Analytics"
+    ],
+    "qualification": "Post Doc Shizuoka University, Japan, Ph.D., MTech from IIT Hyderabad, BTech from NIT Durgapur, IT Consultant for Kawasaki Solar Warehousing, Japan",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "kanand@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/kanand.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Bibin Francis",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D from IISc Bengaluru, Post Doc from IIIT Hyderabad"
+    ],
+    "areas": [],
+    "qualification": "Ph.D from IISc Bengaluru, Post Doc from IIIT Hyderabad",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "bibin@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/bibin.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Bini A. A.",
+    "roles": [
+      "",
+      "Former Faculty",
+      "PhD from NIT-Surathkal, Former Senior Embedded System Developer at Nest Technologies Trivandrum and at KPIT Cummins Pune"
+    ],
+    "areas": [
+      "Signal Processing",
+      "Image Processing",
+      "Computer Vision"
+    ],
+    "qualification": "PhD from NIT-Surathkal, Former Senior Embedded System Developer at Nest Technologies Trivandrum and at KPIT Cummins Pune",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "bini@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/bini.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Prof. V. Ramakrishnan",
+    "roles": [
+      "",
+      "Former Faculty (Former Mentor Director)",
+      "Former Director IISERTVM"
+    ],
+    "areas": [
+      "Optoeletronics",
+      "Classical Mechanics"
+    ],
+    "qualification": "Former Director IISERTVM",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/ramakrishnan.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Rajiv V. Dharaskar",
+    "roles": [
+      "",
+      "Former Director",
+      "Ph.D. (Computers), M.Tech. (Computers) from IIT Dhanbad, M.Phil."
+    ],
+    "areas": [
+      "Digital Forensics (Image, Web, Mobile, Cloud, Networks, etc.)",
+      "Cyber Security",
+      "Data Science",
+      "HCI",
+      "E-learning",
+      "NLP",
+      "AI"
+    ],
+    "qualification": "Ph.D. (Computers), M.Tech. (Computers) from IIT Dhanbad, M.Phil.",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/director1.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Sunil Kumar Kashyap",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D. Maths from Pt. Ravishankar Shukla University, Raipur"
+    ],
+    "areas": [
+      "Cryptography",
+      "Network Security"
+    ],
+    "qualification": "Ph.D. Maths from Pt. Ravishankar Shukla University, Raipur",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "kashyap@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/kashyap.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Prof.Govindan V K",
+    "roles": [
+      "",
+      "Professor (Former Faculty)",
+      "Member of the Committee for Accreditation"
+    ],
+    "areas": [
+      "Image Processing",
+      "Medical Imaging",
+      "agent Technology"
+    ],
+    "qualification": "Member of the Committee for Accreditation",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "email\nvkg at nitc.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/vkg6.png",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr Boddepalli SanthiBhushan",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D. from ABV-IIITM Gwalior, Post-Doc from IIT Bombay, Former Assistant Professor@iiIT Bhopal."
+    ],
+    "areas": [
+      "Micro/Nano-Electronics",
+      "Device Modelling – Electronic and Energy Devices",
+      "Graphene Supercapacitors",
+      "VLSI Design"
+    ],
+    "qualification": "Ph.D. from ABV-IIITM Gwalior, Post-Doc from IIT Bombay, Former Assistant Professor@iiIT Bhopal.",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/bhushan.png",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Priyambada Subudhi",
+    "roles": [
+      "",
+      "Former Faculty",
+      "PhD from IIT Dhanbad"
+    ],
+    "areas": [
+      "Image Processing",
+      "Image Segmentation",
+      "Active Contours",
+      "Graph Cuts",
+      "Machine Learning"
+    ],
+    "qualification": "PhD from IIT Dhanbad",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "priyambada@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/priyam.JPG",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr.Kalka Dubey",
+    "roles": [
+      "",
+      "Former Faculty",
+      "PhD from IIT Roorkee"
+    ],
+    "areas": [
+      "Cloud Computing",
+      "Fog Computing",
+      "Soft Computing",
+      "Internet of Thing (IoT)"
+    ],
+    "qualification": "PhD from IIT Roorkee",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/kalka.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Resmi Ramachandran Pillai",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D. from NIT Tiruchirappalli, Certificate of excellence in National Aptitude Test conducted by NIIT"
+    ],
+    "areas": [
+      "Machine Learning",
+      "Deep Learning"
+    ],
+    "qualification": "Ph.D. from NIT Tiruchirappalli, Certificate of excellence in National Aptitude Test conducted by NIIT",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/resmi.png",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Lekshmi B.G",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D from Friedrich Alexander University (FAU) Erlangen Nuremberg, Germany"
+    ],
+    "areas": [
+      "Query optimization for modern hardware",
+      "Image processing using machine learning approaches",
+      "Data science"
+    ],
+    "qualification": "Ph.D from Friedrich Alexander University (FAU) Erlangen Nuremberg, Germany",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "lekshmi@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/lekshmi.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Anoop B N",
+    "roles": [
+      "",
+      "Former Faculty",
+      "PhD. from NITK Surathkal, M. Tech from NIT Calicut (Signal Processing)"
+    ],
+    "areas": [
+      "Image Processing",
+      "Medical Image Processing",
+      "Deep Learning",
+      "Convolutional Neural Networks",
+      "Auto-encorders",
+      "GANs"
+    ],
+    "qualification": "PhD. from NITK Surathkal, M. Tech from NIT Calicut (Signal Processing)",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "anoop@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/anoopb.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Samson Anosh Babu P",
+    "roles": [
+      "",
+      "Former Faculty",
+      "PhD from IIT Dhanbad,MTech NIT Raurkela (Information Security)"
+    ],
+    "areas": [
+      "Machine learning",
+      "Feature selection",
+      "NGS data analysis"
+    ],
+    "qualification": "PhD from IIT Dhanbad,MTech NIT Raurkela (Information Security)",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/samson.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Avinash Kumar Mittal",
+    "roles": [
+      "",
+      "Former Faculty",
+      "PhD from IIITD Jabalpur, M.Tech from IIT Kharagpur"
+    ],
+    "areas": [
+      "Numerical methods",
+      "High Performance Computing",
+      "Algorithms",
+      "Parallel Computing",
+      "Computational Fluid Dynamics",
+      "Spectral Method",
+      "Applied PDEs"
+    ],
+    "qualification": "PhD from IIITD Jabalpur, M.Tech from IIT Kharagpur",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/avinash.jpeg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. N. Annamalai",
+    "roles": [
+      "",
+      "Former Faculty",
+      "Ph.D in Mathematics from Bharathidasan University, Tiruchirappalli.University First Rank, DST–INSPIRE Senior Research Fellow (2015-2018)"
+    ],
+    "areas": [
+      "Algebraic Coding Theory",
+      "Algebra",
+      "Cryptography"
+    ],
+    "qualification": "Ph.D in Mathematics from Bharathidasan University, Tiruchirappalli.University First Rank, DST–INSPIRE Senior Research Fellow (2015-2018)",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/annamalai.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Jobish John",
+    "roles": [
+      "",
+      "Assistant Professor (Former Faculty)",
+      "PhD from IIT-Mumbai"
+    ],
+    "areas": [
+      "Internet of Things/ Wireless sensor networks",
+      "Lifetime maximization in IoT/ Sensor networks",
+      "Embedded/ Hardware system design",
+      "Design and development of cost effective solutions for socially relevant applications"
+    ],
+    "qualification": "PhD from IIT-Mumbai",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/jobish.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Jaise Jose",
+    "roles": [
+      "",
+      "Assistant Professor (Former Faculty)",
+      "PhD from IISER TVM"
+    ],
+    "areas": [
+      "Numerical Functional Analysis"
+    ],
+    "qualification": "PhD from IISER TVM",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/jaise.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Renjith P.",
+    "roles": [
+      "",
+      "Assistant Professor (Former Faculty)",
+      "PhD from Indian Institute of Information Technology Design and Manufacturing Kancheepuram"
+    ],
+    "areas": [
+      "Graph Theory",
+      "Design and Analysis of Graph Algoritms"
+    ],
+    "qualification": "PhD from Indian Institute of Information Technology Design and Manufacturing Kancheepuram",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/944C76B56A7CAB522DEBDEECEC0CE8F8.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Manikandan V. M.",
+    "roles": [
+      "",
+      "Assistant Professor (Former Faculty)",
+      "PhD from Indian Institute of Information Technology Design and Manufacturing Kancheepuram"
+    ],
+    "areas": [
+      "Digital Image Watermarking",
+      "Reversible Data Hiding",
+      "Digital Image Forensics"
+    ],
+    "qualification": "PhD from Indian Institute of Information Technology Design and Manufacturing Kancheepuram",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/Manikandan.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Gaanutula Damodar Reddy",
+    "roles": [
+      "",
+      "Assistant Professor (Former Faculty)",
+      "PhD from IISER-TVM, MPhil from Pondicherry University"
+    ],
+    "areas": [
+      "Functional Analysis/Numerical Functional Analysis",
+      "Fractional & Weighted Regularization Schemes for Solving Ill-posed Problems and Parameter Choice rules for Fractional and Weighted Regularization Schemes"
+    ],
+    "qualification": "PhD from IISER-TVM, MPhil from Pondicherry University",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/damu.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Riby Abraham Boby",
+    "roles": [
+      "",
+      "Assistant Professor (Former Faculty)",
+      ""
+    ],
+    "areas": [
+      "Robotics",
+      "Machine Vision",
+      "Human-Machine Interface"
+    ],
+    "qualification": "",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": "riby.abraham@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/riby.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Prof. M. P. Rajan",
+    "roles": [
+      "",
+      "Former Faculty & Former PIC",
+      "Post Doc from University of Linz, Austria, Former Faculty of IIT-G, Dean IISER-TVM"
+    ],
+    "areas": [
+      "Machine Learning",
+      "Data Science",
+      "Deep Learning"
+    ],
+    "qualification": "Post Doc from University of Linz, Austria, Former Faculty of IIT-G, Dean IISER-TVM",
+    "phone": null,
+    "room": "\n                        Room No:",
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/ebc6840e76699affa23d9c74f0f20016.jpg",
+    "main_roles": [
+      "Faculty"
+    ]
+  },
+  {
+    "name": "Dr. Rani Stanly",
+    "roles": [],
+    "areas": [
+      "Medical Officer"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202132",
+    "room": "Room No: BB 203",
+    "email": "mo1@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/ranistanly.jpeg",
+    "main_roles": [
+      "Professional Support Staff"
+    ]
+  },
+  {
+    "name": "Dr. Radhakrishnan Nair",
+    "roles": [],
+    "areas": [
+      "Medical Officer"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202132",
+    "room": "Room No: BB 203",
+    "email": "mo2@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/radhakrishnandr.jpeg",
+    "main_roles": [
+      "Professional Support Staff"
+    ]
+  },
+  {
+    "name": "Ms. Renjitha T.R",
+    "roles": [],
+    "areas": [
+      "Psychologist"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202107",
+    "room": "Room No: AB 209 D",
+    "email": "counsellor@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/renjitha.jpeg",
+    "main_roles": [
+      "Professional Support Staff"
+    ]
+  },
+  {
+    "name": "Ms. Priya Mol K",
+    "roles": [],
+    "areas": [
+      "Physical Education Instructor"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202106",
+    "room": "Room No: BD 405",
+    "email": "pet@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/priya.jpg",
+    "main_roles": [
+      "Professional Support Staff"
+    ]
+  },
+  {
+    "name": "Ms. Sumi",
+    "roles": [],
+    "areas": [
+      "Staff Nurse",
+      "Room No:"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202105",
+    "room": null,
+    "email": "nurse@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/sumi.jpeg",
+    "main_roles": [
+      "Professional Support Staff"
+    ]
+  },
+  {
+    "name": "Ms. Vinduja Vijayan",
+    "roles": [],
+    "areas": [
+      "Staff Nurse",
+      "Room No:"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202105",
+    "room": null,
+    "email": "nurse@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/vinduja.jpeg",
+    "main_roles": [
+      "Professional Support Staff"
+    ]
+  },
+  {
+    "name": "Mr. Siju K. S.",
+    "roles": [],
+    "areas": [
+      "Technical Officer"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202121",
+    "room": null,
+    "email": "sijuks@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/siju.jpg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Jithin K C",
+    "roles": [],
+    "areas": [
+      "Junior Technician"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202113",
+    "room": null,
+    "email": "jithin@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/jithin.jpg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Titus J Sam",
+    "roles": [],
+    "areas": [
+      "Sr. Computer Programmer"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202252",
+    "room": null,
+    "email": "titusjsam@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/titusjsam.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Ms. Anjaly Subash",
+    "roles": [],
+    "areas": [
+      "Junior Technician"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202114",
+    "room": null,
+    "email": "anjalysubash@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/anjaly.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Ms. Vinaya Balakrishnan",
+    "roles": [],
+    "areas": [
+      "Junior Technician(Electronics)"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202345",
+    "room": null,
+    "email": "vinayab@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/vinayab.jpg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Ms. Drishya Prasad",
+    "roles": [],
+    "areas": [
+      "Junior Technician"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202115",
+    "room": null,
+    "email": "drishyaprasad@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/drishya.jpg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Srutheesh B",
+    "roles": [],
+    "areas": [
+      "Junior Engineer(Electrical)"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202108",
+    "room": null,
+    "email": "je@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/srutheesh.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Ms. Rosamma Varkey",
+    "roles": [],
+    "areas": [
+      "Technical Assistant"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202120",
+    "room": null,
+    "email": "rosamma@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/rosamma.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Ms. Manisha A.M.",
+    "roles": [],
+    "areas": [
+      "Technical Assistant"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202149",
+    "room": null,
+    "email": "manisha@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/manisha.jpg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Ms. Rejitha R.S",
+    "roles": [],
+    "areas": [
+      "Technical Assistant"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202137",
+    "room": null,
+    "email": "academics2@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/rejitha.jpg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Ms. Anju S",
+    "roles": [],
+    "areas": [
+      "Technical Assistant"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202114",
+    "room": null,
+    "email": "anjus@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/anjus.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Bijo Baby",
+    "roles": [],
+    "areas": [
+      "Technician"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202113",
+    "room": null,
+    "email": "bijobaby@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/bijobaby.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Praveenkumar K.P",
+    "roles": [],
+    "areas": [
+      "Technician"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202116",
+    "room": null,
+    "email": "praveenkumar@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/praveen.JPG",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Sumesh C",
+    "roles": [],
+    "areas": [
+      "MTS"
+    ],
+    "qualification": null,
+    "phone": null,
+    "room": null,
+    "email": "sumesh@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/sumesh.jpg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Ms. Lekshmi M Nair",
+    "roles": [],
+    "areas": [
+      "Junior Technical Superintendent(ECE)"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202346",
+    "room": null,
+    "email": "lekshmimnair@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/LekshmiMNair.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Shanaf P M",
+    "roles": [],
+    "areas": [
+      "Junior Technician"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202116",
+    "room": null,
+    "email": "shanaf@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/shanaf.jpg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Afsar V P",
+    "roles": [],
+    "areas": [
+      "Junior Technician"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202117",
+    "room": null,
+    "email": "afsar@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/afsar.jpg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Deepu S R",
+    "roles": [],
+    "areas": [
+      "Junior Technician"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202116",
+    "room": null,
+    "email": "deepu@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/deepu.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr. Robin Philip",
+    "roles": [],
+    "areas": [
+      "MTS"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202112",
+    "room": null,
+    "email": "robinphilip@iiitkottayam.ac.in",
+    "photo": "https://iiitkottayam.ac.in/data/images/robinphilip.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  },
+  {
+    "name": "Mr.Praveen L V",
+    "roles": [],
+    "areas": [
+      "MTS"
+    ],
+    "qualification": null,
+    "phone": "+91 0482-2202265",
+    "room": null,
+    "email": null,
+    "photo": "https://iiitkottayam.ac.in/data/images/praveen L V.jpeg",
+    "main_roles": [
+      "Technical Staff"
+    ]
+  }
+]

@@ -31,3 +31,12 @@ opencode.json
 *.njsproj
 *.sln
 *.sw?
+.env
+work-done.md
+
+# Python
+__pycache__/
+*.pyc
+
+# Supabase CLI local state
+supabase/.temp/

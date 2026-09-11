@@ -30,6 +30,7 @@ import { Route as RoleRouteImport } from './routes/role'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimetableRouteImport } from './routes/timetable'
+import { Route as ApiTimetableSplatRouteImport } from './routes/api/timetable/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -136,6 +137,11 @@ const TimetableRoute = TimetableRouteImport.update({
   path: '/timetable',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTimetableSplatRoute = ApiTimetableSplatRouteImport.update({
+  id: '/api/timetable/$',
+  path: '/api/timetable/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
+  '/api/timetable/$': typeof ApiTimetableSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
+  '/api/timetable/$': typeof ApiTimetableSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
+  '/api/timetable/$': typeof ApiTimetableSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/timetable'
+    | '/api/timetable/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/timetable'
+    | '/api/timetable/$'
   id:
     | '__root__'
     | '/'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/timetable'
+    | '/api/timetable/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   TimetableRoute: typeof TimetableRoute
+  ApiTimetableSplatRoute: typeof ApiTimetableSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -452,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TimetableRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/timetable/$': {
+      id: '/api/timetable/$'
+      path: '/api/timetable/$'
+      fullPath: '/api/timetable/$'
+      preLoaderRoute: typeof ApiTimetableSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -477,6 +497,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   TimetableRoute: TimetableRoute,
+  ApiTimetableSplatRoute: ApiTimetableSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

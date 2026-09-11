@@ -884,6 +884,47 @@ an in-repo mock dataset (`src/lib/mock-data.ts`) — there is no backend or data
 The design mixes a modern SaaS dashboard look with subtle pixel-art decorations
 (`src/components/pixel/pixel-art.tsx`).
 
+## Timetable vertical slice (PDF → Supabase → API)
+
+The first production-style data pipeline is live: the Semester 3 timetable PDF
+is extracted, normalized, validated, previewed, and (after explicit approval)
+imported into Supabase, with authenticated timetable queries exposed over the
+API. Full details: [`docs/timetable.md`](docs/timetable.md).
+
+```bash
+# Python side (extraction/validation/ingestion)
+python3 -m venv .venv && .venv/bin/pip install pdfplumber supabase pytest
+
+# read-only PDF inspection
+.venv/bin/python scripts/inspect_timetable.py "Data/Structured/Semester 3_TimeTable_Odd_2026.pdf"
+
+# dry run: extract → normalize → validate → preview + validation JSON
+.venv/bin/python scripts/ingest_timetable.py "Data/Structured/Semester 3_TimeTable_Odd_2026.pdf"
+
+# audited import into Supabase (requires SUPABASE_URL + SUPABASE_SECRET_KEY)
+.venv/bin/python scripts/ingest_timetable.py "Data/Structured/Semester 3_TimeTable_Odd_2026.pdf" \
+  --import --approved-by admin@example.com
+
+# Python tests
+.venv/bin/python -m pytest tests/ -q
+
+# database schema
+supabase/migrations/20260909000001_timetable_vertical_slice.sql
+```
+
+API endpoints (dev server: `npm run dev`):
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/timetable` | full valid timetable for the student context |
+| `GET /api/timetable/today` | today's entries |
+| `GET /api/timetable/week` | current week's entries |
+| `GET /api/timetable/next?include_activities=true` | next class (activities opt-in) |
+
+Identity comes from the caller's verified JWT (`auth.uid()` via
+`orion_resolve_user`) — client-supplied user ids are never honored; without a
+Supabase session the endpoints serve a clearly-flagged demo dataset.
+
 ## Tech stack
 
 - **React 19** + **TypeScript**
@@ -900,12 +941,13 @@ The design mixes a modern SaaS dashboard look with subtle pixel-art decorations
 ## Getting started
 
 ```bash
-bun install      # or: npm install
-bun run dev      # dev server (vite dev)
-bun run build    # production build
-bun run preview  # preview the build
-bun run lint     # eslint
-bun run format   # prettier
+npm install      # (or: bun install)
+npm run dev      # dev server (vite dev)
+npm run build    # production build
+npm run preview  # preview the build
+npm run lint     # eslint
+npm run format   # prettier
+npx tsc --noEmit # typecheck
 ```
 
 ## Project structure
@@ -951,6 +993,8 @@ pages react to the selected role. Auth is simulated; no credentials are verified
 
 - Theme (light/dark) is toggled via the store and stored under `orion-theme`.
 - Error reporting hooks in `src/lib/` are Lovable-specific dev tooling.
-- To connect real data, replace the exports in `src/lib/mock-data.ts` with
-  TanStack Query calls against your API.
+- The timetable API (`src/lib/timetable-api.ts`) reads from Supabase when
+  configured (see `.env.example`) and otherwise falls back to demo data.
+- To connect more real data, follow the timetable pattern in
+  `docs/timetable.md` instead of extending `src/lib/mock-data.ts`.
 
