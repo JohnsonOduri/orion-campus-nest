@@ -1,8 +1,8 @@
 {
   "source_id": "Semester 5_Timetable_Odd_2026.pdf",
   "summary": {
-    "total": 185,
-    "passed": 170,
+    "total": 217,
+    "passed": 202,
     "failed": 15,
     "ok": false
   },
@@ -217,7 +217,7 @@
         "valid_until": "2026-11-30",
         "source_id": "Semester 5_Timetable_Odd_2026.pdf",
         "source_page": 1,
-        "source_text": "IEG 311 LAB K DSP/QC",
+        "source_text": "IEG 311 LAB DSP/QC",
         "source_uid": "Semester 5_Timetable_Odd_2026.pdf|s5|COMPUTER SCIENCE AND ENGINEERING|bI|I|d4|p6|15:30|IEG 311|lab"
       },
       "issues": [
@@ -249,7 +249,7 @@
             "valid_until": "2026-11-30",
             "source_id": "Semester 5_Timetable_Odd_2026.pdf",
             "source_page": 1,
-            "source_text": "IEG 311 LAB K DSP/QC",
+            "source_text": "IEG 311 LAB DSP/QC",
             "source_uid": "Semester 5_Timetable_Odd_2026.pdf|s5|COMPUTER SCIENCE AND ENGINEERING|bI|I|d4|p6|15:30|IEG 311|lab"
           },
           "record": {
@@ -277,7 +277,7 @@
             "valid_until": "2026-11-30",
             "source_id": "Semester 5_Timetable_Odd_2026.pdf",
             "source_page": 1,
-            "source_text": "IEG 311 LAB K DSP/QC",
+            "source_text": "IEG 311 LAB DSP/QC",
             "source_uid": "Semester 5_Timetable_Odd_2026.pdf|s5|COMPUTER SCIENCE AND ENGINEERING|bI|I|d4|p6|15:30|IEG 311|lab"
           }
         }

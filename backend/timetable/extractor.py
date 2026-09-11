@@ -369,6 +369,7 @@ def _day_rows(page, grid) -> tuple[dict[str, tuple[float, float]], list[str]]:
 
 
 def _extract_cells(page, grid, header_bottom: float) -> list[GridCell]:
+    words = page.extract_words()
     cells: list[GridCell] = []
     for r_idx, row in enumerate(grid.rows):
         for c_idx, cell in enumerate(row.cells):
@@ -377,7 +378,7 @@ def _extract_cells(page, grid, header_bottom: float) -> list[GridCell]:
             x0, top, x1, bottom = cell
             if top < header_bottom - 1:
                 continue
-            text = _cell_text(page, cell)
+            text = _words_cell_text(words, x0, top, x1, bottom)
             cells.append(GridCell(r_idx, c_idx, x0, x1, top, bottom, text))
     return cells
 

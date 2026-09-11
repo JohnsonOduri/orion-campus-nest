@@ -70,7 +70,7 @@ CREDITS_RE = re.compile(r"\[\s*(\d+)\s*-\s*(\d+)\s*-\s*(\d+)\s*\]\s*(\d+)")
 
 SECTION_HEADER_RE = re.compile(
     r"SEMESTER\s+(?P<semester>[IVX]+|\d+)\s+(?P<branch>.+?)\s+"
-    r"BATCH\s*[-–—]?\s*(?P<batch>[IVX]+|\d+)\s*(?:\[(?P<adm>[^\]]+)\])?",
+    r"BATCH\s*[-–—]?\s*(?P<batch>[IVX]+|\d+)?\s*(?:\[(?P<adm>[^\]]+)\])?",
     re.IGNORECASE,
 )
 
@@ -289,11 +289,18 @@ def document_metadata(section_title: str, page_title: str) -> Optional[DocumentM
         if sem_raw.isdigit()
         else {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8}.get(sem_raw.upper(), 0)
     )
+    # Some branches print a bare "BATCH" with no trailing numeral/letter
+    # (e.g. "CYBER SECURITY BATCH [Adm-2024]") because that branch has only
+    # one batch this term — there is no ambiguity about *which* batch, so
+    # labeling it "1" (consistent with how every other branch's first batch
+    # is printed) is not a guess, unlike inventing a value where several
+    # batches could apply.
+    batch_raw = sm.group("batch")
     return DocumentMetadata(
         semester=semester,
         programme="B.Tech",
         branch=sm.group("branch").strip(),
-        batch=sm.group("batch").strip(),
+        batch=batch_raw.strip() if batch_raw else "1",
         valid_from=valid_from or "",
         valid_until=valid_until or "",
         raw_title=" ".join((section_title or "").split()),

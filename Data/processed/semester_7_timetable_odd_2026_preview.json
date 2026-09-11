@@ -507,8 +507,8 @@
   "stats": {
     "pages_processed": 10,
     "records_extracted": 200,
-    "records_valid": 178,
-    "records_rejected": 22,
+    "records_valid": 190,
+    "records_rejected": 10,
     "courses_discovered": [
       "CSE 411",
       "CSE 412",
@@ -2295,7 +2295,7 @@
       "valid_until": "2026-11-30",
       "source_id": "Semester 7_TimeTable_Odd_2026.pdf",
       "source_page": 3,
-      "source_text": "SEMINA R/ COLLOQUIUM",
+      "source_text": "SEMINAR/ COLLOQUIUM",
       "source_uid": "Semester 7_TimeTable_Odd_2026.pdf|s7|COMPUTER SCIENCE AND ENGINEERING|bII|II|d1|p3|12:05|none|other"
     },
     {
@@ -2631,7 +2631,7 @@
       "valid_until": "2026-11-30",
       "source_id": "Semester 7_TimeTable_Odd_2026.pdf",
       "source_page": 3,
-      "source_text": "IOE 414 IOBES 4P1 4",
+      "source_text": "IOE 414 BSP",
       "source_uid": "Semester 7_TimeTable_Odd_2026.pdf|s7|COMPUTER SCIENCE AND ENGINEERING|bII|II|d3|p5|15:00|IOE 414|class"
     },
     {
@@ -2655,7 +2655,7 @@
       "valid_until": "2026-11-30",
       "source_id": "Semester 7_TimeTable_Odd_2026.pdf",
       "source_page": 3,
-      "source_text": "Interaction with InterFaacctiuolnty w ith",
+      "source_text": "Interaction with Faculty",
       "source_uid": "Semester 7_TimeTable_Odd_2026.pdf|s7|COMPUTER SCIENCE AND ENGINEERING|bII|II|d3|p6|16:00|none|other"
     },
     {
@@ -5673,8 +5673,8 @@
   ],
   "validation": {
     "total": 200,
-    "passed": 178,
-    "failed": 22,
+    "passed": 190,
+    "failed": 10,
     "ok": false
   }
 }

@@ -55,6 +55,16 @@ def _clean(s: Optional[str]) -> str:
     return " ".join((s or "").split())
 
 
+# The same department is printed "AI & DS" on one page and "AI&DS" on
+# another (whitespace-only variance, same source document) — normalize to
+# one spelling so room_allocations.department is queryable consistently.
+_DEPT_ALIASES = {"AI & DS": "AI&DS"}
+
+
+def _norm_department(s: str) -> str:
+    return _DEPT_ALIASES.get(s, s)
+
+
 def extract() -> dict:
     """Parse the PDF table into rooms + room_allocations, PDF-evidence only."""
     rooms: dict[str, dict] = {}
@@ -141,7 +151,7 @@ def extract() -> dict:
                 "room_no": room_no,
                 "semester": semester,
                 "batch": batch_m.group(1) if batch_m else None,
-                "department": None if batch_m else c2,
+                "department": None if batch_m else _norm_department(c2),
                 "section": None,
                 "valid_from": VALID_FROM,
                 "valid_until": VALID_UNTIL,

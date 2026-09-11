@@ -1,0 +1,790 @@
+{
+  "source_id": "Wardens Team July 2026 - Students Copy.pdf",
+  "wardens": [
+    {
+      "hall_code": "H1",
+      "hall_name": "ANAMUDI HOSTEL (GIRLS)",
+      "role": "hostel_warden",
+      "full_name": "Dr. Kanchan Lata Kashyap",
+      "phone": "0482-2202272, 9826733258",
+      "email": "kanchanlata@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H2",
+      "hall_name": "SAHYADRI HOSTEL (GIRLS)",
+      "role": "hostel_warden",
+      "full_name": "Dr. Kanchan Lata Kashyap",
+      "phone": "0482-2202272, 9826733258",
+      "email": "kanchanlata@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H1",
+      "hall_name": "ANAMUDI HOSTEL (GIRLS)",
+      "role": "standby_warden",
+      "full_name": "Dr Asha Sebastian",
+      "phone": "0482-2202248, 9495393573",
+      "email": "asha@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H2",
+      "hall_name": "SAHYADRI HOSTEL (GIRLS)",
+      "role": "standby_warden",
+      "full_name": "Dr Asha Sebastian",
+      "phone": "0482-2202248, 9495393573",
+      "email": "asha@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H1",
+      "hall_name": "ANAMUDI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Suriyapriya",
+      "phone": "0482-2202254, 8610135747",
+      "email": "suriyapriya@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H2",
+      "hall_name": "SAHYADRI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Suriyapriya",
+      "phone": "0482-2202254, 8610135747",
+      "email": "suriyapriya@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H1",
+      "hall_name": "ANAMUDI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Dakshayani",
+      "phone": "0482-2202275, 9578359880",
+      "email": "dhakshayani@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H2",
+      "hall_name": "SAHYADRI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Dakshayani",
+      "phone": "0482-2202275, 9578359880",
+      "email": "dhakshayani@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H1",
+      "hall_name": "ANAMUDI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Anu Maria Sebastian",
+      "phone": "0482-2202228, 8089706065",
+      "email": "anumaria@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H2",
+      "hall_name": "SAHYADRI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Anu Maria Sebastian",
+      "phone": "0482-2202228, 8089706065",
+      "email": "anumaria@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H1",
+      "hall_name": "ANAMUDI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Gayathri GR",
+      "phone": "0482-2202184, 8547344787",
+      "email": "gayathri@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H2",
+      "hall_name": "SAHYADRI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Gayathri GR",
+      "phone": "0482-2202184, 8547344787",
+      "email": "gayathri@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H1",
+      "hall_name": "ANAMUDI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Jeena Thomas",
+      "phone": "0482-2202278, 9495662514",
+      "email": "jeenathomas@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H2",
+      "hall_name": "SAHYADRI HOSTEL (GIRLS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Jeena Thomas",
+      "phone": "0482-2202278, 9495662514",
+      "email": "jeenathomas@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H4",
+      "hall_name": "MEENACHIL HOSTEL (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Ananth",
+      "phone": "0482-2202176, 9443318734",
+      "email": "ananth@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H5",
+      "hall_name": "CHITAR HOSTEL (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Ananth",
+      "phone": "0482-2202176, 9443318734",
+      "email": "ananth@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H4",
+      "hall_name": "MEENACHIL HOSTEL (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Vengadeswaran",
+      "phone": "0482-2202206, 9944174949",
+      "email": "vengadesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H5",
+      "hall_name": "CHITAR HOSTEL (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Vengadeswaran",
+      "phone": "0482-2202206, 9944174949",
+      "email": "vengadesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H4",
+      "hall_name": "MEENACHIL HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr S Jai Ganesh",
+      "phone": "0482-2202277, 9962765289",
+      "email": "jaiganesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H5",
+      "hall_name": "CHITAR HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr S Jai Ganesh",
+      "phone": "0482-2202277, 9962765289",
+      "email": "jaiganesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H4",
+      "hall_name": "MEENACHIL HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Miratholi Chand C",
+      "phone": "0482-2202369, 9942384499",
+      "email": "miratholichand@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H5",
+      "hall_name": "CHITAR HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Miratholi Chand C",
+      "phone": "0482-2202369, 9942384499",
+      "email": "miratholichand@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H3",
+      "hall_name": "MANIMALA HOSTEL (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Sivaiah Bellamkonda",
+      "phone": "0482-2202170, 8142274581",
+      "email": "sivaiah@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H14",
+      "hall_name": "MJ APARTMENT (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Sivaiah Bellamkonda",
+      "phone": "0482-2202170, 8142274581",
+      "email": "sivaiah@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H3",
+      "hall_name": "MANIMALA HOSTEL (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Koppala Guravaiah",
+      "phone": "0482-2202171, 9790336056",
+      "email": "kguravaiah@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H14",
+      "hall_name": "MJ APARTMENT (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Koppala Guravaiah",
+      "phone": "0482-2202171, 9790336056",
+      "email": "kguravaiah@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H3",
+      "hall_name": "MANIMALA HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Balasubramanian P",
+      "phone": "0482-2202258, 9629115552",
+      "email": "pbala@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H14",
+      "hall_name": "MJ APARTMENT (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Balasubramanian P",
+      "phone": "0482-2202258, 9629115552",
+      "email": "pbala@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H3",
+      "hall_name": "MANIMALA HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Sridhar Raj S",
+      "phone": "0482-2202, 9597177687",
+      "email": "sridharraj@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H14",
+      "hall_name": "MJ APARTMENT (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Sridhar Raj S",
+      "phone": "0482-2202, 9597177687",
+      "email": "sridharraj@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H8",
+      "hall_name": "NILA HOSTEL (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Santos Kumar A",
+      "phone": "0482-2202177, 8349529678, 8821833569",
+      "email": "santos@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H6",
+      "hall_name": "AGASTHYA APARTMENT (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Santos Kumar A",
+      "phone": "0482-2202177, 8349529678, 8821833569",
+      "email": "santos@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H8",
+      "hall_name": "NILA HOSTEL (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Venkatesh S",
+      "phone": "0482-2202205, 6379116250",
+      "email": "svenkatesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H6",
+      "hall_name": "AGASTHYA APARTMENT (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Venkatesh S",
+      "phone": "0482-2202205, 6379116250",
+      "email": "svenkatesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H8",
+      "hall_name": "NILA HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Balu A",
+      "phone": "0482-2202182, 9443841911",
+      "email": "balu@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H6",
+      "hall_name": "AGASTHYA APARTMENT (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Balu A",
+      "phone": "0482-2202182, 9443841911",
+      "email": "balu@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H8",
+      "hall_name": "NILA HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr E Silambarasan",
+      "phone": "0482-2202179, 9750135964",
+      "email": "silambarasan@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H6",
+      "hall_name": "AGASTHYA APARTMENT (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr E Silambarasan",
+      "phone": "0482-2202179, 9750135964",
+      "email": "silambarasan@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H9",
+      "hall_name": "KALAPURACKAL HOSTEL (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Jayakrushna Sahoo",
+      "phone": "0482-2202164, 7872456553",
+      "email": "jsahoo@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H10",
+      "hall_name": "KALAPURACKAL APARTMENT (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Jayakrushna Sahoo",
+      "phone": "0482-2202164, 7872456553",
+      "email": "jsahoo@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H7",
+      "hall_name": "COPTYRE ARCADE (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Jayakrushna Sahoo",
+      "phone": "0482-2202164, 7872456553",
+      "email": "jsahoo@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H15",
+      "hall_name": "SUNSHINE APARTMENT (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Jayakrushna Sahoo",
+      "phone": "0482-2202164, 7872456553",
+      "email": "jsahoo@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H9",
+      "hall_name": "KALAPURACKAL HOSTEL (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr John Paul Martin",
+      "phone": "0482-2202202, 9895066584",
+      "email": "johnpaul@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H10",
+      "hall_name": "KALAPURACKAL APARTMENT (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr John Paul Martin",
+      "phone": "0482-2202202, 9895066584",
+      "email": "johnpaul@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H7",
+      "hall_name": "COPTYRE ARCADE (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr John Paul Martin",
+      "phone": "0482-2202202, 9895066584",
+      "email": "johnpaul@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H15",
+      "hall_name": "SUNSHINE APARTMENT (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr John Paul Martin",
+      "phone": "0482-2202202, 9895066584",
+      "email": "johnpaul@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H9",
+      "hall_name": "KALAPURACKAL HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Amitkumar Roy",
+      "phone": "0482-2202201, 9774822160",
+      "email": "amit@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H10",
+      "hall_name": "KALAPURACKAL APARTMENT (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Amitkumar Roy",
+      "phone": "0482-2202201, 9774822160",
+      "email": "amit@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H7",
+      "hall_name": "COPTYRE ARCADE (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Amitkumar Roy",
+      "phone": "0482-2202201, 9774822160",
+      "email": "amit@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H15",
+      "hall_name": "SUNSHINE APARTMENT (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Amitkumar Roy",
+      "phone": "0482-2202201, 9774822160",
+      "email": "amit@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H9",
+      "hall_name": "KALAPURACKAL HOSTEL (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr AV Prajeesh",
+      "phone": "0482-2202, 8891942230",
+      "email": "prajeesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H10",
+      "hall_name": "KALAPURACKAL APARTMENT (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr AV Prajeesh",
+      "phone": "0482-2202, 8891942230",
+      "email": "prajeesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H7",
+      "hall_name": "COPTYRE ARCADE (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr AV Prajeesh",
+      "phone": "0482-2202, 8891942230",
+      "email": "prajeesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H15",
+      "hall_name": "SUNSHINE APARTMENT (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr AV Prajeesh",
+      "phone": "0482-2202, 8891942230",
+      "email": "prajeesh@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H11",
+      "hall_name": "ANNA RESIDENCY (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Susheel Kumar Joshi",
+      "phone": "0482-2202185, 9540766915",
+      "email": "joshi@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H12",
+      "hall_name": "MARYLAND PANACKAL RESIDENCY(BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Susheel Kumar Joshi",
+      "phone": "0482-2202185, 9540766915",
+      "email": "joshi@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H16",
+      "hall_name": "KTM BUILDING (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Susheel Kumar Joshi",
+      "phone": "0482-2202185, 9540766915",
+      "email": "joshi@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H13",
+      "hall_name": "COURT COMPLEX (BOYS)",
+      "role": "hostel_warden",
+      "full_name": "Dr Susheel Kumar Joshi",
+      "phone": "0482-2202185, 9540766915",
+      "email": "joshi@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H11",
+      "hall_name": "ANNA RESIDENCY (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Murugan D",
+      "phone": "0482-22022489, 9944256572",
+      "email": "murugand@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H12",
+      "hall_name": "MARYLAND PANACKAL RESIDENCY(BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Murugan D",
+      "phone": "0482-22022489, 9944256572",
+      "email": "murugand@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H16",
+      "hall_name": "KTM BUILDING (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Murugan D",
+      "phone": "0482-22022489, 9944256572",
+      "email": "murugand@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H13",
+      "hall_name": "COURT COMPLEX (BOYS)",
+      "role": "standby_warden",
+      "full_name": "Dr Murugan D",
+      "phone": "0482-22022489, 9944256572",
+      "email": "murugand@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H11",
+      "hall_name": "ANNA RESIDENCY (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Goutam Mali",
+      "phone": "0482-2202214, 8637841835",
+      "email": "goutam@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H12",
+      "hall_name": "MARYLAND PANACKAL RESIDENCY(BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Goutam Mali",
+      "phone": "0482-2202214, 8637841835",
+      "email": "goutam@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H16",
+      "hall_name": "KTM BUILDING (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Goutam Mali",
+      "phone": "0482-2202214, 8637841835",
+      "email": "goutam@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H13",
+      "hall_name": "COURT COMPLEX (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr Goutam Mali",
+      "phone": "0482-2202214, 8637841835",
+      "email": "goutam@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H11",
+      "hall_name": "ANNA RESIDENCY (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr R Thaniya Sairaj",
+      "phone": "0482-2202227, 8148523188",
+      "email": "sairaj@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H12",
+      "hall_name": "MARYLAND PANACKAL RESIDENCY(BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr R Thaniya Sairaj",
+      "phone": "0482-2202227, 8148523188",
+      "email": "sairaj@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H16",
+      "hall_name": "KTM BUILDING (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr R Thaniya Sairaj",
+      "phone": "0482-2202227, 8148523188",
+      "email": "sairaj@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H13",
+      "hall_name": "COURT COMPLEX (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Dr R Thaniya Sairaj",
+      "phone": "0482-2202227, 8148523188",
+      "email": "sairaj@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H11",
+      "hall_name": "ANNA RESIDENCY (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Mr Anandhu Mohan",
+      "phone": "0482-2202362, 8592084675",
+      "email": "anandhu@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H12",
+      "hall_name": "MARYLAND PANACKAL RESIDENCY(BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Mr Anandhu Mohan",
+      "phone": "0482-2202362, 8592084675",
+      "email": "anandhu@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H16",
+      "hall_name": "KTM BUILDING (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Mr Anandhu Mohan",
+      "phone": "0482-2202362, 8592084675",
+      "email": "anandhu@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": "H13",
+      "hall_name": "COURT COMPLEX (BOYS)",
+      "role": "assistant_warden",
+      "full_name": "Mr Anandhu Mohan",
+      "phone": "0482-2202362, 8592084675",
+      "email": "anandhu@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": null,
+      "hall_name": null,
+      "role": "chief_warden",
+      "full_name": "Dr Victer Paul",
+      "phone": "0482-2202165, 9944913170",
+      "email": "victerpaul@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": null,
+      "hall_name": null,
+      "role": "associate_dean_hostel_affairs_and_student_events",
+      "full_name": "Dr. Bakkyaraj T",
+      "phone": "0482-2202160",
+      "email": "bakkyaraj@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": null,
+      "hall_name": null,
+      "role": "hostel_manager",
+      "full_name": "Padma Kumar TV",
+      "phone": "0482-2202148, Mobile 6295662931",
+      "email": "hostel_manager@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    },
+    {
+      "hall_code": null,
+      "hall_name": null,
+      "role": "security_officer",
+      "full_name": "Aravindan M",
+      "phone": "0482-2202110, Mobile 7012897764",
+      "email": "so@iiitkottayam.ac.in",
+      "status": "active",
+      "source_id": "Wardens Team July 2026 - Students Copy.pdf"
+    }
+  ],
+  "warnings": [
+    "page 3: unrecognized role block: 'IT Support\\nitsupport@iiitkottayam.ac.in'",
+    "page 3: unrecognized role block: 'Outpass\\noutpass_portal@iiitkottayam.ac.in'"
+  ],
+  "validation_issues": []
+}
