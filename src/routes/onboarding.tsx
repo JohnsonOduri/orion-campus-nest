@@ -49,7 +49,7 @@ function Onboarding() {
 
   function finish() {
     setOnboarded(true);
-    navigate({ to: "/login" });
+    navigate({ to: "/login", search: { error: undefined } });
   }
 
   return (
@@ -106,7 +106,11 @@ function Onboarding() {
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+          <Link
+            to="/login"
+            search={{ error: undefined }}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
             Sign in
           </Link>
         </p>

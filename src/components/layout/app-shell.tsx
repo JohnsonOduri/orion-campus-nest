@@ -37,8 +37,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useOrion } from "@/store/orion";
+import { useAuth } from "@/hooks/use-auth";
+import { requestCrAccess } from "@/lib/cr-request-api";
+import type { AppRole } from "@/lib/auth-api";
+import { AuthGate } from "@/components/auth/auth-gate";
 import { FloatingAiButton } from "@/components/ai/ai-chat";
 import { PixelBadge, PixelParticles, PixelSprite, SPRITES } from "@/components/pixel/pixel-art";
+import { toast } from "sonner";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 
@@ -107,7 +112,20 @@ function NavLinks({ items, collapsed, onNavigate }: { items: NavItem[]; collapse
   );
 }
 
-function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: (() => void) | undefined }) {
+function SidebarBody({
+  collapsed,
+  onNavigate,
+  role,
+}: {
+  collapsed: boolean;
+  onNavigate?: (() => void) | undefined;
+  role: AppRole | null;
+}) {
+  const visibleWorkspaceNav = workspaceNav.filter((item) => {
+    if (item.to === "/cr") return role === "CR" || role === "ADMIN";
+    if (item.to === "/admin") return role === "ADMIN";
+    return true;
+  });
   return (
     <div className="flex h-full flex-col">
       <div className={cn("flex items-center gap-2.5 px-4 py-4", collapsed && "justify-center px-2")}>
@@ -128,14 +146,16 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
           )}
           <NavLinks items={studentNav} collapsed={collapsed} onNavigate={onNavigate} />
         </div>
-        <div>
-          {!collapsed && (
-            <p className="px-3 pb-2 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-              Workspaces
-            </p>
-          )}
-          <NavLinks items={workspaceNav} collapsed={collapsed} onNavigate={onNavigate} />
-        </div>
+        {visibleWorkspaceNav.length > 0 && (
+          <div>
+            {!collapsed && (
+              <p className="px-3 pb-2 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                Workspaces
+              </p>
+            )}
+            <NavLinks items={visibleWorkspaceNav} collapsed={collapsed} onNavigate={onNavigate} />
+          </div>
+        )}
         <div>
           {!collapsed && (
             <p className="px-3 pb-2 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
@@ -159,8 +179,17 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
-  const { sidebarCollapsed, toggleSidebar, theme, setTheme, role } = useOrion();
+function initialsOf(name: string | null, email: string | null): string {
+  if (name) {
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "U";
+  }
+  return (email?.[0] ?? "U").toUpperCase();
+}
+
+function AppShellInner({ children, allow }: { children: ReactNode; allow: AppRole[] }) {
+  const { sidebarCollapsed, toggleSidebar, theme, setTheme } = useOrion();
+  const { context, signOut, refresh } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -168,6 +197,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (isDark !== (theme === "dark")) setTheme(isDark ? "dark" : "light");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const role = context?.role ?? null;
+  const canSeeBothPortals = role === "ADMIN";
+
+  async function onRequestCrAccess() {
+    try {
+      await requestCrAccess();
+      toast.success("CR access requested — an admin will review it.");
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not submit the request.");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -177,7 +219,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           sidebarCollapsed ? "w-[72px]" : "w-64",
         )}
       >
-        <SidebarBody collapsed={sidebarCollapsed} />
+        <SidebarBody collapsed={sidebarCollapsed} role={role} />
       </aside>
 
       <div className={cn("transition-[padding] duration-300", sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-64")}>
@@ -191,7 +233,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 bg-sidebar p-0">
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
-                <SidebarBody collapsed={false} onNavigate={() => setMobileOpen(false)} />
+                <SidebarBody collapsed={false} onNavigate={() => setMobileOpen(false)} role={role} />
               </SheetContent>
             </Sheet>
 
@@ -239,15 +281,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <button aria-label="Account menu" className="ml-1">
                     <Avatar className="size-8 rounded-lg">
                       <AvatarFallback className="rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-                        AM
+                        {initialsOf(context?.fullName ?? null, context?.email ?? null)}
                       </AvatarFallback>
                     </Avatar>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
-                    <p className="text-sm font-semibold">Aarav Menon</p>
-                    <p className="font-mono text-[11px] text-muted-foreground">2022BCS0142</p>
+                    <p className="truncate text-sm font-semibold">{context?.fullName ?? "Account"}</p>
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">{context?.email}</p>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -256,13 +298,22 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <DropdownMenuItem asChild>
                     <Link to="/settings">Settings</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/role">Switch role</Link>
-                  </DropdownMenuItem>
+                  {canSeeBothPortals && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/role">Switch portal</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {role === "STUDENT" && context?.crRequestStatus === "none" && (
+                    <DropdownMenuItem onSelect={onRequestCrAccess}>Request CR access</DropdownMenuItem>
+                  )}
+                  {role === "STUDENT" && context?.crRequestStatus === "pending" && (
+                    <DropdownMenuItem disabled>CR access requested — pending</DropdownMenuItem>
+                  )}
+                  {role === "STUDENT" && context?.crRequestStatus === "rejected" && (
+                    <DropdownMenuItem onSelect={onRequestCrAccess}>Request CR access again</DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/login">Sign out</Link>
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void signOut()}>Sign out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -293,5 +344,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <FloatingAiButton />
     </div>
+  );
+}
+
+const DEFAULT_ALLOW: AppRole[] = ["STUDENT", "CR", "ADMIN"];
+
+/**
+ * `allow` restricts which roles may view this page (ADMIN always passes —
+ * see AuthGate). Defaults to any signed-in role, which is correct for every
+ * page except /cr (["CR"]) and /admin (["ADMIN"]).
+ */
+export function AppShell({ children, allow = DEFAULT_ALLOW }: { children: ReactNode; allow?: AppRole[] }) {
+  return (
+    <AuthGate allow={allow}>
+      <AppShellInner allow={allow}>{children}</AppShellInner>
+    </AuthGate>
   );
 }

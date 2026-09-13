@@ -28,11 +28,18 @@
 
 ## Phase 1 — Auth, Student Dashboard, AI Chat, PostgreSQL, Basic RAG, Timetable, Faculty, Courses, Announcements
 
-### 1.1 Authentication — ⬜ **Not started**
-- `/login` route exists but is **UI only**: email/student-ID tabs, no `supabase.auth.*` call anywhere in `src/` (verified — zero matches).
-- No session/JWT wiring in the frontend; no protected-route logic; no role-based redirect after login.
-- `profiles` table exists in Supabase (id, full_name, email, role, department, admission_year, semester, section, batch) with RLS enabled, FK to `auth.users`, and a `handle_new_user()` trigger function — **but it currently has a security-definer/anon-exec advisor warning** (see Supabase Findings below) and is not yet exercised by any real signup flow from the app.
-- **Needed:** wire Supabase Auth (email/password or OTP) into `/login`, `/onboarding`, `/role`; session persistence; route guards per role (STUDENT/FACULTY/CR/ADMIN); replace store's simulated role with the authenticated user's `profiles.role`.
+### 1.1 Authentication — ✅ **Done (Google-only, domain-restricted, role-based)** — added 2026-09-13
+- Real Google OAuth sign-in (`src/routes/login.tsx`), no email/password/student-ID form anymore. Google was already enabled on the Supabase project (verified via Management API); this work wired the frontend and added the authorization rules around it.
+- **Domain restriction enforced in the database** (a Postgres Before-User-Created Auth Hook, `hook_restrict_signup_by_email_domain` — migration `20260913000001_auth_signup_and_role_security.sql`): only `%@iiitkottayam.ac.in` plus one explicit test exception (`oduri.johnson@gmail.com`) can sign up; everything else gets a clean `403` from the real signup endpoint before an account is even created. Verified live with real HTTP calls (not simulated) against all three cases.
+- **Role assignment**: `handle_new_user()` sets `ADMIN` for the test exception, `STUDENT` for everyone else — verified live. `ADMIN` is the one role allowed into every portal (satisfies "admin needs both admin and CR access" without a multi-role schema change).
+- **A real privilege-escalation gap was found and fixed**: the pre-existing `profiles_update_own` RLS policy let any authenticated user PATCH their own `role` column with no restriction. Fixed with a `BEFORE UPDATE` trigger (`prevent_role_self_escalation`) — verified live: a student's direct attempt to set their own role to `ADMIN` now fails with `400`.
+- **CR access is admin-approved, never self-service**: a student requests via `approval_requests` (`submission_type='cr_access_request'`); an admin approves/rejects via a new SECURITY DEFINER RPC, `review_cr_access_request`, which is the *only* path that flips `profiles.role` to `CR`, always writes `audit_logs`. New RLS policies (`admin_select_all_approval_requests`, `admin_update_all_approval_requests`, `profiles_select_admin_all`, `profiles_update_admin_all`) let an admin see/manage this — previously an admin couldn't even SELECT another user's profile. UI: "Request CR access" in the account menu (student), a real "CR access requests" queue in `/admin` (approve/reject buttons, `src/lib/admin-api.ts`).
+- **Onboarding** (`/complete-profile`, new route): collects full name, admission year, programme/branch, semester, batch — writes to `student_profiles` (RLS previously had **no INSERT/UPDATE policy at all**, only SELECT-own; added `students_insert_own_profile`/`students_update_own_profile`) and mirrors `full_name`/`admission_year` into `profiles`. This is exactly the data `orion_student_context` reads for chat/timetable personalization (docs/query-router.md) — a signed-in user with an incomplete profile is redirected here automatically before reaching any portal.
+- **Sessions**: cookie-based via `@supabase/ssr` (`src/lib/supabase-browser.ts`, `src/lib/supabase-server.ts`'s new `getSupabaseSessionClient`) — works across page loads and server functions on both mobile and desktop browsers without manual token forwarding. `src/routes/auth/callback.tsx` exchanges the OAuth code, decides the destination server-side (role + profile-completeness), and redirects in one hop.
+- **Route guards**: `src/components/auth/auth-gate.tsx`, wired into `AppShell` (single integration point covers every page that uses it) — unauthenticated → `/login`; incomplete profile → `/complete-profile`; wrong role → sent to their own portal; `ADMIN` always passes. Explicitly a UX convenience, not the security boundary — every data path is independently RLS/`is_admin()`-protected regardless (verified directly, not just through the UI).
+- Zustand store (`src/store/orion.ts`) no longer holds a client-chosen `role` — removed the now-dead `role`/`setRole`/`userName` fields; role comes only from the server-verified `useAuth()` hook.
+- **Verified two ways**: direct HTTP calls against the real Supabase project (signup restriction, role assignment, self-escalation block, onboarding RLS, CR request/approval, audit log) **and** a real headless-Chromium browser session against the running dev server (Google redirect correctness, role-based access across `/dashboard`/`/admin`/`/cr`, onboarding redirect + real form submission). Full write-up and every verification table: `docs/auth.md`.
+- **Not done**: SSR-level route guards (client-side only for now, see `docs/auth.md` §3/§7); the `FACULTY` role has no signup path or portal yet; production redirect URL not yet added to the Supabase Auth allowlist (dev-only `localhost:8080` for now).
 
 ### 1.2 Student Dashboard — 🟡 Partial
 - UI complete (`src/routes/dashboard.tsx`) with today's classes, attendance charts, announcements — **all from mock data**, not live queries.
@@ -188,7 +195,7 @@ All ⬜ **Not started.**
 | Area | Status | Notes |
 |---|---|---|
 | Supabase Storage buckets | ⬜ | No bucket for CR uploads / document source files created yet — needed before file upload UI can work |
-| Real authentication end-to-end | ⬜ | Blocks: personalized dashboard, CR upload attribution, admin approval actor tracking, RLS actually mattering client-side |
+| Real authentication end-to-end | ✅ | Done 2026-09-13 — Google-only, domain-restricted, role-based, verified live (§1.1, `docs/auth.md`). RLS now actually matters client-side (verified: self-role-escalation blocked, admin-only policies enforced). CR upload attribution / admin approval actor tracking still blocked on §2.1/§2.3 (CR upload workflow, admin approval UI) themselves being unbuilt — auth is no longer what's blocking them. |
 | `departments` table population | ⬜ | 0 rows; `faculty.department_id` unlinked |
 | Migration history reconciliation | 🟡 | Local `supabase/migrations/*.sql` files exist and match the live schema in substance, but `list_migrations` on the hosted project is empty — hosted schema was applied via direct SQL/Management API, not `supabase db push`, so migration tracking is out of sync |
 | Security advisors (from `get_advisors`) | 🟡 | 1) `ingestion_runs` has RLS enabled but **no policies** (currently inaccessible to all non-service roles — likely intentional but should be confirmed/documented); 2) `handle_new_user()` is `SECURITY DEFINER` and publicly executable via RPC (`anon`+`authenticated`) — should be reviewed, it's meant to run only via the `auth.users` insert trigger, not be directly callable; 3) leaked-password protection is disabled in Supabase Auth settings — should be enabled |
@@ -218,42 +225,37 @@ These aren't new features — they're checks needed to know the true state of Ph
 
 ---
 
-## What Should Be Implemented Next (prioritized, as of 2026-09-11)
+## What Should Be Implemented Next (prioritized, as of 2026-09-13)
 
-Ordered by what unblocks the most other work, not by original CLAUDE.md §36 sequence (structured data + RAG corpus + query router are now done, changing what's next).
+Ordered by what unblocks the most other work, not by original CLAUDE.md §36 sequence (structured data + RAG corpus + query router + real authentication are now done, changing what's next).
 
-### 1. Real authentication (highest priority — everything else is scaffolding until this exists)
-- Wire Supabase Auth (email/password or OTP) into `/login`, `/onboarding`, `/role`.
-- Replace `src/lib/chat-api.ts`'s `getTestStudentClient()` test-student scaffolding with a real session lookup once login exists — it's clearly flagged (`usedTestStudent`/"test student session" badge) but is not a permanent solution.
-- Route guards per role (STUDENT/FACULTY/CR/ADMIN); replace the Zustand store's simulated role with the authenticated user's `profiles.role`.
-- Unblocks: personalized dashboard, CR upload attribution, admin approval actor tracking, RLS actually mattering client-side, cohort-aware semantic search (below).
+### 1. Wire the query router's chat to the now-real session (quick, unblocks everything else here)
+- `src/lib/chat-api.ts`'s `getTestStudentClient()` scaffolding (clearly flagged `usedTestStudent`/"test student session" badge) should now read the real cookie session via `getSupabaseSessionClient` (docs/auth.md §2) instead of always signing in as the test student — real auth exists now, this was the one thing blocking it.
+- Once that's done, pass the authenticated student's real `student_profiles` context (cohort, department, semester) into `semanticSearch`/hybrid retrieval instead of the hardcoded test account's.
 
 ### 2. Grounded generation (the LLM step deliberately not built yet)
 - Wire `backend/query/llm_client.py` (Python reference) / a TS equivalent into the query flow. The scaffolding already exists: cheapest-tier Gemini model, small token cap, refuses to call when `has_answer` is False.
 - Render citations properly in the generated answer (not just as a bullet-pointed fact list, which is what the chat shows today).
 - Add a grounding-validation step (does the generated text actually stay within the retrieved facts/snippets?) before returning it.
 
-### 3. Cohort-aware filtering wired to real students
-- `semanticSearch`/`semantic_search` already accept `cohort`/`category`/`document_type` filters — nothing calls them with a real value yet. Once auth exists, pass the authenticated student's own cohort (`ADM2026` vs `21-25`) so a "What are the attendance requirements?" query returns one cohort's answer, not both (current, unfiltered behavior — correct for an unfiltered call, but not the final product behavior).
-
-### 4. CR upload → OCR → admin approval workflow (Phase 2, entirely unbuilt)
+### 3. CR upload → OCR → admin approval workflow (Phase 2, entirely unbuilt)
 - File upload UI + Supabase Storage bucket (doesn't exist yet).
 - OCR pipeline trigger reusing the now-proven `tesseract`/`pytesseract` path from `scripts/ingest_documents.py`, wired into `ingestion_jobs` instead of being a one-off admin script.
 - Admin approval-queue UI writing to `approval_requests` + `audit_logs`.
 - This is the only way non-engineers (CRs/admins) can add data going forward — everything live today was loaded by an engineer running a script.
 
-### 5. Remaining structured-data gaps
+### 4. Remaining structured-data gaps
 - Two blocked timetable conflicts still need institutional confirmation before ~25 more Semester 5/7 records can import: the `IEG 311` code naming two different electives, and the `CSS 411`/`ICS 411` mismatch on Semester 7 Batch III (docs/timetable.md-adjacent, see §1.6 above).
 - `exams` — no source PDF exists at all; needs a data source before any ingestion can start.
 - `departments` table (0 rows) — deferred because populating it means resolving the same ambiguity as the `timetable_entries.department` spelling variants (§2.10) that the user chose to leave alone; revisit together.
 - Room/timetable join — `timetable_entries.room_id` is `NULL` for all 988 entries (source PDFs print no room per class period); would need either a new room-per-class data source or accepting batch/department-level room info as a lower-precision answer.
 
-### 6. Remaining document-ingestion gaps
+### 5. Remaining document-ingestion gaps
 - `recruiterscorner.pdf` — needs an explicit product-owner decision (marketing content), not a default.
 - Hindi-language pages of the 2009 UGC anti-ragging regulations are unsearchable (only `eng` tessdata installed) — install `hin.traineddata` and re-run `scripts/ingest_documents.py --only "UGC Regulations"` if that content matters.
 - Reranking step (README §9) doesn't exist — single-pass cosine similarity only.
 
-### 7. Testing and process debt
+### 6. Testing and process debt
 - No tests yet for auth, role permissions, expiry handling, announcement filtering, CR approval/rejection, OCR normalization, sensitive-data filtering, faculty availability (AGENTS.md §25) — most of these can't be written meaningfully until the features they cover exist (items 1 and 4 above).
 - `docs/decisions/` ADR log doesn't exist — AGENTS.md §31 asks for architecture decisions to be recorded there (e.g. the local-embeddings-instead-of-API decision, the test-student auth scaffolding decision, both made this session without a formal ADR).
 - Security/performance advisor items in the Cross-Cutting Gaps table above are still open (`ingestion_runs` policy-less RLS, `handle_new_user()` SECURITY DEFINER reachability, leaked-password protection, `student_profiles` RLS per-row re-evaluation, overlapping `documents` SELECT policies).

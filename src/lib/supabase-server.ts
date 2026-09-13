@@ -1,9 +1,61 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createServerClient, serializeCookieHeader, type CookieOptions } from "@supabase/ssr";
 
 function supabaseUrl(): string | null {
   const env = process.env;
   return env["SUPABASE_URL"] ?? env["VITE_SUPABASE_URL"] ?? env["PUBLIC_SUPABASE_URL"] ?? null;
 }
+
+function anonKey(): string | null {
+  const env = process.env;
+  return (
+    env["SUPABASE_ANON_KEY"] ??
+    env["SUPABASE_PUBLIC_ANON_KEY"] ??
+    env["VITE_SUPABASE_ANON_KEY"] ??
+    env["PUBLIC_SUPABASE_ANON_KEY"] ??
+    null
+  );
+}
+
+function parseCookieHeader(header: string | null): { name: string; value: string }[] {
+  if (!header) return [];
+  return header
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((pair) => {
+      const idx = pair.indexOf("=");
+      if (idx === -1) return { name: pair, value: "" };
+      return { name: pair.slice(0, idx), value: decodeURIComponent(pair.slice(idx + 1)) };
+    });
+}
+
+/**
+ * Cookie-based session client (real browser login) — this is what makes
+ * "sign in with Google" work across page loads and server functions without
+ * manually forwarding a bearer header. The browser client
+ * (src/lib/supabase-browser.ts) stores the session in cookies; this reads
+ * them from the incoming request and, when `onSetCookies` is given (only the
+ * OAuth callback route needs this — see src/routes/auth/callback.tsx),
+ * forwards any refreshed session cookies back out. Still the anon key only,
+ * still RLS-scoped to the resolved auth.uid() — never service-role.
+ */
+export function getSupabaseSessionClient(
+  request: Request,
+  onSetCookies?: (cookies: { name: string; value: string; options: CookieOptions }[]) => void,
+): SupabaseClient | null {
+  const url = supabaseUrl();
+  const key = anonKey();
+  if (!url || !key) return null;
+  return createServerClient(url, key, {
+    cookies: {
+      getAll: () => parseCookieHeader(request.headers.get("cookie")),
+      setAll: (cookiesToSet) => onSetCookies?.(cookiesToSet),
+    },
+  });
+}
+
+export { serializeCookieHeader };
 
 /**
  * Server-side Supabase admin client (service role).

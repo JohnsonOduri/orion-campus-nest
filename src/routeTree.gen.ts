@@ -15,6 +15,7 @@ import { Route as AiRouteImport } from './routes/ai'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ClubsRouteImport } from './routes/clubs'
+import { Route as CompleteProfileRouteImport } from './routes/complete-profile'
 import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as CrRouteImport } from './routes/cr'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -30,6 +31,7 @@ import { Route as RoleRouteImport } from './routes/role'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimetableRouteImport } from './routes/timetable'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as ApiTimetableSplatRouteImport } from './routes/api/timetable/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -60,6 +62,11 @@ const CalendarRoute = CalendarRouteImport.update({
 const ClubsRoute = ClubsRouteImport.update({
   id: '/clubs',
   path: '/clubs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompleteProfileRoute = CompleteProfileRouteImport.update({
+  id: '/complete-profile',
+  path: '/complete-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoursesRoute = CoursesRouteImport.update({
@@ -137,6 +144,11 @@ const TimetableRoute = TimetableRouteImport.update({
   path: '/timetable',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTimetableSplatRoute = ApiTimetableSplatRouteImport.update({
   id: '/api/timetable/$',
   path: '/api/timetable/$',
@@ -150,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
   '/clubs': typeof ClubsRoute
+  '/complete-profile': typeof CompleteProfileRoute
   '/courses': typeof CoursesRoute
   '/cr': typeof CrRoute
   '/dashboard': typeof DashboardRoute
@@ -165,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/api/timetable/$': typeof ApiTimetableSplatRoute
 }
 export interface FileRoutesByTo {
@@ -174,6 +188,7 @@ export interface FileRoutesByTo {
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
   '/clubs': typeof ClubsRoute
+  '/complete-profile': typeof CompleteProfileRoute
   '/courses': typeof CoursesRoute
   '/cr': typeof CrRoute
   '/dashboard': typeof DashboardRoute
@@ -189,6 +204,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/api/timetable/$': typeof ApiTimetableSplatRoute
 }
 export interface FileRoutesById {
@@ -199,6 +215,7 @@ export interface FileRoutesById {
   '/announcements': typeof AnnouncementsRoute
   '/calendar': typeof CalendarRoute
   '/clubs': typeof ClubsRoute
+  '/complete-profile': typeof CompleteProfileRoute
   '/courses': typeof CoursesRoute
   '/cr': typeof CrRoute
   '/dashboard': typeof DashboardRoute
@@ -214,6 +231,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/api/timetable/$': typeof ApiTimetableSplatRoute
 }
 export interface FileRouteTypes {
@@ -225,6 +243,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/calendar'
     | '/clubs'
+    | '/complete-profile'
     | '/courses'
     | '/cr'
     | '/dashboard'
@@ -240,6 +259,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/timetable'
+    | '/auth/callback'
     | '/api/timetable/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -249,6 +269,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/calendar'
     | '/clubs'
+    | '/complete-profile'
     | '/courses'
     | '/cr'
     | '/dashboard'
@@ -264,6 +285,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/timetable'
+    | '/auth/callback'
     | '/api/timetable/$'
   id:
     | '__root__'
@@ -273,6 +295,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/calendar'
     | '/clubs'
+    | '/complete-profile'
     | '/courses'
     | '/cr'
     | '/dashboard'
@@ -288,6 +311,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/timetable'
+    | '/auth/callback'
     | '/api/timetable/$'
   fileRoutesById: FileRoutesById
 }
@@ -298,6 +322,7 @@ export interface RootRouteChildren {
   AnnouncementsRoute: typeof AnnouncementsRoute
   CalendarRoute: typeof CalendarRoute
   ClubsRoute: typeof ClubsRoute
+  CompleteProfileRoute: typeof CompleteProfileRoute
   CoursesRoute: typeof CoursesRoute
   CrRoute: typeof CrRoute
   DashboardRoute: typeof DashboardRoute
@@ -313,6 +338,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   TimetableRoute: typeof TimetableRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   ApiTimetableSplatRoute: typeof ApiTimetableSplatRoute
 }
 
@@ -358,6 +384,13 @@ declare module '@tanstack/react-router' {
       path: '/clubs'
       fullPath: '/clubs'
       preLoaderRoute: typeof ClubsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/complete-profile': {
+      id: '/complete-profile'
+      path: '/complete-profile'
+      fullPath: '/complete-profile'
+      preLoaderRoute: typeof CompleteProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/courses': {
@@ -465,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TimetableRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/timetable/$': {
       id: '/api/timetable/$'
       path: '/api/timetable/$'
@@ -482,6 +522,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnnouncementsRoute: AnnouncementsRoute,
   CalendarRoute: CalendarRoute,
   ClubsRoute: ClubsRoute,
+  CompleteProfileRoute: CompleteProfileRoute,
   CoursesRoute: CoursesRoute,
   CrRoute: CrRoute,
   DashboardRoute: DashboardRoute,
@@ -497,6 +538,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   TimetableRoute: TimetableRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   ApiTimetableSplatRoute: ApiTimetableSplatRoute,
 }
 export const routeTree = rootRouteImport

@@ -25,7 +25,7 @@ const tone = { approved: "success", pending: "warning", rejected: "danger" } as 
 
 function CrPage() {
   return (
-    <AppShell>
+    <AppShell allow={["CR"]}>
       <div className="space-y-5">
         <PageHeader badge="Class representative" title="CR Portal" subtitle="CSE · Semester 6 · Section A" />
 

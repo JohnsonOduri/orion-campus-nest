@@ -1,16 +1,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type Role = "student" | "cr" | "admin";
-
+// Role/identity live in the server-verified auth context (src/hooks/use-auth.ts,
+// backed by src/lib/auth-api.ts) — never here. This store is UI preference
+// only (theme/sidebar) plus the pre-login marketing tour's "seen it" flag.
 type OrionState = {
-  role: Role;
-  userName: string;
   onboarded: boolean;
   theme: "light" | "dark";
   sidebarCollapsed: boolean;
   aiOpen: boolean;
-  setRole: (r: Role) => void;
   setOnboarded: (v: boolean) => void;
   toggleTheme: () => void;
   setTheme: (t: "light" | "dark") => void;
@@ -21,13 +19,10 @@ type OrionState = {
 export const useOrion = create<OrionState>()(
   persist(
     (set, get) => ({
-      role: "student",
-      userName: "Aarav Menon",
       onboarded: false,
       theme: "light",
       sidebarCollapsed: false,
       aiOpen: false,
-      setRole: (role) => set({ role }),
       setOnboarded: (onboarded) => set({ onboarded }),
       setTheme: (theme) => {
         set({ theme });
@@ -40,6 +35,6 @@ export const useOrion = create<OrionState>()(
       toggleSidebar: () => set({ sidebarCollapsed: !get().sidebarCollapsed }),
       setAiOpen: (aiOpen) => set({ aiOpen }),
     }),
-    { name: "orion-store", partialize: (s) => ({ role: s.role, onboarded: s.onboarded }) },
+    { name: "orion-store", partialize: (s) => ({ onboarded: s.onboarded }) },
   ),
 );
