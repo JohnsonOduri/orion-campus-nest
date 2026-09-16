@@ -26,7 +26,7 @@ import { Route as MessRouteImport } from './routes/mess'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as RoleRouteImport } from './routes/role'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimetableRouteImport } from './routes/timetable'
@@ -117,9 +117,9 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RoleRoute = RoleRouteImport.update({
-  id: '/role',
-  path: '/role',
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -161,7 +161,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
-  '/role': typeof RoleRoute
+  '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
@@ -185,7 +185,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
-  '/role': typeof RoleRoute
+  '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
@@ -210,7 +210,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
-  '/role': typeof RoleRoute
+  '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
@@ -236,7 +236,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/profile'
-    | '/role'
+    | '/register'
     | '/search'
     | '/settings'
     | '/timetable'
@@ -260,7 +260,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/profile'
-    | '/role'
+    | '/register'
     | '/search'
     | '/settings'
     | '/timetable'
@@ -284,7 +284,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/profile'
-    | '/role'
+    | '/register'
     | '/search'
     | '/settings'
     | '/timetable'
@@ -309,7 +309,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
-  RoleRoute: typeof RoleRoute
+  RegisterRoute: typeof RegisterRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   TimetableRoute: typeof TimetableRoute
@@ -437,11 +437,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/role': {
-      id: '/role'
-      path: '/role'
-      fullPath: '/role'
-      preLoaderRoute: typeof RoleRouteImport
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -493,7 +493,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
-  RoleRoute: RoleRoute,
+  RegisterRoute: RegisterRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   TimetableRoute: TimetableRoute,

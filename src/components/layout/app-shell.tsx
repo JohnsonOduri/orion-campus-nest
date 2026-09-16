@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Sparkles,
@@ -37,6 +38,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useOrion } from "@/store/orion";
+import { useProfile, profileQueryOptions } from "@/hooks/use-profile";
+import { apiPost } from "@/lib/api-client";
+import { toast } from "sonner";
 import { FloatingAiButton } from "@/components/ai/ai-chat";
 import { PixelBadge, PixelParticles, PixelSprite, SPRITES } from "@/components/pixel/pixel-art";
 
@@ -107,7 +111,15 @@ function NavLinks({ items, collapsed, onNavigate }: { items: NavItem[]; collapse
   );
 }
 
-function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: (() => void) | undefined }) {
+function SidebarBody({
+  collapsed,
+  onNavigate,
+  workspaceItems,
+}: {
+  collapsed: boolean;
+  onNavigate?: (() => void) | undefined;
+  workspaceItems: NavItem[];
+}) {
   return (
     <div className="flex h-full flex-col">
       <div className={cn("flex items-center gap-2.5 px-4 py-4", collapsed && "justify-center px-2")}>
@@ -128,14 +140,16 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
           )}
           <NavLinks items={studentNav} collapsed={collapsed} onNavigate={onNavigate} />
         </div>
-        <div>
-          {!collapsed && (
-            <p className="px-3 pb-2 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-              Workspaces
-            </p>
-          )}
-          <NavLinks items={workspaceNav} collapsed={collapsed} onNavigate={onNavigate} />
-        </div>
+        {workspaceItems.length > 0 && (
+          <div>
+            {!collapsed && (
+              <p className="px-3 pb-2 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                Workspaces
+              </p>
+            )}
+            <NavLinks items={workspaceItems} collapsed={collapsed} onNavigate={onNavigate} />
+          </div>
+        )}
         <div>
           {!collapsed && (
             <p className="px-3 pb-2 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
@@ -160,8 +174,28 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { sidebarCollapsed, toggleSidebar, theme, setTheme, role } = useOrion();
+  const { sidebarCollapsed, toggleSidebar, theme, setTheme } = useOrion();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: profile } = useProfile();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const workspaceItems = workspaceNav.filter((item) => {
+    if (!profile) return false;
+    if (item.to === "/cr") return profile.role === "CR";
+    if (item.to === "/admin") return profile.role === "ADMIN";
+    return false;
+  });
+
+  async function handleSignOut() {
+    try {
+      await apiPost("/auth/logout");
+    } finally {
+      queryClient.setQueryData(profileQueryOptions.queryKey, null);
+      toast.success("Signed out");
+      navigate({ to: "/login" });
+    }
+  }
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark");
@@ -177,7 +211,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           sidebarCollapsed ? "w-[72px]" : "w-64",
         )}
       >
-        <SidebarBody collapsed={sidebarCollapsed} />
+        <SidebarBody collapsed={sidebarCollapsed} workspaceItems={workspaceItems} />
       </aside>
 
       <div className={cn("transition-[padding] duration-300", sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-64")}>
@@ -191,7 +225,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 bg-sidebar p-0">
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
-                <SidebarBody collapsed={false} onNavigate={() => setMobileOpen(false)} />
+                <SidebarBody collapsed={false} onNavigate={() => setMobileOpen(false)} workspaceItems={workspaceItems} />
               </SheetContent>
             </Sheet>
 
@@ -217,9 +251,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
 
             <div className="ml-auto flex items-center gap-1">
-              <PixelBadge tone="success" className="hidden sm:inline-flex">
-                {role}
-              </PixelBadge>
+              {profile && (
+                <PixelBadge tone="success" className="hidden sm:inline-flex">
+                  {profile.role}
+                </PixelBadge>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -239,15 +275,22 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <button aria-label="Account menu" className="ml-1">
                     <Avatar className="size-8 rounded-lg">
                       <AvatarFallback className="rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-                        AM
+                        {(profile?.full_name ?? profile?.display_name ?? profile?.email ?? "?")
+                          .split(" ")
+                          .map((p) => p[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel>
-                    <p className="text-sm font-semibold">Aarav Menon</p>
-                    <p className="font-mono text-[11px] text-muted-foreground">2022BCS0142</p>
+                    <p className="truncate text-sm font-semibold">
+                      {profile?.full_name ?? profile?.display_name ?? "Account"}
+                    </p>
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">{profile?.email}</p>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -256,13 +299,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <DropdownMenuItem asChild>
                     <Link to="/settings">Settings</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/role">Switch role</Link>
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/login">Sign out</Link>
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

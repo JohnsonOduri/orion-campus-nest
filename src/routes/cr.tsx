@@ -1,97 +1,133 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader, SectionCard, StatCard } from "@/components/shared/primitives";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PixelBadge, PixelLoadingBar } from "@/components/pixel/pixel-art";
-import { uploads } from "@/lib/mock-data";
-import { CheckCircle2, Clock, FileUp, ScanText, UploadCloud, XCircle } from "lucide-react";
+import { PixelBadge } from "@/components/pixel/pixel-art";
+import { CheckCircle2, Clock, Megaphone } from "lucide-react";
 import { toast } from "sonner";
+import { apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { requireRole } from "@/lib/route-guards";
 
 export const Route = createFileRoute("/cr")({
+  beforeLoad: requireRole(["CR", "ADMIN"]),
   head: () => ({
     meta: [
       { title: "CR Portal — ORION Campus" },
-      { name: "description", content: "Class representative workspace: upload timetables and notices, verify OCR output, track approvals." },
+      { name: "description", content: "Class representative workspace: author announcements and track approvals." },
       { property: "og:title", content: "CR Portal — ORION" },
-      { property: "og:description", content: "Uploads, OCR verification and approval history." },
+      { property: "og:description", content: "Announcement authoring and approval history." },
     ],
   }),
   component: CrPage,
 });
 
-const tone = { approved: "success", pending: "warning", rejected: "danger" } as const;
+type Announcement = {
+  id: number;
+  title: string;
+  status: "pending" | "active" | "rejected" | string;
+  category: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  published_at: string | null;
+};
+
+const tone = { active: "success", pending: "warning", rejected: "danger" } as const;
 
 function CrPage() {
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("");
+
+  const announcementsQuery = useQuery({
+    queryKey: ["cr", "announcements"],
+    queryFn: () => apiGet<Announcement[]>("/cr/announcements"),
+  });
+
+  const submit = useMutation({
+    mutationFn: () =>
+      apiPost("/cr/announcements", {
+        title,
+        content,
+        category: category || undefined,
+      }),
+    onSuccess: () => {
+      toast.success("Submitted for admin approval");
+      setTitle("");
+      setContent("");
+      setCategory("");
+      queryClient.invalidateQueries({ queryKey: ["cr", "announcements"] });
+    },
+    onError: (err) => {
+      toast.error(err instanceof ApiError ? err.message : "Could not submit announcement");
+    },
+  });
+
+  const announcements = announcementsQuery.data ?? [];
+  const pending = announcements.filter((a) => a.status === "pending").length;
+  const active = announcements.filter((a) => a.status === "active").length;
+
   return (
     <AppShell>
       <div className="space-y-5">
-        <PageHeader badge="Class representative" title="CR Portal" subtitle="CSE · Semester 6 · Section A" />
+        <PageHeader badge="Class representative" title="CR Portal" subtitle="Author announcements for admin approval" />
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Uploads this month" value={14} icon={<UploadCloud className="size-4" />} />
-          <StatCard label="Pending review" value={1} tone="warning" icon={<Clock className="size-4" />} />
-          <StatCard label="Approved" value={11} tone="success" icon={<CheckCircle2 className="size-4" />} />
-          <StatCard label="Avg OCR score" value={91} suffix="%" tone="accent" icon={<ScanText className="size-4" />} />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <StatCard label="Submitted" value={announcements.length} icon={<Megaphone className="size-4" />} />
+          <StatCard label="Pending review" value={pending} tone="warning" icon={<Clock className="size-4" />} />
+          <StatCard label="Live" value={active} tone="success" icon={<CheckCircle2 className="size-4" />} />
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-2">
-          <SectionCard title="Quick upload" description="Timetable, mess menu or announcement">
-            <button
-              onClick={() => toast.success("Document queued for OCR")}
-              className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border p-8 text-center transition-colors hover:border-primary"
+        <SectionCard title="New announcement" description="Goes live only after admin approval">
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="title">Title</Label>
+              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Mid-sem exam schedule" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="category">Category (optional)</Label>
+              <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="OFFICIAL, EVENT, CLUB…" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="content">Content</Label>
+              <Textarea id="content" rows={5} value={content} onChange={(e) => setContent(e.target.value)} />
+            </div>
+            <Button
+              className="w-full"
+              disabled={!title.trim() || !content.trim() || submit.isPending}
+              onClick={() => submit.mutate()}
             >
-              <FileUp className="size-6 text-primary" />
-              <span className="text-sm font-medium">Drag & drop or browse</span>
-              <span className="font-mono text-[11px] text-muted-foreground">PDF, PNG, JPG up to 10 MB</span>
-            </button>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {["Timetable", "Mess menu", "Announcement"].map((t) => (
-                <PixelBadge key={t}>{t}</PixelBadge>
-              ))}
-            </div>
-            <Button className="mt-4 w-full" onClick={() => toast.success("Submitted for admin approval")}>
-              Submit for approval
+              {submit.isPending ? "Submitting…" : "Submit for approval"}
             </Button>
-          </SectionCard>
+          </div>
+        </SectionCard>
 
-          <SectionCard title="OCR verification" description="mess_menu_week32.jpg · 88% confidence">
-            <PixelLoadingBar value={88} />
-            <Progress value={88} className="mt-3 h-1.5" />
-            <Textarea
-              className="mt-4 font-mono text-xs"
-              rows={6}
-              defaultValue={"BREAKFAST 07:30 Idli & sambar, chutney\nLUNCH 12:15 Rice, sambar, thoran, fish curry\nSNACKS 16:30 Parippu vada, tea\nDINNER 19:30 Chapati, veg kurma, egg roast"}
-            />
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button size="sm" onClick={() => toast.success("Approved and published")}>
-                <CheckCircle2 className="size-4" /> Approve
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => toast("Saved as draft")}>
-                Save draft
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => toast.error("Rejected")}>
-                <XCircle className="size-4" /> Reject
-              </Button>
-            </div>
-          </SectionCard>
-        </div>
-
-        <SectionCard title="Upload history" contentClassName="p-0">
-          <ul className="divide-y divide-border">
-            {uploads.map((u) => (
-              <li key={u.file} className="flex flex-wrap items-center gap-3 p-4">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-mono text-xs font-medium">{u.file}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {u.type} · {u.date} · OCR {u.confidence}%
-                  </p>
-                </div>
-                <PixelBadge tone={tone[u.status as keyof typeof tone]}>{u.status}</PixelBadge>
-              </li>
-            ))}
-          </ul>
+        <SectionCard title="Submission history" contentClassName="p-0">
+          {announcementsQuery.isLoading ? (
+            <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+          ) : announcements.length === 0 ? (
+            <p className="p-4 text-sm text-muted-foreground">No announcements submitted yet.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {announcements.map((a) => (
+                <li key={a.id} className="flex flex-wrap items-center gap-3 p-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{a.title}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {a.category ?? "General"} · {new Date(a.created_at).toLocaleString()}
+                      {a.rejection_reason ? ` · ${a.rejection_reason}` : ""}
+                    </p>
+                  </div>
+                  <PixelBadge tone={tone[a.status as keyof typeof tone] ?? "muted"}>{a.status}</PixelBadge>
+                </li>
+              ))}
+            </ul>
+          )}
         </SectionCard>
       </div>
     </AppShell>

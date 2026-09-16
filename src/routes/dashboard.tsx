@@ -13,11 +13,16 @@ import {
   Users,
   Megaphone,
   FileText,
+  Upload,
 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader, SectionCard, StatCard } from "@/components/shared/primitives";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { useProfile } from "@/hooks/use-profile";
 import { Badge } from "@/components/ui/badge";
 import {
   PixelBadge,
@@ -54,6 +59,63 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
+type CrRequestStatus = {
+  id: number;
+  approval_status: "pending" | "approved" | "rejected";
+  rejection_reason: string | null;
+} | null;
+
+function CrAccessCard() {
+  const { data: profile } = useProfile();
+  const queryClient = useQueryClient();
+
+  const statusQuery = useQuery({
+    queryKey: ["cr", "access-request", "status"],
+    queryFn: () => apiGet<CrRequestStatus>("/cr/access-request/status"),
+    enabled: profile?.role === "STUDENT",
+  });
+
+  const submit = useMutation({
+    mutationFn: () => apiPost("/cr/access-request", {}),
+    onSuccess: () => {
+      toast.success("CR access request submitted");
+      queryClient.invalidateQueries({ queryKey: ["cr", "access-request", "status"] });
+    },
+    onError: (err) => {
+      toast.error(err instanceof ApiError ? err.message : "Could not submit request");
+    },
+  });
+
+  if (!profile || profile.role !== "STUDENT") return null;
+
+  const status = statusQuery.data;
+
+  return (
+    <SectionCard title="Become a Class Representative" description="Author announcements once approved by an admin">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Upload className="size-4" />
+          {status?.approval_status === "pending" && "Your CR access request is pending admin review."}
+          {status?.approval_status === "rejected" &&
+            `Your last request was rejected${status.rejection_reason ? `: ${status.rejection_reason}` : "."}`}
+          {!status && "Request CR access to author campus announcements."}
+        </div>
+        <Button
+          size="sm"
+          disabled={status?.approval_status === "pending" || submit.isPending}
+          onClick={() => submit.mutate()}
+        >
+          {status?.approval_status === "pending"
+            ? "Pending"
+            : status?.approval_status === "rejected"
+              ? "Request again"
+              : "Request CR access"}
+        </Button>
+      </div>
+    </SectionCard>
+  );
+}
+
 function Dashboard() {
   const live = todaysClasses.find((c) => c.status === "live");
   const next = todaysClasses.find((c) => c.status === "upcoming");
@@ -61,6 +123,7 @@ function Dashboard() {
   return (
     <AppShell>
       <div className="space-y-5">
+        <CrAccessCard />
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
