@@ -9,7 +9,6 @@ import {
   Users,
   UtensilsCrossed,
   Megaphone,
-  Bell,
   User,
   Settings,
   Search,
@@ -58,7 +57,6 @@ const studentNav: NavItem[] = [
   { to: "/mess", label: "Mess", icon: UtensilsCrossed },
   { to: "/documents", label: "Documents", icon: FileText },
   { to: "/announcements", label: "Announcements", icon: Megaphone },
-  { to: "/notifications", label: "Notifications", icon: Bell },
 ];
 
 const bottomNav: NavItem[] = [
@@ -264,12 +262,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               >
                 {theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
               </Button>
-              <Link to="/notifications" aria-label="Notifications">
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="size-5" />
-                  <span className="absolute top-2 right-2 size-2 pixelated bg-destructive" />
-                </Button>
-              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button aria-label="Account menu" className="ml-1">

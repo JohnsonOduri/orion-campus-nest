@@ -1,18 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader, SectionCard } from "@/components/shared/primitives";
+import { EmptyState, PageHeader, SectionCard } from "@/components/shared/primitives";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PixelBadge } from "@/components/pixel/pixel-art";
-import { slotTimes, todaysClasses, weekTimetable } from "@/lib/mock-data";
-import { Download, MapPin, Search } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { apiGet } from "@/lib/api-client";
+import {
+  DAY_NAMES,
+  deriveStatus,
+  entryLabel,
+  formatTime,
+  todaysEntries,
+  type StudentContext,
+  type TimetableEntry,
+} from "@/lib/timetable";
 
 export const Route = createFileRoute("/timetable")({
   head: () => ({
     meta: [
       { title: "Timetable — ORION Campus Companion" },
-      { name: "description", content: "Weekly, daily and monthly class schedules with rooms, labs and faculty for IIIT Kottayam." },
+      { name: "description", content: "Weekly and daily class schedules with rooms, labs and faculty for IIIT Kottayam." },
       { property: "og:title", content: "ORION Timetable" },
       { property: "og:description", content: "Weekly and daily class schedules with rooms and faculty." },
     ],
@@ -20,43 +28,59 @@ export const Route = createFileRoute("/timetable")({
   component: TimetablePage,
 });
 
+type TimetableResponse = { student: StudentContext | null; entries: TimetableEntry[] };
+
 function TimetablePage() {
-  const live = todaysClasses.find((c) => c.status === "live");
-  const next = todaysClasses.find((c) => c.status === "upcoming");
+  const dayQuery = useQuery({
+    queryKey: ["timetable", "day"],
+    queryFn: () => apiGet<TimetableResponse>("/timetable/day"),
+  });
+  const weekQuery = useQuery({
+    queryKey: ["timetable", "week"],
+    queryFn: () => apiGet<TimetableResponse>("/timetable/week"),
+  });
+
+  const now = new Date();
+  const dayEntries = todaysEntries(dayQuery.data?.entries ?? [], now);
+  const withStatus = dayEntries.map((e) => ({ entry: e, status: deriveStatus(e, now) }));
+  const live = withStatus.find((x) => x.status === "live")?.entry;
+  const next = withStatus.find((x) => x.status === "upcoming")?.entry;
+
+  const student = dayQuery.data?.student ?? weekQuery.data?.student ?? null;
+  const subtitle = student
+    ? `${student.department} · Semester ${student.semester} · Batch ${student.batch} · Section ${student.section}`
+    : "";
+
+  const weekEntries = weekQuery.data?.entries ?? [];
+  const days = Array.from(new Set(weekEntries.map((e) => e.day_of_week))).sort((a, b) => a - b);
+  const slots = Array.from(new Set(weekEntries.map((e) => e.slot_index))).sort((a, b) => a - b);
+  const slotLabel = (slot: number) => {
+    const sample = weekEntries.find((e) => e.slot_index === slot && e.start_time && e.end_time);
+    return sample ? `${formatTime(sample.start_time)}–${formatTime(sample.end_time)}` : `Slot ${slot}`;
+  };
 
   return (
     <AppShell>
       <div className="space-y-5">
-        <PageHeader
-          badge="Semester 6"
-          title="Timetable"
-          subtitle="CSE · Batch 2022–2026 · Section A"
-          actions={
-            <>
-              <Button variant="outline" size="sm">
-                <Download className="size-4" /> Export
-              </Button>
-              <div className="relative hidden sm:block">
-                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search course" className="h-9 w-48 pl-9" />
-              </div>
-            </>
-          }
-        />
+        <PageHeader badge="Timetable" title="Timetable" subtitle={subtitle} />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="surface-card p-4">
             <PixelBadge tone="success">Now</PixelBadge>
-            <p className="mt-2 text-sm font-semibold">{live?.title ?? "Free period"}</p>
+            <p className="mt-2 text-sm font-semibold">{live ? entryLabel(live) : "Free period"}</p>
             <p className="font-mono text-xs text-muted-foreground">
-              {live ? `${live.time}–${live.end} · ${live.room} · ${live.faculty}` : "Enjoy the break"}
+              {live
+                ? `${formatTime(live.start_time)}–${formatTime(live.end_time)} · ${live.room ?? "—"} · ${(live.faculty_names ?? []).join(", ") || "—"}`
+                : "Enjoy the break"}
             </p>
           </div>
           <div className="surface-card p-4">
             <PixelBadge>Next</PixelBadge>
-            <p className="mt-2 text-sm font-semibold">{next?.title}</p>
+            <p className="mt-2 text-sm font-semibold">{next ? entryLabel(next) : "—"}</p>
             <p className="font-mono text-xs text-muted-foreground">
-              {next ? `${next.time}–${next.end} · ${next.room} · ${next.faculty}` : "—"}
+              {next
+                ? `${formatTime(next.start_time)}–${formatTime(next.end_time)} · ${next.room ?? "—"} · ${(next.faculty_names ?? []).join(", ") || "—"}`
+                : "—"}
             </p>
           </div>
         </div>
@@ -65,89 +89,95 @@ function TimetablePage() {
           <TabsList>
             <TabsTrigger value="day">Day</TabsTrigger>
             <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="month">Month</TabsTrigger>
           </TabsList>
 
           <TabsContent value="day" className="pt-4">
-            <SectionCard title="Tuesday, 04 August" contentClassName="p-0">
-              <ul className="divide-y divide-border">
-                {todaysClasses.map((c) => (
-                  <li key={c.code} className="flex items-center gap-3 p-4">
-                    <span className="w-16 shrink-0 font-mono text-xs text-muted-foreground">{c.time}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{c.title}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {c.faculty} · <MapPin className="inline size-3" /> {c.room}
-                      </p>
-                    </div>
-                    <PixelBadge tone={c.status === "live" ? "success" : c.status === "done" ? "muted" : "primary"}>
-                      {c.status}
-                    </PixelBadge>
-                  </li>
-                ))}
-              </ul>
+            <SectionCard title={DAY_NAMES[now.getDay()] ?? "Today"} contentClassName="p-0">
+              {dayQuery.isLoading ? (
+                <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+              ) : dayEntries.length === 0 ? (
+                <EmptyState title="No classes today" message="Nothing scheduled for today." />
+              ) : (
+                <ul className="divide-y divide-border">
+                  {withStatus.map(({ entry: c, status }) => (
+                    <li key={c.id} className="flex items-center gap-3 p-4">
+                      <span className="w-16 shrink-0 font-mono text-xs text-muted-foreground">
+                        {formatTime(c.start_time)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {entryLabel(c)} {c.course_name && <span className="text-xs text-muted-foreground">{c.course_name}</span>}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {(c.faculty_names ?? []).join(", ") || "—"} · <MapPin className="inline size-3" /> {c.room ?? "—"}
+                        </p>
+                      </div>
+                      {status && (
+                        <PixelBadge tone={status === "live" ? "success" : status === "done" ? "muted" : "primary"}>
+                          {status}
+                        </PixelBadge>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </SectionCard>
           </TabsContent>
 
           <TabsContent value="week" className="pt-4">
             <SectionCard contentClassName="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[46rem] border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/40">
-                      <th className="p-3 text-left font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
-                        Day
-                      </th>
-                      {slotTimes.map((t) => (
-                        <th key={t} className="p-3 text-left font-mono text-[11px] text-muted-foreground">
-                          {t}
+              {weekQuery.isLoading ? (
+                <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+              ) : days.length === 0 ? (
+                <EmptyState title="No timetable found" message="Nothing scheduled for this week." />
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[46rem] border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/40">
+                        <th className="p-3 text-left font-mono text-[11px] tracking-wider text-muted-foreground uppercase">
+                          Day
                         </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {weekTimetable.map((row) => (
-                      <tr key={row.day} className="border-b border-border last:border-0">
-                        <td className="p-3 font-semibold">{row.day}</td>
-                        {row.slots.map((s, i) => (
-                          <td key={i} className="p-2">
-                            {s === "—" ? (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            ) : (
-                              <span className="inline-block rounded-md border border-border bg-secondary/50 px-2 py-1.5 font-mono text-[11px] font-medium">
-                                {s}
-                              </span>
-                            )}
-                          </td>
+                        {slots.map((slot) => (
+                          <th key={slot} className="p-3 text-left font-mono text-[11px] text-muted-foreground">
+                            {slotLabel(slot)}
+                          </th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </SectionCard>
-          </TabsContent>
-
-          <TabsContent value="month" className="pt-4">
-            <SectionCard title="August 2026">
-              <div className="grid grid-cols-7 gap-1.5 text-center">
-                {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-                  <span key={i} className="font-mono text-[10px] text-muted-foreground">
-                    {d}
-                  </span>
-                ))}
-                {Array.from({ length: 31 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-md border border-border p-1 text-[11px] transition-colors hover:border-primary"
-                  >
-                    <span className={i + 1 === 4 ? "font-bold text-primary" : "text-muted-foreground"}>{i + 1}</span>
-                    {[3, 17, 19, 21].includes(i) ? (
-                      <span className="mx-auto mt-1 block size-1.5 pixelated bg-accent" />
-                    ) : null}
-                  </div>
-                ))}
-              </div>
+                    </thead>
+                    <tbody>
+                      {days.map((day) => (
+                        <tr key={day} className="border-b border-border last:border-0">
+                          <td className="p-3 font-semibold">{DAY_NAMES[day]}</td>
+                          {slots.map((slot) => {
+                            const cellEntries = weekEntries.filter(
+                              (e) => e.day_of_week === day && e.slot_index === slot,
+                            );
+                            return (
+                              <td key={slot} className="p-2">
+                                {cellEntries.length === 0 ? (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                ) : (
+                                  <div className="flex flex-col gap-1">
+                                    {cellEntries.map((e) => (
+                                      <span
+                                        key={e.id}
+                                        className="inline-block rounded-md border border-border bg-secondary/50 px-2 py-1.5 font-mono text-[11px] font-medium"
+                                      >
+                                        {entryLabel(e)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </SectionCard>
           </TabsContent>
         </Tabs>

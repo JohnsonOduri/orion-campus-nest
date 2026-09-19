@@ -23,14 +23,12 @@ import { Route as ExamsRouteImport } from './routes/exams'
 import { Route as FacultyRouteImport } from './routes/faculty'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MessRouteImport } from './routes/mess'
-import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimetableRouteImport } from './routes/timetable'
-import { Route as ApiTimetableSplatRouteImport } from './routes/api/timetable/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -102,11 +100,6 @@ const MessRoute = MessRouteImport.update({
   path: '/mess',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -137,11 +130,6 @@ const TimetableRoute = TimetableRouteImport.update({
   path: '/timetable',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTimetableSplatRoute = ApiTimetableSplatRouteImport.update({
-  id: '/api/timetable/$',
-  path: '/api/timetable/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -158,14 +146,12 @@ export interface FileRoutesByFullPath {
   '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
   '/mess': typeof MessRoute
-  '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
-  '/api/timetable/$': typeof ApiTimetableSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -182,14 +168,12 @@ export interface FileRoutesByTo {
   '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
   '/mess': typeof MessRoute
-  '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
-  '/api/timetable/$': typeof ApiTimetableSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -207,14 +191,12 @@ export interface FileRoutesById {
   '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
   '/mess': typeof MessRoute
-  '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timetable': typeof TimetableRoute
-  '/api/timetable/$': typeof ApiTimetableSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -233,14 +215,12 @@ export interface FileRouteTypes {
     | '/faculty'
     | '/login'
     | '/mess'
-    | '/notifications'
     | '/onboarding'
     | '/profile'
     | '/register'
     | '/search'
     | '/settings'
     | '/timetable'
-    | '/api/timetable/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -257,14 +237,12 @@ export interface FileRouteTypes {
     | '/faculty'
     | '/login'
     | '/mess'
-    | '/notifications'
     | '/onboarding'
     | '/profile'
     | '/register'
     | '/search'
     | '/settings'
     | '/timetable'
-    | '/api/timetable/$'
   id:
     | '__root__'
     | '/'
@@ -281,14 +259,12 @@ export interface FileRouteTypes {
     | '/faculty'
     | '/login'
     | '/mess'
-    | '/notifications'
     | '/onboarding'
     | '/profile'
     | '/register'
     | '/search'
     | '/settings'
     | '/timetable'
-    | '/api/timetable/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -306,14 +282,12 @@ export interface RootRouteChildren {
   FacultyRoute: typeof FacultyRoute
   LoginRoute: typeof LoginRoute
   MessRoute: typeof MessRoute
-  NotificationsRoute: typeof NotificationsRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   TimetableRoute: typeof TimetableRoute
-  ApiTimetableSplatRoute: typeof ApiTimetableSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -416,13 +390,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -465,13 +432,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TimetableRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/timetable/$': {
-      id: '/api/timetable/$'
-      path: '/api/timetable/$'
-      fullPath: '/api/timetable/$'
-      preLoaderRoute: typeof ApiTimetableSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -490,14 +450,12 @@ const rootRouteChildren: RootRouteChildren = {
   FacultyRoute: FacultyRoute,
   LoginRoute: LoginRoute,
   MessRoute: MessRoute,
-  NotificationsRoute: NotificationsRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   TimetableRoute: TimetableRoute,
-  ApiTimetableSplatRoute: ApiTimetableSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

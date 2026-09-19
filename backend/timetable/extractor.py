@@ -496,13 +496,58 @@ def _saturday_text(page, grid) -> Optional[str]:
 # ------------------------------------------------------------------- public
 
 
-def extract_section(page, page_index: int) -> Optional[Section]:
-    """Extract one batch/section grid from a timetable page."""
+def _section_bands(page) -> list[tuple[float, float]]:
+    """Y-ranges (top, bottom) for each section title found on the page.
+
+    Most timetable pages carry exactly one batch/section grid. Some stack
+    two full grids under separate titles (e.g. "BATCH-I" above "BATCH-II"
+    on the same page, each with its own days-grid and legend) — a single
+    page.find_tables() call only ever returns the largest table, so without
+    splitting by title band the second grid is silently dropped entirely.
+    """
+    matches = page.search(r"SEMESTER\s+\S+.*BATCH\s*[-–—]?\s*\S+", regex=True)
+    if len(matches) <= 1:
+        return [(0, page.height)]
+    tops = sorted(m["top"] for m in matches)
+    bands: list[tuple[float, float]] = []
+    for i, t in enumerate(tops):
+        band_top = max(t - 2, 0)
+        band_bottom = tops[i + 1] - 2 if i + 1 < len(tops) else page.height
+        bands.append((band_top, band_bottom))
+    return bands
+
+
+def extract_sections(page, page_index: int) -> list[Section]:
+    """Extract every batch/section grid from a timetable page.
+
+    The document-wide "TIME TABLE FOR <month>-<month> <year>" line (which
+    document_metadata parses for valid_from/valid_until) only prints once,
+    above the first batch's title — a lower band's crop never sees it. Read
+    it from the FULL, uncropped page once and pass it to every band, so a
+    second/third stacked section on the same page still gets the correct
+    validity window instead of an empty one.
+    """
+    full_text = page.extract_text() or ""
+    page_title = _page_title(page, full_text)
+    out: list[Section] = []
+    for top, bottom in _section_bands(page):
+        band_page = page.crop((0, top, page.width, bottom), strict=False)
+        section = _extract_one_section(band_page, page_index, page_title=page_title)
+        if section is not None:
+            out.append(section)
+    return out
+
+
+def _extract_one_section(
+    page, page_index: int, *, page_title: Optional[str] = None
+) -> Optional[Section]:
+    """Extract one batch/section grid from a (possibly cropped) page band."""
     text = page.extract_text() or ""
     title = _section_title(text)
     if not title:
         return None
-    meta = document_metadata(title, _page_title(page, text))
+    resolved_page_title = page_title if page_title is not None else _page_title(page, text)
+    meta = document_metadata(title, resolved_page_title)
     grid = _largest_grid(page)
     if grid is None:
         return None
@@ -555,11 +600,11 @@ def extract_document(pdf_path: str | Path) -> TimetableDocument:
             text = page.extract_text() or ""
             if not _section_title(text):
                 continue  # cover/appendix pages carry no section grid
-            section = extract_section(page, idx)
-            if section is None:
+            sections = extract_sections(page, idx)
+            if not sections:
                 doc.warnings.append(f"page {idx}: section-like header but no grid extracted")
                 continue
-            doc.sections.append(section)
+            doc.sections.extend(sections)
     _backfill_missing_period_times(doc)
     return doc
 

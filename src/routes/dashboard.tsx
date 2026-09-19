@@ -33,19 +33,29 @@ import {
   SPRITES,
 } from "@/components/pixel/pixel-art";
 import {
-  announcements,
   assignments,
   attendanceTrend,
   conversations,
   courses,
   exams,
-  faculty,
-  messMenu,
   student,
-  todaysClasses,
   aiSuggestions,
 } from "@/lib/mock-data";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import {
+  DAY_NAMES,
+  deriveStatus,
+  entryLabel,
+  formatTime,
+  todaysEntries,
+  type StudentContext,
+  type TimetableEntry,
+} from "@/lib/timetable";
+
+type TimetableResponse = { student: StudentContext | null; entries: TimetableEntry[] };
+type FacultyMember = { id: number; full_name: string; initials: string | null; office_location: string | null };
+type MessRow = { id: number; meal: string; items: string[] };
+type Announcement = { id: number; title: string; content: string; category: string | null; created_at: string; published_at: string | null };
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -117,8 +127,28 @@ function CrAccessCard() {
 }
 
 function Dashboard() {
-  const live = todaysClasses.find((c) => c.status === "live");
-  const next = todaysClasses.find((c) => c.status === "upcoming");
+  const dayQuery = useQuery({
+    queryKey: ["timetable", "day"],
+    queryFn: () => apiGet<TimetableResponse>("/timetable/day"),
+  });
+  const now = new Date();
+  const dayEntries = todaysEntries(dayQuery.data?.entries ?? [], now);
+  const withStatus = dayEntries.map((e) => ({ entry: e, status: deriveStatus(e, now) }));
+  const live = withStatus.find((x) => x.status === "live")?.entry;
+  const next = withStatus.find((x) => x.status === "upcoming")?.entry;
+
+  const facultyQuery = useQuery({
+    queryKey: ["faculty"],
+    queryFn: () => apiGet<FacultyMember[]>("/faculty"),
+  });
+  const messQuery = useQuery({
+    queryKey: ["mess", "today"],
+    queryFn: () => apiGet<MessRow[]>("/mess/today"),
+  });
+  const announcementsQuery = useQuery({
+    queryKey: ["announcements"],
+    queryFn: () => apiGet<Announcement[]>("/announcements"),
+  });
 
   return (
     <AppShell>
@@ -139,8 +169,8 @@ function Dashboard() {
                 Good morning, Aarav 👋
               </h1>
               <p className="mt-1.5 max-w-md text-sm text-primary-foreground/85">
-                {live ? `${live.title} is live in ${live.room}.` : "No class running right now."}{" "}
-                {next ? `Next: ${next.title} at ${next.time}.` : ""}
+                {live ? `${entryLabel(live)} is live${live.room ? ` in ${live.room}` : ""}.` : "No class running right now."}{" "}
+                {next ? `Next: ${entryLabel(next)} at ${formatTime(next.start_time)}.` : ""}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button asChild variant="secondary" size="sm">
@@ -184,7 +214,7 @@ function Dashboard() {
           <SectionCard
             className="lg:col-span-2"
             title="Today's classes"
-            description="Tuesday · 5 sessions"
+            description={`${DAY_NAMES[now.getDay()] ?? "Today"} · ${dayEntries.length} session${dayEntries.length === 1 ? "" : "s"}`}
             action={
               <Button asChild variant="ghost" size="sm">
                 <Link to="/timetable">View week</Link>
@@ -192,38 +222,45 @@ function Dashboard() {
             }
             contentClassName="p-0"
           >
-            <ul className="divide-y divide-border">
-              {todaysClasses.map((c) => (
-                <li key={c.code} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 sm:px-5">
-                  <div className="w-14 shrink-0 font-mono text-xs text-muted-foreground">
-                    <p className="font-semibold text-foreground">{c.time}</p>
-                    <p>{c.end}</p>
-                  </div>
-                  <span
-                    className="h-10 w-1 shrink-0 pixelated"
-                    style={{
-                      background:
-                        c.status === "live" ? "var(--accent)" : c.status === "done" ? "var(--border)" : "var(--primary)",
-                    }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">
-                      {c.title} <span className="font-mono text-xs text-muted-foreground">{c.code}</span>
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {c.faculty} · <MapPin className="inline size-3" /> {c.room}
-                    </p>
-                  </div>
-                  {c.status === "live" ? (
-                    <PixelBadge tone="success">Live</PixelBadge>
-                  ) : c.status === "done" ? (
-                    <PixelBadge tone="muted">Done</PixelBadge>
-                  ) : (
-                    <PixelBadge tone="primary">Soon</PixelBadge>
-                  )}
-                </li>
-              ))}
-            </ul>
+            {dayQuery.isLoading ? (
+              <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+            ) : dayEntries.length === 0 ? (
+              <p className="p-4 text-sm text-muted-foreground">No classes scheduled today.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {withStatus.map(({ entry: c, status }) => (
+                  <li key={c.id} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 sm:px-5">
+                    <div className="w-14 shrink-0 font-mono text-xs text-muted-foreground">
+                      <p className="font-semibold text-foreground">{formatTime(c.start_time)}</p>
+                      <p>{formatTime(c.end_time)}</p>
+                    </div>
+                    <span
+                      className="h-10 w-1 shrink-0 pixelated"
+                      style={{
+                        background:
+                          status === "live" ? "var(--accent)" : status === "done" ? "var(--border)" : "var(--primary)",
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
+                        {entryLabel(c)}{" "}
+                        {c.course_name && <span className="font-mono text-xs text-muted-foreground">{c.course_name}</span>}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {(c.faculty_names ?? []).join(", ") || "—"} · <MapPin className="inline size-3" /> {c.room ?? "—"}
+                      </p>
+                    </div>
+                    {status === "live" ? (
+                      <PixelBadge tone="success">Live</PixelBadge>
+                    ) : status === "done" ? (
+                      <PixelBadge tone="muted">Done</PixelBadge>
+                    ) : (
+                      <PixelBadge tone="primary">Soon</PixelBadge>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </SectionCard>
 
           <div className="space-y-5">
@@ -310,18 +347,21 @@ function Dashboard() {
             </Button>
           </SectionCard>
 
-          <SectionCard title="Today at the mess" description="Ratings from 214 students">
-            <ul className="space-y-2.5">
-              {messMenu.map((m) => (
-                <li key={m.meal} className="rounded-lg border border-border p-2.5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{m.meal}</p>
-                    <span className="font-mono text-[11px] text-muted-foreground">{m.time}</span>
-                  </div>
-                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{m.items.join(" · ")}</p>
-                </li>
-              ))}
-            </ul>
+          <SectionCard title="Today at the mess">
+            {messQuery.isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : (messQuery.data ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">No menu published for today.</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {(messQuery.data ?? []).map((m) => (
+                  <li key={m.id} className="rounded-lg border border-border p-2.5">
+                    <p className="text-sm font-medium capitalize">{m.meal}</p>
+                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{m.items.join(" · ")}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </SectionCard>
         </div>
 
@@ -338,48 +378,56 @@ function Dashboard() {
               </Button>
             }
           >
-            <ul className="space-y-3">
-              {announcements.slice(0, 3).map((a) => (
-                <li key={a.id} className="flex gap-3 rounded-lg border border-border p-3 hover-lift">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <Megaphone className="size-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold">{a.title}</p>
-                      <Badge variant="secondary" className="text-[10px]">
-                        {a.tag}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{a.body}</p>
-                    <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                      {a.author} · {a.time}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-
-          <div className="space-y-5">
-            <SectionCard title="Faculty availability" description="Right now">
-              <ul className="space-y-2.5">
-                {faculty.slice(0, 4).map((f) => (
-                  <li key={f.name} className="flex items-center gap-2.5">
-                    <span className="grid size-8 place-items-center rounded-lg bg-secondary/60 text-[11px] font-bold">
-                      {f.name.split(" ").slice(-1)[0]?.[0]}
+            {announcementsQuery.isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : (announcementsQuery.data ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">No announcements yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {(announcementsQuery.data ?? []).slice(0, 3).map((a) => (
+                  <li key={a.id} className="flex gap-3 rounded-lg border border-border p-3 hover-lift">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                      <Megaphone className="size-4" />
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium">{f.name}</p>
-                      <p className="truncate font-mono text-[10px] text-muted-foreground">{f.cabin}</p>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-sm font-semibold">{a.title}</p>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {a.category ?? "General"}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{a.content}</p>
+                      <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                        {new Date(a.published_at ?? a.created_at).toLocaleDateString()}
+                      </p>
                     </div>
-                    <span
-                      className="size-2 shrink-0 pixelated"
-                      style={{ background: f.available ? "var(--success)" : "var(--muted-foreground)" }}
-                    />
                   </li>
                 ))}
               </ul>
+            )}
+          </SectionCard>
+
+          <div className="space-y-5">
+            <SectionCard title="Faculty directory">
+              {facultyQuery.isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading…</p>
+              ) : (
+                <ul className="space-y-2.5">
+                  {(facultyQuery.data ?? []).slice(0, 4).map((f) => (
+                    <li key={f.id} className="flex items-center gap-2.5">
+                      <span className="grid size-8 place-items-center rounded-lg bg-secondary/60 text-[11px] font-bold">
+                        {f.initials ?? f.full_name[0]}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium">{f.full_name}</p>
+                        {f.office_location && (
+                          <p className="truncate font-mono text-[10px] text-muted-foreground">{f.office_location}</p>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <Button asChild variant="outline" size="sm" className="mt-4 w-full">
                 <Link to="/faculty">
                   <Users className="size-4" /> Directory

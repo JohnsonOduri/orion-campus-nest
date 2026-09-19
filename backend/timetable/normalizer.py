@@ -16,7 +16,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
-from .extractor import PeriodColumn, Section, TimetableDocument
+from .extractor import LegendEntry, PeriodColumn, Section, TimetableDocument
 from .model import (
     NON_COURSE_ACTIVITIES,
     TimetableRecord,
@@ -36,6 +36,10 @@ class NormalizationResult:
     unresolved_courses: list[str] = field(default_factory=list)
     unresolved_faculty: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    # Legend rows in this section that were never matched to any grid cell
+    # (see pair_orphaned_legend_entries) — computed once at the end of
+    # normalize_section.
+    orphaned_legend: list[LegendEntry] = field(default_factory=list)
 
 
 def _clean(text: str) -> str:
@@ -207,14 +211,15 @@ def normalize_section(section: Section, source_id: str) -> NormalizationResult:
             kind, _ = _classify_cell(cell["text"])
             if kind in {"empty", "noise"}:
                 continue
-            targets: list[PeriodColumn]
-            if kind == "activity":
-                # whole-grid activities span every column they cover
-                targets = _significant_periods(x0, x1, periods)
-                if not targets:
-                    best = _best_period(x0, x1, periods)
-                    targets = [best] if best else []
-            else:
+            # A cell (lab, double-period class, or whole-grid activity) that
+            # visually merges across 2+ period columns emits one record per
+            # significantly-overlapped column — not just its single best
+            # match — so e.g. a 2-period lab shows up in both periods
+            # instead of silently vanishing from the second one. Previously
+            # only "activity" kind cells got this treatment; any merged
+            # class/lab cell lost its second period entirely.
+            targets: list[PeriodColumn] = _significant_periods(x0, x1, periods)
+            if not targets:
                 best = _best_period(x0, x1, periods)
                 targets = [best] if best else []
             if not targets:
@@ -328,6 +333,17 @@ def normalize_section(section: Section, source_id: str) -> NormalizationResult:
             )
         )
 
+    used_codes = {
+        re.sub(r"\s+", "", r.course_code).upper()
+        for r in result.records
+        if r.course_code and r.course_name
+    }
+    result.orphaned_legend = [
+        e
+        for e in section.legend.entries
+        if re.sub(r"\s+", "", e.course_code).upper() not in used_codes
+    ]
+
     return result
 
 
@@ -349,6 +365,183 @@ def dedupe(records: list[TimetableRecord]) -> tuple[list[TimetableRecord], int]:
         seen.add(uid)
         out.append(r)
     return out, dupes
+
+
+def normalize_branch_names(records: list[TimetableRecord]) -> list[TimetableRecord]:
+    """A department/branch name differing from its majority spelling only by
+    whitespace placement (e.g. "ELECTRONICS AND COMM UNICATION ENGINEERING"
+    vs "...COMMUNICATION...") is the same department, not two — confirmed a
+    pre-existing PDF text quirk (present in the raw extracted text itself,
+    on exactly one batch's title line out of four otherwise-identical ones),
+    not something this pipeline introduces. Compares with ALL whitespace
+    stripped, not just collapsed, since the corruption inserts a space
+    mid-word rather than duplicating one; keeps the majority spelling.
+    """
+
+    def key(name: str) -> str:
+        return re.sub(r"\s+", "", name).upper()
+
+    counts: dict[str, dict[str, int]] = {}
+    for r in records:
+        variants = counts.setdefault(key(r.branch), {})
+        variants[r.branch] = variants.get(r.branch, 0) + 1
+
+    canonical: dict[str, str] = {}
+    for k, variants in counts.items():
+        if len(variants) <= 1:
+            continue
+        best_name, best_count = None, -1
+        for name, cnt in variants.items():
+            if cnt > best_count:
+                best_name, best_count = name, cnt
+        canonical[k] = best_name
+
+    if not canonical:
+        return records
+
+    for r in records:
+        k = key(r.branch)
+        if k in canonical and r.branch != canonical[k]:
+            r.branch = canonical[k]
+
+    return records
+
+
+def pair_orphaned_legend_entries(results: list[NormalizationResult]) -> None:
+    """Resolve a section-local code typo: the grid references a code (e.g.
+    "IEG 311") that isn't a key in THIS section's own legend, while that
+    same legend has one entry (e.g. "IEG 313 DIGITAL SIGNAL PROCESSING")
+    that never matched any grid cell in this section. Pairing is scoped to
+    exactly-one-unresolved-code vs exactly-one-orphaned-entry within a
+    single section — an unambiguous 1:1 correction, never a guess among
+    multiple candidates or across sections. Mutates records in place; must
+    run before merge_duplicate_course_codes so the now-resolved name/
+    faculty are in place for that step to see.
+    """
+    for result in results:
+        if len(result.unresolved_courses) != 1 or len(result.orphaned_legend) != 1:
+            continue
+        bad_norm = re.sub(r"\s+", "", result.unresolved_courses[0]).upper()
+        entry = result.orphaned_legend[0]
+        for r in result.records:
+            if (
+                r.course_code
+                and not r.course_name
+                and re.sub(r"\s+", "", r.course_code).upper() == bad_norm
+            ):
+                r.course_name = entry.course_name
+                r.faculty_initials = list(entry.faculty_initials)
+                r.faculty_names = list(entry.faculty_names)
+
+
+def merge_duplicate_course_codes(records: list[TimetableRecord]) -> list[TimetableRecord]:
+    """The inverse of resolve_code_conflicts: the SAME course name printed
+    under two different codes in this document (e.g. a legend typo — one
+    page's footer says "IEG 313 DIGITAL SIGNAL PROCESSING" while every other
+    page with that exact course says "IEG 311") is a duplicate-code slip,
+    not two real courses. Rewrite the minority code(s) to match the
+    majority code for that name, so the natural-key upsert in
+    repository/hosted_adapter treats them as one course, not two. Must run
+    BEFORE resolve_code_conflicts so a name that's genuinely split across
+    codes is fully consolidated first, leaving only real code-shares-two-
+    courses conflicts for that step to disambiguate.
+    """
+
+    def norm(name: str) -> str:
+        return re.sub(r"[^A-Z0-9]+", " ", name.upper()).strip()
+
+    codes_by_name: dict[str, list[str]] = {}
+    for r in records:
+        if r.course_code and r.course_name:
+            codes_by_name.setdefault(norm(r.course_name), []).append(r.course_code)
+
+    canonical_code: dict[str, str] = {}
+    for name_key, codes in codes_by_name.items():
+        counts: dict[str, int] = {}
+        for c in codes:
+            counts[c] = counts.get(c, 0) + 1
+        if len(counts) <= 1:
+            continue
+        best_code, best_count = None, -1
+        for code, cnt in counts.items():
+            if cnt > best_count:
+                best_code, best_count = code, cnt
+        canonical_code[name_key] = best_code
+
+    if not canonical_code:
+        return records
+
+    for r in records:
+        if not (r.course_code and r.course_name):
+            continue
+        key = norm(r.course_name)
+        target = canonical_code.get(key)
+        if target and r.course_code != target:
+            r.course_code = target
+
+    return records
+
+
+_ACRONYM_SKIP_WORDS = {"for", "and", "the", "of", "in", "to", "a", "an"}
+
+
+def _name_acronym(name: str) -> str:
+    words = re.findall(r"[A-Za-z]+", name)
+    letters = [w[0].upper() for w in words if w.lower() not in _ACRONYM_SKIP_WORDS]
+    return "".join(letters)[:4] or "X"
+
+
+def resolve_code_conflicts(records: list[TimetableRecord]) -> list[TimetableRecord]:
+    """A printed course code that genuinely names two different courses in
+    this document (an institute-elective slot where different sections take
+    different electives under the same shared code — e.g. "IEG 311" used for
+    both "Digital Signal Processing" and "Quantum Computing for Engineers")
+    gets disambiguated here rather than left for the validator to reject
+    outright: the most common name for a conflicted code keeps the original
+    code; every other name gets a suffix built from its OWN name's initials
+    (e.g. "IEG 311" -> "IEG 311-QCE"), so each code maps to exactly one
+    course again. This never guesses which course is "really" IEG 311 — it
+    only renames the minority course(s) under a new, distinct, honestly
+    synthetic code so neither course's data is silently dropped or
+    corrupted (AGENTS.md §6: never guess; the validator's
+    course_code_conflict rule exists specifically to catch this shape of
+    ambiguity, and this is the resolution step for it, applied before
+    validation runs).
+    """
+
+    def norm(name: str) -> str:
+        return re.sub(r"[^A-Z0-9]+", " ", name.upper()).strip()
+
+    names_by_code: dict[str, list[str]] = {}
+    for r in records:
+        if r.course_code and r.course_name:
+            names_by_code.setdefault(r.course_code, []).append(r.course_name)
+
+    canonical_key: dict[str, str] = {}
+    for code, names in names_by_code.items():
+        counts: dict[str, int] = {}
+        for n in names:
+            counts[norm(n)] = counts.get(norm(n), 0) + 1
+        if len(counts) <= 1:
+            continue
+        best_key, best_count = None, -1
+        for key, cnt in counts.items():
+            if cnt > best_count:
+                best_key, best_count = key, cnt
+        canonical_key[code] = best_key
+
+    if not canonical_key:
+        return records
+
+    for r in records:
+        if not (r.course_code and r.course_name):
+            continue
+        code = r.course_code
+        if code not in canonical_key or norm(r.course_name) == canonical_key[code]:
+            continue
+        r.course_code = f"{code}-{_name_acronym(r.course_name)}"
+
+    return records
 
 
 def build_preview(

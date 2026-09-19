@@ -10,24 +10,6 @@ export const student = {
   credits: { earned: 118, total: 160 },
 };
 
-export const todaysClasses = [
-  { time: "09:00", end: "09:55", code: "CS304", title: "Machine Learning", room: "LH-3", faculty: "Dr. Rekha Nair", status: "done" },
-  { time: "10:00", end: "10:55", code: "CS312", title: "Computer Networks", room: "LH-1", faculty: "Dr. Vivek Sharma", status: "done" },
-  { time: "11:10", end: "12:05", code: "CS306", title: "Compiler Design", room: "LH-2", faculty: "Dr. Anita George", status: "live" },
-  { time: "14:00", end: "16:00", code: "CS318", title: "ML Lab", room: "Lab-B", faculty: "Dr. Rekha Nair", status: "upcoming" },
-  { time: "16:15", end: "17:10", code: "HS210", title: "Engineering Economics", room: "LH-5", faculty: "Prof. S. Kurian", status: "upcoming" },
-];
-
-export const weekTimetable = [
-  { day: "Mon", slots: ["CS304", "CS312", "CS306", "—", "CS318 Lab", "HS210"] },
-  { day: "Tue", slots: ["CS312", "CS306", "MA301", "—", "CS304", "—"] },
-  { day: "Wed", slots: ["CS306", "CS304", "CS312", "—", "CS320 Lab", "CS320 Lab"] },
-  { day: "Thu", slots: ["MA301", "CS304", "HS210", "—", "CS312", "—"] },
-  { day: "Fri", slots: ["CS312", "MA301", "CS306", "—", "Mentoring", "Clubs"] },
-];
-
-export const slotTimes = ["09:00", "10:00", "11:10", "12:05", "14:00", "16:15"];
-
 export const courses = [
   { code: "CS304", title: "Machine Learning", credits: 4, faculty: "Dr. Rekha Nair", attendance: 91, assignments: 2, progress: 68 },
   { code: "CS312", title: "Computer Networks", credits: 3, faculty: "Dr. Vivek Sharma", attendance: 84, assignments: 1, progress: 72 },
@@ -35,23 +17,6 @@ export const courses = [
   { code: "MA301", title: "Probability & Statistics", credits: 3, faculty: "Dr. P. Ramesh", attendance: 93, assignments: 0, progress: 80 },
   { code: "HS210", title: "Engineering Economics", credits: 2, faculty: "Prof. S. Kurian", attendance: 88, assignments: 1, progress: 61 },
   { code: "CS318", title: "Machine Learning Lab", credits: 2, faculty: "Dr. Rekha Nair", attendance: 96, assignments: 1, progress: 74 },
-];
-
-export const faculty = [
-  { name: "Dr. Rekha Nair", dept: "CSE", role: "Associate Professor", cabin: "AB-214", email: "rekha@iiitkottayam.ac.in", phone: "+91 98470 11223", available: true, hours: "Mon–Wed, 3–5 PM", research: "Deep Learning, Vision", subjects: ["CS304", "CS318"] },
-  { name: "Dr. Vivek Sharma", dept: "CSE", role: "Assistant Professor", cabin: "AB-118", email: "vivek@iiitkottayam.ac.in", phone: "+91 98470 44551", available: false, hours: "Tue & Thu, 2–4 PM", research: "Networks, Edge Systems", subjects: ["CS312"] },
-  { name: "Dr. Anita George", dept: "CSE", role: "Professor", cabin: "AB-301", email: "anita@iiitkottayam.ac.in", phone: "+91 98470 88112", available: true, hours: "Daily, 4–5 PM", research: "Compilers, PL Theory", subjects: ["CS306"] },
-  { name: "Dr. P. Ramesh", dept: "Mathematics", role: "Associate Professor", cabin: "BB-105", email: "ramesh@iiitkottayam.ac.in", phone: "+91 98470 33447", available: true, hours: "Wed–Fri, 11–1 PM", research: "Stochastic Processes", subjects: ["MA301"] },
-  { name: "Prof. S. Kurian", dept: "Humanities", role: "Professor", cabin: "BB-208", email: "kurian@iiitkottayam.ac.in", phone: "+91 98470 66778", available: false, hours: "Mon, 10–12 PM", research: "Development Economics", subjects: ["HS210"] },
-  { name: "Dr. Neha Pillai", dept: "ECE", role: "Assistant Professor", cabin: "AB-402", email: "neha@iiitkottayam.ac.in", phone: "+91 98470 99001", available: true, hours: "Tue–Thu, 3–4 PM", research: "VLSI, Embedded", subjects: ["EC205"] },
-];
-
-export const announcements = [
-  { id: 1, title: "Mid-semester exam schedule released", body: "Mid-sem exams begin 18 Aug. Hall tickets are live in the Exams module. Check seating plans before reporting.", tag: "Academics", priority: "high", pinned: true, time: "2h ago", author: "Academic Section" },
-  { id: 2, title: "Hostel water supply maintenance", body: "Block C water supply will be interrupted on Saturday between 10 AM and 2 PM.", tag: "Hostel", priority: "medium", pinned: true, time: "5h ago", author: "Hostel Office" },
-  { id: 3, title: "TechFest ORION'26 registrations open", body: "Register for 24 events across coding, robotics and design. Early-bird closes Friday.", tag: "Events", priority: "low", pinned: false, time: "1d ago", author: "Student Council" },
-  { id: 4, title: "Library extended hours during exams", body: "The central library will remain open until 1 AM from 12 Aug to 30 Aug.", tag: "Library", priority: "low", pinned: false, time: "2d ago", author: "Library" },
-  { id: 5, title: "CS306 lab sheet 4 uploaded", body: "Compiler Design lab sheet 4 with the LALR parser assignment is now available.", tag: "Department", priority: "medium", pinned: false, time: "3d ago", author: "Dr. Anita George" },
 ];
 
 export const assignments = [
@@ -66,13 +31,6 @@ export const exams = [
   { code: "CS306", title: "Compiler Design", date: "22 Aug 2026", time: "14:00 – 16:00", venue: "Hall A", seat: "A-07", status: "upcoming" },
   { code: "MA301", title: "Probability & Statistics", date: "12 Jun 2026", time: "09:30 – 11:30", venue: "Hall C", seat: "C-19", status: "completed", grade: "A" },
   { code: "HS210", title: "Engineering Economics", date: "10 Jun 2026", time: "14:00 – 16:00", venue: "Hall B", seat: "B-30", status: "completed", grade: "A+" },
-];
-
-export const messMenu = [
-  { meal: "Breakfast", time: "07:30 – 09:15", items: ["Idli & sambar", "Coconut chutney", "Banana", "Filter coffee"], rating: 4.2 },
-  { meal: "Lunch", time: "12:15 – 14:00", items: ["Kerala rice", "Sambar", "Beans thoran", "Fish curry / Paneer", "Curd"], rating: 4.5, special: true },
-  { meal: "Snacks", time: "16:30 – 17:30", items: ["Parippu vada", "Tea"], rating: 3.9 },
-  { meal: "Dinner", time: "19:30 – 21:00", items: ["Chapati", "Veg kurma", "Egg roast", "Rice & rasam"], rating: 4.0 },
 ];
 
 export const clubs = [
@@ -106,17 +64,6 @@ export const documents = [
   { name: "Bonafide Certificate Format", category: "Forms", size: "180 KB", updated: "22 May" },
   { name: "Anti-ragging Policy", category: "Policy", size: "410 KB", updated: "10 Jan" },
   { name: "Scholarship Guidelines", category: "Finance", size: "640 KB", updated: "28 Apr" },
-];
-
-export const notifications = [
-  { group: "Today", items: [
-    { title: "CS306 class moved to LH-2", time: "10 min ago", unread: true, type: "timetable" },
-    { title: "New announcement: Hall tickets live", time: "2h ago", unread: true, type: "announcement" },
-  ] },
-  { group: "Yesterday", items: [
-    { title: "Assignment graded — MA301", time: "1d ago", unread: false, type: "academics" },
-    { title: "Codex club meetup at 6 PM", time: "1d ago", unread: false, type: "clubs" },
-  ] },
 ];
 
 export const attendanceTrend = [
