@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from postgrest.exceptions import APIError
 
-from app.api import admin, announcements, auth, cr, faculty, mess, oauth, registration, timetable
+from app.api import admin, ai, announcements, auth, cr, faculty, mess, oauth, registration, timetable
 from app.core import config
 from app.services import gotrue_http
 
@@ -59,6 +59,7 @@ app.include_router(timetable.router)
 app.include_router(faculty.router)
 app.include_router(mess.router)
 app.include_router(announcements.router)
+app.include_router(ai.router)
 
 
 @app.get("/health")

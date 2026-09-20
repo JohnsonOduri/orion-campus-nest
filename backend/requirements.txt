@@ -7,3 +7,4 @@ pydantic[email]
 pytest
 pdfplumber
 requests
+sentence-transformers

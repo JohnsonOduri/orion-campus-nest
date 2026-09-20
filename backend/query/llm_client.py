@@ -1,14 +1,14 @@
-"""Gemini client — scaffolded for the next slice, NOT called by service.py yet.
+"""Gemini client, called from backend/app/api/ai.py's POST /ai/ask.
 
 Per the task that created this module: "do not add an LLM until the
-routing/retrieval/context layer is independently tested." This file exists
-so GEMINI_API_KEY (present in .env) has a ready, cost-conscious integration
-point once that testing is done — it is not imported by router.py,
-retrieval.py, context.py, or service.py.
+routing/retrieval/context layer is independently tested." Kept as a
+cost-conscious integration point, deliberately not imported by router.py,
+retrieval.py, context.py, or service.py themselves — those stay pure
+retrieval, generation is layered on top by the caller.
 
 Cost-control choices, so a wired-in caller can't accidentally burn the free
 tier:
-  - defaults to `gemini-2.0-flash-lite`, the cheapest/fastest Gemini model
+  - defaults to `gemini-3.5-flash-lite`, the cheapest/fastest Gemini model
     with a free tier, not a Pro model;
   - `max_output_tokens` defaults small (256) — grounded answers from a
     GroundedContext should be short, not essays;
@@ -34,7 +34,7 @@ from typing import Optional
 
 from .types import GroundedContext
 
-DEFAULT_MODEL = "gemini-2.0-flash-lite"
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
@@ -55,7 +55,17 @@ def build_prompt(context: GroundedContext) -> str:
     lines = [
         "Answer the user's question using ONLY the facts and excerpts below. "
         "If they don't answer the question, say you don't have that information. "
-        "Cite sources by name when you state a fact.",
+        "Cite sources by name when you state a fact. "
+        "A fact may include parenthetical context (e.g. explaining why an "
+        "answer skips ahead to a later day) — preserve that context in your "
+        "answer instead of dropping it, since it's exactly what stops a "
+        "correct-but-surprising answer from reading as wrong. "
+        "If the question uses a relative day word (yesterday, today, "
+        "tomorrow, a weekday name), the facts have ALREADY been resolved to "
+        "that exact calendar date by the retrieval system — a fact stating "
+        "a specific date (e.g. 2026-09-19) IS the answer to a question "
+        "about \"yesterday\", do not refuse just because the fact uses the "
+        "date instead of repeating the relative word.",
         "",
         f"Question: {context.query}",
         "",

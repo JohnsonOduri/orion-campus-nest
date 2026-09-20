@@ -19,6 +19,7 @@ class RouteType(str, Enum):
     STRUCTURED = "structured"
     SEMANTIC = "semantic"
     HYBRID = "hybrid"
+    SMALL_TALK = "small_talk"
     UNSUPPORTED = "unsupported"
 
 
@@ -28,6 +29,9 @@ class StructuredIntent(str, Enum):
     WEEK_TIMETABLE = "week_timetable"
     DAY_OF_WEEK_TIMETABLE = "day_of_week_timetable"
     FACULTY_FOR_COURSE = "faculty_for_course"
+    MESS_TODAY = "mess_today"
+    MESS_WEEK = "mess_week"
+    MESS_ON_DAY = "mess_on_day"
     NONE = "none"
 
 
@@ -45,6 +49,13 @@ class QueryPlan:
     topic_text: Optional[str] = None
     # a course code detected in the query, for FACULTY_FOR_COURSE
     course_code: Optional[str] = None
+    # a specific meal detected in the query ("breakfast"/"lunch"/"dinner"/
+    # "snacks"), for MESS_TODAY/MESS_WEEK/MESS_ON_DAY — narrows retrieval
+    # to just that meal instead of returning all 4 and making a generation
+    # step guess which one the question meant (found live: an ambiguous
+    # 4-fact list for one day was enough to make the LLM hedge with "I
+    # don't have that information" even though the exact fact was present).
+    meal: Optional[str] = None
     # optional explicit filters the query text itself implied (rare — cohort
     # etc. normally comes from the authenticated user's academic context,
     # never from free-text query parsing, per AGENTS.md §17)
@@ -57,6 +68,7 @@ class QueryPlan:
             "route": self.route.value,
             "structured_intent": self.structured_intent.value,
             "topic_text": self.topic_text,
+            "meal": self.meal,
             "course_code": self.course_code,
             "semantic_filters": self.semantic_filters,
             "reasoning": self.reasoning,

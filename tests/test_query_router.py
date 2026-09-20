@@ -44,6 +44,18 @@ def test_semantic_topic_keywords():
         assert classify(q).route == RouteType.SEMANTIC
 
 
+def test_semantic_topic_plural_forms():
+    """Plural phrasing must match too — \\bregulation\\b alone never matches
+    inside "regulations" (no word boundary between "n" and "s")."""
+    for q in [
+        "Tell me about the campus regulations",
+        "What are the degree requirement procedures?",
+        "What are the prerequisites for this course?",
+        "What are the grading policies?",
+    ]:
+        assert classify(q).route == RouteType.SEMANTIC
+
+
 def test_faculty_nlp_meet_routes_hybrid():
     plan = classify("Which faculty work in NLP and when can I meet them?")
     assert plan.route == RouteType.HYBRID
@@ -109,6 +121,88 @@ def test_ambiguous_query_unsupported():
     assert plan.route == RouteType.UNSUPPORTED
 
 
+def test_mess_today_routes_structured():
+    for q in ["What's the mess menu today?", "What's for lunch?", "what's on the canteen menu"]:
+        plan = classify(q)
+        assert plan.route == RouteType.STRUCTURED
+        assert plan.structured_intent == StructuredIntent.MESS_TODAY
+
+
+def test_mess_week_routes_structured():
+    plan = classify("Show me the mess menu for this week")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.MESS_WEEK
+
+
+def test_mess_yesterday_routes_mess_on_day():
+    """The reported bug: "yesterday's dinner" must resolve to yesterday's
+    date, not silently fall back to today's menu."""
+    plan = classify("What was there for yesterday's dinner?")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.MESS_ON_DAY
+    assert plan.topic_text == "yesterday"
+
+
+def test_mess_tomorrow_routes_mess_on_day():
+    plan = classify("What's for lunch tomorrow?")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.MESS_ON_DAY
+    assert plan.topic_text == "tomorrow"
+
+
+def test_mess_named_weekday_routes_mess_on_day():
+    plan = classify("What's the mess menu on Monday?")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.MESS_ON_DAY
+    assert plan.topic_text == "Monday"
+
+
+def test_mess_meal_is_extracted_for_ambiguous_phrasing():
+    """The reported bug: "What was the yesterday's dinner?" retrieved the
+    right facts but generation hedged because 4 unrelated meals were in the
+    fact list. Narrowing to just the mentioned meal removes the ambiguity."""
+    plan = classify("What was the yesterday's dinner?")
+    assert plan.structured_intent == StructuredIntent.MESS_ON_DAY
+    assert plan.meal == "dinner"
+
+
+def test_mess_meal_extraction_for_today_and_week():
+    assert classify("What's for breakfast today?").meal == "breakfast"
+    assert classify("mess menu for this week").meal is None
+    assert classify("snacks this week").meal == "snacks"
+
+
+def test_mess_generic_query_has_no_meal_filter():
+    plan = classify("What's the mess menu?")
+    assert plan.structured_intent == StructuredIntent.MESS_TODAY
+    assert plan.meal is None
+
+
+def test_greeting_routes_small_talk():
+    for q in ["hi", "Hello!", "hey", "heyy", "good morning"]:
+        plan = classify(q)
+        assert plan.route == RouteType.SMALL_TALK
+        assert plan.topic_text
+
+
+def test_thanks_routes_small_talk():
+    plan = classify("thanks!")
+    assert plan.route == RouteType.SMALL_TALK
+
+
+def test_bye_routes_small_talk():
+    plan = classify("bye")
+    assert plan.route == RouteType.SMALL_TALK
+
+
+def test_greeting_embedded_in_a_real_question_is_not_swallowed():
+    """"hi what is my next class" must still answer the real question — only
+    a message that is *only* a greeting should short-circuit to small talk."""
+    plan = classify("hi what is my next class")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.NEXT_CLASS
+
+
 def test_plan_never_carries_fabricated_answer_data():
     """A QueryPlan is a routing decision only — it must never itself carry
     anything that looks like a retrieved fact (AGENTS.md §6)."""
@@ -119,6 +213,7 @@ def test_plan_never_carries_fabricated_answer_data():
         "route",
         "structured_intent",
         "topic_text",
+        "meal",
         "course_code",
         "semantic_filters",
         "reasoning",

@@ -19,7 +19,7 @@ does not replace it or start a new ingestion pipeline.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .types import QueryPlan, RetrievalResult, SemanticSnippet, StructuredFact, StructuredIntent
@@ -56,9 +56,28 @@ def next_class(client: Any, at: Optional[datetime] = None, include_activities: b
             plan=_plan(StructuredIntent.NEXT_CLASS),
             warnings=["no upcoming class found in the resolved student's active, valid timetable"],
         )
+    entry_day = data.get("day_of_week")
+    weekday_name = _day_name(entry_day)
+    end_time = data.get("end_time") or ""
+    is_today = entry_day == at.isoweekday() and end_time > at.strftime("%H:%M:%S")
+    if is_today:
+        when_phrase = f"today ({weekday_name})"
+        gap_note = ""
+    else:
+        days_until = ((entry_day - at.isoweekday() + 6) % 7) + 1 if entry_day is not None else None
+        if days_until == 1:
+            when_phrase = f"tomorrow ({weekday_name})"
+            gap_note = " (you have no more classes today)"
+        else:
+            when_phrase = weekday_name
+            # This is genuinely the chronologically nearest class the RPC found
+            # (that's what "next class" ordering guarantees), so it's always
+            # true that nothing is scheduled in the gap — surfacing that
+            # explicitly is what stops a multi-day jump from reading as random.
+            gap_note = f" (no classes are scheduled between now and then — {days_until} days away)" if days_until else ""
     claim = (
         f"Next class: {data.get('course_code')} {data.get('course_name') or ''} "
-        f"on day {data.get('day_of_week')} {data.get('start_time')}-{data.get('end_time')}"
+        f"{when_phrase}, {data.get('start_time')}-{data.get('end_time')}{gap_note}"
     ).strip()
     fact = StructuredFact(
         claim=claim,
@@ -92,7 +111,7 @@ def week_timetable(client: Any, on_date: Optional[str] = None) -> RetrievalResul
     entries = res.data or []
     facts = [
         StructuredFact(
-            claim=f"{e.get('course_code') or e.get('entry_type')} day {e.get('day_of_week')} "
+            claim=f"{e.get('course_code') or e.get('entry_type')} {_day_name(e.get('day_of_week'))} "
             f"{e.get('start_time')}-{e.get('end_time')}",
             data=e,
             source="orion_week_timetable RPC (live timetable)",
@@ -108,6 +127,11 @@ _WEEKDAY_TO_NUM = {
     "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4,
     "Friday": 5, "Saturday": 6, "Sunday": 7,
 }
+_WEEKDAY_NAME = {v: k for k, v in _WEEKDAY_TO_NUM.items()}
+
+
+def _day_name(day_of_week: Optional[int]) -> str:
+    return _WEEKDAY_NAME.get(day_of_week, f"day {day_of_week}")
 
 
 def day_of_week_timetable(client: Any, weekday_name: str) -> RetrievalResult:
@@ -181,6 +205,120 @@ def faculty_for_course(client: Any, course_code: str) -> RetrievalResult:
             )
     warnings = [] if facts else [f"no active faculty link found for {course['course_code']}"]
     return RetrievalResult(plan=_plan(StructuredIntent.FACULTY_FOR_COURSE), facts=facts, warnings=warnings)
+
+
+# ------------------------------------------------------------- mess menu
+#
+# Shared with backend/app/api/mess.py's GET /mess/today and /mess/week —
+# this module is the one implementation, the REST endpoints import from
+# here rather than keeping their own copy. The live mess_menus table only
+# has August 2026 data; each day falls back to the most recent upload for
+# that same weekday (a real weekly-rotation hostel practice, confirmed
+# byte-identical week to week), tagged is_actual=False so callers can be
+# honest that it's a repeated cycle, not a freshly published menu.
+
+
+def split_mess_items(rows: list[dict]) -> list[dict]:
+    for row in rows:
+        raw = row.get("items")
+        row["items"] = [s.strip() for s in raw.split(",")] if raw else []
+    return rows
+
+
+def mess_all_active_rows(client: Any) -> list[dict]:
+    return (
+        client.table("mess_menus")
+        .select("id,menu_date,meal,items,status")
+        .eq("status", "active")
+        .execute()
+        .data
+        or []
+    )
+
+
+def mess_menu_for_day(all_rows: list[dict], target: date) -> list[dict]:
+    exact = [r for r in all_rows if r["menu_date"] == target.isoformat()]
+    if exact:
+        return [
+            {**r, "display_date": target.isoformat(), "source_date": r["menu_date"], "is_actual": True}
+            for r in exact
+        ]
+    candidates = [r for r in all_rows if date.fromisoformat(r["menu_date"]).weekday() == target.weekday()]
+    if not candidates:
+        return []
+    latest_date = max(c["menu_date"] for c in candidates)
+    return [
+        {**r, "display_date": target.isoformat(), "source_date": r["menu_date"], "is_actual": False}
+        for r in candidates
+        if r["menu_date"] == latest_date
+    ]
+
+
+def _mess_fact(row: dict) -> StructuredFact:
+    items = ", ".join(row["items"]) if row["items"] else "no items listed"
+    claim = f"{row['meal'].capitalize()} on {row['display_date']}: {items}"
+    if not row["is_actual"]:
+        weekday_name = date.fromisoformat(row["source_date"]).strftime("%A")
+        claim += f" (most recent {weekday_name} menu on file, from {row['source_date']} — not confirmed for this date)"
+    return StructuredFact(claim=claim, data=row, source="mess_menus (live)", source_id=str(row.get("id")))
+
+
+def _filter_meal(rows: list[dict], meal: Optional[str]) -> list[dict]:
+    return [r for r in rows if r["meal"] == meal] if meal else rows
+
+
+def mess_today(client: Any, meal: Optional[str] = None) -> RetrievalResult:
+    all_rows = mess_all_active_rows(client)
+    rows = split_mess_items(sorted(mess_menu_for_day(all_rows, date.today()), key=lambda r: r["meal"]))
+    facts = [_mess_fact(r) for r in _filter_meal(rows, meal)]
+    warnings = [] if facts else ["no active mess menu found for today or the most recent matching weekday"]
+    return RetrievalResult(plan=_plan(StructuredIntent.MESS_TODAY), facts=facts, warnings=warnings)
+
+
+def mess_week(client: Any, meal: Optional[str] = None) -> RetrievalResult:
+    all_rows = mess_all_active_rows(client)
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
+    rows: list[dict] = []
+    for i in range(7):
+        rows.extend(mess_menu_for_day(all_rows, week_start + timedelta(days=i)))
+    rows.sort(key=lambda r: (r["display_date"], r["meal"]))
+    facts = [_mess_fact(r) for r in _filter_meal(split_mess_items(rows), meal)]
+    warnings = [] if facts else ["no active mess menu found for this week or the most recent matching weekdays"]
+    return RetrievalResult(plan=_plan(StructuredIntent.MESS_WEEK), facts=facts, warnings=warnings)
+
+
+def _resolve_mess_target_date(day_ref: str) -> Optional[date]:
+    ref = day_ref.strip().lower()
+    today = date.today()
+    if ref == "yesterday":
+        return today - timedelta(days=1)
+    if ref == "tomorrow":
+        return today + timedelta(days=1)
+    target_num = _WEEKDAY_TO_NUM.get(day_ref.strip().capitalize())
+    if target_num is not None:
+        offset = (target_num - today.isoweekday()) % 7
+        return today + timedelta(days=offset)
+    return None
+
+
+def mess_on_day(client: Any, day_ref: str, meal: Optional[str] = None) -> RetrievalResult:
+    """"Yesterday's dinner", "what's for lunch tomorrow", "mess menu on
+    Monday" — resolves the actual referenced date (never silently falling
+    back to today's menu, the bug found live: mess_today() always used
+    date.today() regardless of what the query asked for) and reuses the
+    same weekly-rotation fallback every other mess lookup uses."""
+    target = _resolve_mess_target_date(day_ref)
+    if target is None:
+        return RetrievalResult(
+            plan=_plan(StructuredIntent.MESS_ON_DAY),
+            warnings=[f"unrecognized day reference: {day_ref!r}"],
+        )
+    all_rows = mess_all_active_rows(client)
+    rows = split_mess_items(sorted(mess_menu_for_day(all_rows, target), key=lambda r: r["meal"]))
+    facts = [_mess_fact(r) for r in _filter_meal(rows, meal)]
+    warnings = [] if facts else [f"no active mess menu found for {target.isoformat()} or the most recent matching weekday"]
+    return RetrievalResult(plan=_plan(StructuredIntent.MESS_ON_DAY), facts=facts, warnings=warnings)
 
 
 def _plan(intent: StructuredIntent) -> QueryPlan:

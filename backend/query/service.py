@@ -27,6 +27,15 @@ def answer_query(client: Any, query: str) -> GroundedContext:
 
         return build_context(RetrievalResult(plan=plan, warnings=["unsupported or ambiguous query"]))
 
+    if plan.route == RouteType.SMALL_TALK:
+        from .types import RetrievalResult, StructuredFact
+
+        # Answered directly from the router's own canned reply — never
+        # touches Supabase or retrieval.py, so this never reaches the LLM
+        # either (ai.py uses this fact as the answer verbatim).
+        fact = StructuredFact(claim=plan.topic_text or "", data={}, source="small_talk")
+        return build_context(RetrievalResult(plan=plan, facts=[fact]))
+
     if plan.route == RouteType.STRUCTURED:
         result = _dispatch_structured(client, plan)
     elif plan.route == RouteType.SEMANTIC:
@@ -53,6 +62,12 @@ def _dispatch_structured(client: Any, plan) -> Any:
         return retrieval.day_of_week_timetable(client, plan.topic_text or "")
     if plan.structured_intent == StructuredIntent.FACULTY_FOR_COURSE:
         return retrieval.faculty_for_course(client, plan.course_code)
+    if plan.structured_intent == StructuredIntent.MESS_TODAY:
+        return retrieval.mess_today(client, meal=plan.meal)
+    if plan.structured_intent == StructuredIntent.MESS_WEEK:
+        return retrieval.mess_week(client, meal=plan.meal)
+    if plan.structured_intent == StructuredIntent.MESS_ON_DAY:
+        return retrieval.mess_on_day(client, plan.topic_text or "", meal=plan.meal)
     from .types import RetrievalResult
 
     return RetrievalResult(plan=plan, warnings=["structured route with no recognized intent"])

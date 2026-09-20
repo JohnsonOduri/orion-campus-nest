@@ -45,3 +45,7 @@ class AnnouncementSubmitRequest(BaseModel):
 class ReviewDecisionRequest(BaseModel):
     approve: bool
     rejection_reason: Optional[str] = None
+
+
+class AskRequest(BaseModel):
+    query: str = Field(min_length=1)
