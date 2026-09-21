@@ -1,5 +1,21 @@
 # Authentication, Roles, and CR Access
 
+> **Read this first (2026-09-21).** The **database-side** rules below — the
+> domain-restricted signup hook, `handle_new_user()` role assignment, the
+> `prevent_role_self_escalation` trigger, `is_admin()`, the RLS policies, and
+> the CR request/approval RPC with its audit trail — are **still live and in
+> force**, and are now captured in
+> `supabase/migrations/20260913000001_capture_live_auth_drift.sql`.
+>
+> The **frontend/session sections are historical**. That implementation
+> (`src/lib/auth-api.ts`, `supabase-browser.ts`, `use-auth.ts`, `auth-gate.tsx`,
+> `/auth/callback`, `/complete-profile`) was replaced on 2026-09-21 by the
+> FastAPI service in `backend/app/`: sign-in, Google OAuth (PKCE), registration
+> and the CR/admin queues are now API endpoints, and sessions are httpOnly
+> cookies set by that service rather than `@supabase/ssr` cookies written in
+> the browser. The removed code is preserved on branch
+> `backup/frontend-auth-9b8c915`. Current API surface: `CLAUDE.md` §15.
+
 Google-only sign-in, restricted to the institute email domain (with one
 explicit test exception), server-verified roles, and a request/approval
 workflow for Class Representative access. Full auth flow: browser → Supabase

@@ -877,124 +877,150 @@ information rather than simply producing fluent AI responses.
 
 # ORION Campus Companion
 
-A responsive, AI-flavoured campus management web app for IIIT Kottayam. It ships as a
-front-end prototype: every screen is fully built and interactive, but all data comes from
-an in-repo mock dataset (`src/lib/mock-data.ts`) — there is no backend or database yet.
+A campus assistant for IIIT Kottayam: a React/TanStack Start frontend, a
+**FastAPI backend**, and Supabase (Postgres 17 + pgvector + GoTrue) as the
+source of truth. The AI chat answers from real institutional data — routed to
+SQL or vector retrieval first, then phrased by Gemini — never from model memory.
 
-The design mixes a modern SaaS dashboard look with subtle pixel-art decorations
-(`src/components/pixel/pixel-art.tsx`).
+> **Status: 2026-09-21.** Runs on localhost only; nothing is deployed yet.
+> What's built and what isn't: [`tasks-done.md`](tasks-done.md).
+> Running log: [`Work-done.md`](Work-done.md).
+> Hosting requirements and options:
+> [`docs/backend-requirements.md`](docs/backend-requirements.md).
 
-## Timetable vertical slice (PDF → Supabase → API)
+## Architecture
 
-The first production-style data pipeline is live: the Semester 3 timetable PDF
-is extracted, normalized, validated, previewed, and (after explicit approval)
-imported into Supabase, with authenticated timetable queries exposed over the
-API. Full details: [`docs/timetable.md`](docs/timetable.md).
+```
+browser --httpOnly cookie--> TanStack Start SSR --fetch--> FastAPI (backend/)
+                                                              | caller's JWT
+                                                              v
+                                                     Supabase (Postgres + RLS)
+scripts/*.py (service-role) ---------------------------------> Supabase
+```
+
+The frontend never talks to Supabase directly. It calls the FastAPI service
+through `src/lib/api-client.ts`; that service forwards the caller's own JWT, so
+Row Level Security governs every read and write. The service-role key lives
+only in the Python ingestion scripts.
+
+## Running it
+
+Both halves must run together.
 
 ```bash
-# Python side (extraction/validation/ingestion)
-python3 -m venv .venv && .venv/bin/pip install pdfplumber supabase pytest
+# 1. API  (http://localhost:8000)
+python3 -m venv .venv && .venv/bin/pip install -r backend/requirements.txt
+cd backend && ../.venv/bin/uvicorn main:app --reload --port 8000
 
-# read-only PDF inspection
+# 2. Frontend  (http://localhost:8080)
+npm install
+npm run dev
+```
+
+Configuration comes from one repo-root `.env` (see `.env.example`), read by
+both sides. Required: `SUPABASE_URL`, `SUPABASE_ANON_KEY`. Optional but
+expected: `GEMINI_API_KEY` (without it the chat degrades to retrieval-only and
+says so), `API_BASE_URL`, `FRONTEND_ORIGIN`, `COOKIE_SECURE`,
+`VITE_API_BASE_URL`. `SUPABASE_SECRET_KEY` is needed **only** for the ingestion
+scripts.
+
+```bash
+npm run build      # production build
+npm run lint       # eslint
+npx tsc --noEmit   # typecheck
+.venv/bin/python -m pytest tests -q   # 142 tests
+```
+
+## API surface
+
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /auth/signup` `/auth/login` `/auth/logout` · `GET /auth/me` · `POST /auth/register` |
+| Google OAuth (PKCE) | `GET /auth/oauth/google/authorize` → `/auth/oauth/google/callback` |
+| Timetable | `GET /timetable/day` `/timetable/week` `/timetable/next` |
+| Directory & campus | `GET /faculty` · `GET /mess/today` `/mess/week` · `GET /announcements` |
+| CR | `POST /cr/access-request` · `GET /cr/access-request/status` · `GET`/`POST /cr/announcements` |
+| Admin | `GET /admin/cr-requests` · `POST /admin/cr-requests/{id}/review` · `GET /admin/announcements` · `POST /admin/announcements/{id}/review` |
+| AI | `POST /ai/ask` |
+
+Sessions are httpOnly cookies set by the API (`SameSite=Lax`), so the browser
+never holds a Supabase token — and the frontend and API must share a
+registrable domain in any real deployment.
+
+## Data pipelines (Python)
+
+Ingestion is deliberately a separate, human-approved, idempotent step — every
+run is audited in `ingestion_runs`:
+
+```bash
+# read-only inspection
 .venv/bin/python scripts/inspect_timetable.py "Data/Structured/Semester 3_TimeTable_Odd_2026.pdf"
 
-# dry run: extract → normalize → validate → preview + validation JSON
+# dry run: extract -> normalize -> validate -> preview + validation JSON
 .venv/bin/python scripts/ingest_timetable.py "Data/Structured/Semester 3_TimeTable_Odd_2026.pdf"
 
-# audited import into Supabase (requires SUPABASE_URL + SUPABASE_SECRET_KEY)
+# audited import (needs SUPABASE_SECRET_KEY)
 .venv/bin/python scripts/ingest_timetable.py "Data/Structured/Semester 3_TimeTable_Odd_2026.pdf" \
   --import --approved-by admin@example.com
-
-# Python tests
-.venv/bin/python -m pytest tests/ -q
-
-# database schema
-supabase/migrations/20260909000001_timetable_vertical_slice.sql
 ```
 
-API endpoints (dev server: `npm run dev`):
+Other pipelines: `ingest_academic_calendar.py`, `ingest_classroom_details.py`,
+`ingest_mess_menu.py`, `ingest_hostel_wardens.py`, `ingest_documents.py`
+(PDF/OCR → chunks → embeddings), `rebuild_faculty.py`. OCR needs the
+`tesseract` binary installed.
 
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /api/timetable` | full valid timetable for the student context |
-| `GET /api/timetable/today` | today's entries |
-| `GET /api/timetable/week` | current week's entries |
-| `GET /api/timetable/next?include_activities=true` | next class (activities opt-in) |
+Details: [`docs/timetable.md`](docs/timetable.md),
+[`docs/query-router.md`](docs/query-router.md),
+[`docs/auth.md`](docs/auth.md) (database-side auth rules; its frontend sections
+describe an architecture that was replaced on 2026-09-21).
 
-Identity comes from the caller's verified JWT (`auth.uid()` via
-`orion_resolve_user`) — client-supplied user ids are never honored; without a
-Supabase session the endpoints serve a clearly-flagged demo dataset.
+## Live data (2026-09-21)
 
-## Tech stack
+1,263 timetable entries (Sem 3/5/7) · 43 courses · 185 faculty · 30 rooms ·
+30 academic-calendar events · 124 mess-menu rows · 78 hostel wardens ·
+17 documents / 1,269 embedded chunks. Empty: `departments`, `exams`,
+`ingestion_jobs`.
 
-- **React 19** + **TypeScript**
+## Screens
 
+Live data: `/login`, `/register`, `/timetable`, `/faculty`, `/mess`,
+`/announcements`, `/cr`, the AI chat, and parts of `/dashboard`, `/admin`,
+`/search`.
 
+Still mock (`src/lib/mock-data.ts`): `/calendar`, `/clubs`, `/courses`,
+`/documents`, `/exams`, `/profile`, `/notifications`.
 
-- **TanStack Start** + **TanStack Router** (file-based routing, SSR-capable)
-- **TanStack Query** for the query client provider
-- **Vite 8** as the build tool
-- **Tailwind CSS v4** + **shadcn/ui** (Radix primitives) + **lucide-react**
-- **Zustand** (persisted) for app state, **React Hook Form** + **Zod** for forms
-- **Framer Motion** for animation, **Recharts** for charts, **Sonner** for toasts
-
-## Getting started
-
-```bash
-npm install      # (or: bun install)
-npm run dev      # dev server (vite dev)
-npm run build    # production build
-npm run preview  # preview the build
-npm run lint     # eslint
-npm run format   # prettier
-npx tsc --noEmit # typecheck
-```
+Roles are `STUDENT`, `CR`, `ADMIN` (`FACULTY` exists in the schema but has no
+signup path yet), assigned server-side — never chosen by the client. Admins can
+enter every portal.
 
 ## Project structure
 
 ```
+backend/
+  main.py            FastAPI app
+  app/api/           routers (auth, oauth, registration, cr, admin,
+                     timetable, faculty, mess, announcements, ai)
+  app/core/          config, cookies, redirects
+  app/services/      GoTrue HTTP + Supabase client factories
+  query/             router / retrieval / context / Gemini client
+  timetable/         PDF extraction -> normalization -> validation -> import
 src/
   routes/            file-based routes (one file per page)
-  components/
-    ui/              shadcn/ui components
-    layout/          app-shell.tsx — sidebar, topbar, mobile nav, theme toggle
-    ai/              ai-chat.tsx — floating assistant panel
-    pixel/           pixel-art decorations
-    shared/          shared primitives
-  store/orion.ts     Zustand store: role, user, onboarding, theme, sidebar, AI panel
-  lib/mock-data.ts   all demo data (courses, timetable, mess, clubs, exams, …)
-  hooks/             use-mobile
+  lib/api-client.ts  the only path from frontend to data
+  components/        ui/ (shadcn), layout/, ai/, pixel/, shared/
+scripts/             ingestion + verification CLIs
+supabase/migrations/ 20 SQL migrations
+tests/               142 Python tests
 ```
-
-## Routes
-
-| Route | Purpose |
-| --- | --- |
-| `/` | Landing page |
-| `/login` | Sign in (email / student ID tabs) |
-| `/onboarding`, `/role` | First-run setup and role selection |
-| `/dashboard` | Overview: today's classes, attendance, announcements |
-| `/timetable`, `/calendar` | Weekly timetable and campus calendar |
-| `/courses`, `/faculty`, `/exams` | Academics |
-| `/attendance` data lives in dashboard charts | — |
-| `/mess`, `/clubs`, `/announcements`, `/events` | Campus life |
-| `/documents` | Document uploads and files |
-| `/ai` | Full-page AI assistant |
-| `/search`, `/notifications`, `/profile`, `/settings` | Utility pages |
-| `/cr`, `/admin` | Class-representative and admin panels |
-
-## Roles
-
-The store supports three roles — `student`, `cr`, `admin` — chosen at `/role` and
-persisted to `localStorage` (`orion-store`). Navigation and the `/cr` and `/admin`
-pages react to the selected role. Auth is simulated; no credentials are verified.
 
 ## Notes
 
-- Theme (light/dark) is toggled via the store and stored under `orion-theme`.
-- Error reporting hooks in `src/lib/` are Lovable-specific dev tooling.
-- The timetable API (`src/lib/timetable-api.ts`) reads from Supabase when
-  configured (see `.env.example`) and otherwise falls back to demo data.
-- To connect more real data, follow the timetable pattern in
-  `docs/timetable.md` instead of extending `src/lib/mock-data.ts`.
-
+- Timetable day/next-class behaviour is pinned to **IST** in SQL
+  (`20260921000004_timetable_ist_timezone_fix.sql`) — don't reintroduce a
+  process-clock dependency.
+- Query embeddings run locally (`all-MiniLM-L6-v2`, 384-dim) inside the API
+  process; the corpus was embedded with the same model, so changing it means
+  re-embedding all 1,269 chunks.
+- To connect more real data, follow the pipeline pattern in
+  `docs/timetable.md` rather than extending `src/lib/mock-data.ts`.

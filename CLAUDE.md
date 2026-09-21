@@ -1,7 +1,15 @@
 # CLAUDE.md — ORION AI-Powered Campus Assistant
 
 > Persistent engineering context for Claude Code / AI coding agents.
-> Current project state: 2026-09-11.
+> Current project state: **2026-09-21** (§7, §10, §11, §15, §16, §17 re-measured
+> that day against the live database and the merged tree, commit `146bb9a`).
+>
+> **Architecture changed on 2026-09-21.** ORION now has a real **FastAPI
+> service** under `backend/` that the frontend calls over HTTP; the TypeScript
+> query/data layer (`src/lib/query/`, `chat-api.ts`, `timetable-api.ts`,
+> `supabase-server.ts`) was deleted in favour of the Python implementation, and
+> sessions are httpOnly cookies set by that API. Deployment requirements:
+> `docs/backend-requirements.md`. Current status: `tasks-done.md`.
 
 ## 1. Mission
 
@@ -122,6 +130,16 @@ SQL       pgvector    SQL + vector
     Grounded Answer + Sources
 ```
 
+Runtime shape as actually deployed today (all on localhost):
+
+```text
+browser --httpOnly cookie--> TanStack Start SSR --fetch--> FastAPI (backend/)
+                                                              | caller's JWT
+                                                              v
+                                                     Supabase (Postgres + RLS)
+scripts/*.py (service-role) ---------------------------------> Supabase
+```
+
 Ingestion:
 
 ```text
@@ -205,19 +223,24 @@ scripts/
   probe_supabase.py
   probe_schema.py
 
+backend/app/            # FastAPI service (added 2026-09-21)
+  main.py
+  api/{auth,oauth,registration,cr,admin,timetable,faculty,mess,announcements,ai,deps}.py
+  core/{config,cookies,redirects}.py
+  services/{gotrue_http,supabase_clients}.py
+
+backend/query/          # routing / retrieval / context / Gemini client
+  router.py
+  retrieval.py
+  context.py
+  service.py
+  llm_client.py
+
 src/lib/
-  timetable-api.ts
-  supabase-server.ts
-  timetable-demo.ts
+  api-client.ts         # the ONLY way the frontend reaches data now
+  timetable.ts
 
-src/routes/api/timetable/
-  $*.tsx
-
-supabase/migrations/
-  20260909000001_timetable_vertical_slice.sql
-  20260909210000_hosted_schema_alignment.sql
-  20260909220000_entry_type_tutorial.sql
-  20260909230000_fix_handle_new_user.sql
+supabase/migrations/    # 20 files as of 2026-09-21
 ```
 
 Pipeline:
@@ -325,56 +348,55 @@ Do not change this distinction casually.
 
 # 10. LIVE SUPABASE STATE
 
-The hosted database is already populated with the Semester 3 timetable.
-
-Current important counts:
+Measured **2026-09-21** by direct SQL against `dgklugpgrnxhyjkvnacp`.
 
 ```text
-profiles                 2
-student_profiles         2
+profiles                 7      (3 STUDENT, 2 CR, 2 ADMIN)
+student_profiles         5
 
 departments              0
 
-faculty                  37
-courses                  15
+faculty                185      (125 with email)
+courses                 43
 
-rooms                    0
-room_allocations         0
+rooms                   30
+room_allocations        26
 
-timetable_periods        9
-timetable_entries        608
-timetable_entry_faculty  430
+timetable_periods       26
+timetable_entries     1263      (608 S3 + 477 S5 + 178 S7)
+timetable_entry_faculty 838
 
-academic_calendar        0
+academic_calendar       30
 exams                    0
-mess_menus               0
-announcements            0
+mess_menus             124      (August 2026 only — now stale)
+announcements            1      (status rejected)
+hostel_wardens          78
 
-documents                0
-document_versions        0
-document_chunks          0
+documents               17
+document_versions       17
+document_chunks       1269      (384-dim local MiniLM embeddings)
 
 ingestion_jobs           0
-ingestion_runs           3
-approval_requests        0
-audit_logs               0
+ingestion_runs          25
+approval_requests        2      (cr_access_request, both approved)
+audit_logs               3      (2 CR approvals, 1 announcement rejection)
 ```
 
-Timetable aggregate:
+`timetable_entries.room_id` is NULL for all 1,263 rows — the timetable PDFs
+print no room per class period.
+
+Public RPCs live on the project (all now captured in `supabase/migrations/`):
 
 ```text
-total_entries    608
-active_entries   608
-currently_valid  608
-distinct courses 15
-distinct faculty 35
-distinct rooms   0
-sources          1
+orion_resolve_user        orion_student_context    orion_active_entries
+orion_day_timetable       orion_week_timetable     orion_next_class
+orion_entry_json          match_document_chunks    is_admin
+handle_new_user           hook_restrict_signup_by_email_domain
+prevent_role_self_escalation                       update_updated_at
+complete_registration     get_my_profile
+submit_cr_access_request  review_cr_access_request
+submit_announcement       review_announcement
 ```
-
-The 37 faculty rows include 37 discovered faculty; 35 are currently referenced by the direct timetable `faculty_id` field. The many-to-many table contains 430 teacher links.
-
----
 
 # 11. ACTUAL HOSTED SCHEMA — DO NOT ASSUME OLD COLUMN NAMES
 
@@ -462,16 +484,20 @@ created_at
 updated_at
 ```
 
-Current faculty enrichment:
+Additional columns added 2026-09-21: `phone`, `designation`, `profile_url`,
+and `category` (**`text[]`** — a person can be both HOD and teaching faculty).
+
+Current faculty state (2026-09-21):
 
 ```text
-faculty rows       37
-with initials      37
-with email         0
-with research      0
+faculty rows      185
+with email        125
+categories        176 faculty / 17 administrative / 7 professional_support / 5 hod
 ```
 
-Faculty master data is therefore incomplete.
+Rebuilt from the institute directory CSVs by `scripts/rebuild_faculty.py`.
+`department_id` is still unlinked because `departments` has 0 rows, and
+`research_interests` is populated for only a minority of rows.
 
 ### academic_calendar
 
@@ -624,109 +650,105 @@ The implementation pins relevant day/time behavior consistently to UTC.
 
 # 15. Existing API implementation
 
-The current timetable API uses TanStack Start.
+**The API is a FastAPI service in `backend/`** (`uvicorn main:app`), not a
+TanStack Start route handler. Routers:
 
-Important framework detail:
-
-The current implementation obtains the request with:
-
-```ts
-getRequest()
+```text
+auth           /auth/signup /auth/login /auth/logout /auth/me
+oauth          /auth/oauth/google/authorize  /auth/oauth/google/callback   (PKCE)
+registration   /auth/register                     -> complete_registration
+cr             /cr/access-request [+ /status]  /cr/announcements [GET, POST]
+admin          /admin/cr-requests [+ /{id}/review]
+               /admin/announcements [+ /{id}/review]
+timetable      /timetable/day  /timetable/week  /timetable/next
+faculty        /faculty
+mess           /mess/today  /mess/week
+announcements  /announcements
+ai             /ai/ask
+health         /health
 ```
 
-from:
+Rules that must not be regressed:
 
-```ts
-@tanstack/react-start/server
-```
+- **Every router forwards the caller's own JWT.** No router uses the
+  service-role key to serve a user request; RLS is the real boundary and
+  `backend/app/api/deps.py` adds a fast 401/403 on top.
+- **Sessions are httpOnly cookies set by this service** (`orion_access_token`,
+  `orion_refresh_token`, `SameSite=Lax`, `Secure` via `COOKIE_SECURE`) — the
+  browser never holds a Supabase token. Consequence: the frontend and the API
+  must be served from the same registrable domain, or the cookie is not sent.
+- CORS is locked to one origin (`FRONTEND_ORIGIN`) with credentials enabled.
+- PostgREST `APIError`s (from RPC-level `raise exception`) are mapped to a
+  clean 400, not an opaque 500.
+- The frontend reaches all of this through `src/lib/api-client.ts`, which
+  forwards the incoming `Cookie` header during SSR.
 
-Do not assume the handler context contains a direct `request` property.
-
-The API uses a request-scoped non-service-role Supabase client for user traffic.
-
-Demo mode exists when Supabase/auth is unavailable and must be clearly distinguishable from real data.
-
----
+`src/lib/query/`, `src/lib/chat-api.ts`, `src/lib/timetable-api.ts` and
+`src/lib/supabase-server.ts` **no longer exist** — `backend/query/` is the one
+implementation of routing/retrieval/context. Do not recreate the TS port.
 
 # 16. Existing verification
 
-Previously verified:
+Last run **2026-09-21** on the merged tree (commit `146bb9a`):
 
 ```text
-pytest tests/ -q
-=> 87 passed
-
-npm run build
-=> passes
-
-npx tsc --noEmit
-=> passes
+.venv/bin/python -m pytest tests -q   => 142 passed
+npx tsc --noEmit                      => clean
+npm run build                         => passes
 ```
 
-The timetable slice has tests for extraction, normalization, validation, idempotency, expiry, timetable retrieval, next-class behavior, activities, and identity isolation.
+Test coverage is Python-side only: extraction, normalization, validation,
+idempotency, expiry, timetable retrieval, next-class behaviour, activities,
+identity isolation, query routing, context, service. **There are no tests for
+the FastAPI routers** (auth, cookies, role gating, CR/admin review) and none
+for the frontend.
 
-There are known pre-existing repo-wide formatting/lint issues in untouched areas. Do not launch a broad formatting rewrite just to fix unrelated legacy files.
-
----
+There are known pre-existing repo-wide formatting/lint issues in untouched
+areas. Do not launch a broad formatting rewrite just to fix unrelated legacy
+files.
 
 # 17. NOT COMPLETE YET
 
-Do not claim the entire structured-data layer or AI system is complete.
+Do not claim the system is finished. As of 2026-09-21:
 
-### Timetables
-- Semester 5 TODO
-- Semester 7 TODO
+### Deployed anywhere
+- **Nothing.** The app runs on localhost only; cookie, CORS and OAuth redirect
+  configuration are all localhost-specific. See `docs/backend-requirements.md`
+  before provisioning anything — the `SameSite=Lax` session cookie constrains
+  where the frontend and API may live relative to each other.
 
-### Rooms
-- Classroom Details extraction TODO
-- `rooms = 0`
-- `room_allocations = 0`
+### CR document upload / OCR pipeline
+- No Supabase Storage bucket exists; `ingestion_jobs` is 0 rows; no upload UI,
+  no OCR preview, no publish step. CR *access requests* and CR *announcements*
+  are built; CR *documents* are not.
 
-### Academic calendar
-- source exists
-- database population TODO
-- `academic_calendar = 0`
+### Structured data
+- `exams` = 0 (no source document exists at all).
+- `departments` = 0; `faculty.department_id` unlinked.
+- `mess_menus` covers August 2026 only — that month has passed.
+- `timetable_entries.room_id` NULL for all 1,263 rows.
+- `courses` has only code/name/credits; curriculum fields unpopulated.
 
-### Exams
-- schema exists
-- dataset population TODO
-- `exams = 0`
+### RAG / AI
+- Generation is live (Gemini `gemini-3.5-flash-lite` via `POST /ai/ask`), but
+  there is **no reranking, no streaming, and no post-generation grounding
+  check**, and the authenticated student's cohort is not consistently applied
+  to semantic retrieval.
+- `faculty_research_search` re-embeds the whole faculty corpus per request
+  instead of storing vectors — a real performance defect.
 
-### Mess
-- schema exists
-- dataset population TODO
-- `mess_menus = 0`
+### UI
+- Live: `/timetable`, `/faculty`, `/mess`, `/announcements`, `/cr`, `/login`,
+  `/register`, the AI chat.
+- Still mock: `/calendar`, `/clubs`, `/courses`, `/documents`, `/exams`,
+  `/profile`, `/notifications`, plus parts of `/dashboard`, `/admin`,
+  `/search`, `/ai`.
 
-### Faculty
-- 37 basic faculty records exist
-- email enrichment TODO
-- research-interest enrichment TODO
-- department normalization may require departments data
-
-### Departments
-- `departments = 0`
-
-### Announcements
-- `announcements = 0`
-
-### Documents/RAG
-- `documents = 0`
-- `document_versions = 0`
-- `document_chunks = 0`
-- embeddings = 0
-- production RAG TODO
-
-### AI router
-- final production structured/semantic/hybrid router TODO
-
-### LLM orchestration
-- final grounded answer pipeline TODO
-
-### CR workflow
-- schema foundations exist
-- full upload/OCR/preview/approval/publish UX and processing pipeline TODO
-
----
+### Process
+- `docs/decisions/` does not exist, though `backend/app/core/config.py` already
+  cites `docs/decisions/orion-auth-plan.md`.
+- Hosted Supabase migration *tracking* is still empty even though the migration
+  files now match the live schema.
 
 # 18. Recommended implementation order
 
@@ -1312,28 +1334,26 @@ Do not immediately code after reading this file.
 
 # 36. Immediate roadmap
 
-Unless the user explicitly requests another task, prioritize:
+Updated 2026-09-21 — the original structured-data ordering is largely done.
+Unless the user asks for something else, prioritize:
 
-1. Faculty JSON normalization/import.
-2. Semester 5 timetable.
-3. Semester 7 timetable.
-4. Classroom Details.
-5. Academic Calendar.
-6. Mess menu.
-7. Exams.
-8. Departments/master data.
-9. Structured-data verification.
-10. Document ingestion.
-11. RAG.
-12. Query router.
-13. LLM orchestration.
-14. Hybrid retrieval.
-15. CR approval UX/processing.
-16. Full product integration.
+1. **Deploy** (see `docs/backend-requirements.md`): one warm container in
+   ap-south-1 for the FastAPI service, the frontend on the same registrable
+   domain, `COOKIE_SECURE=true`, production redirect URL allowlisted.
+2. **CR document upload → OCR → admin approval** — the last big unbuilt slice,
+   and the reason a second (worker) container will be needed.
+3. **AI answer quality**: store faculty embeddings instead of re-embedding per
+   request; apply the student's cohort to semantic retrieval; add a grounding
+   check.
+4. **Finish UI wiring** (`/calendar`, `/courses`, `/exams`, `/documents`,
+   `/clubs`, `/notifications`, and the mock remnants elsewhere).
+5. **Data gaps**: a current mess menu, an exams source, `departments` + the
+   department-spelling decision, room↔timetable.
+6. **Tests for the FastAPI layer** — currently zero — and the `docs/decisions/`
+   ADR log.
 
-The Semester 3 timetable pipeline is the reference implementation for future structured ingestion.
-
----
+The Semester 3 timetable pipeline remains the reference implementation for
+future structured ingestion.
 
 # 37. Definition of done
 
