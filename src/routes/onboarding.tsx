@@ -9,7 +9,6 @@ import {
   PixelSprite,
   SPRITES,
 } from "@/components/pixel/pixel-art";
-import { useOrion } from "@/store/orion";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -44,12 +43,10 @@ const SLIDES = [
 function Onboarding() {
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
-  const setOnboarded = useOrion((s) => s.setOnboarded);
   const slide = SLIDES[step]!;
 
   function finish() {
-    setOnboarded(true);
-    navigate({ to: "/login", search: { error: undefined } });
+    navigate({ to: "/login" });
   }
 
   return (
@@ -106,11 +103,7 @@ function Onboarding() {
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Already have an account?{" "}
-          <Link
-            to="/login"
-            search={{ error: undefined }}
-            className="font-medium text-primary underline-offset-4 hover:underline"
-          >
+          <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
             Sign in
           </Link>
         </p>

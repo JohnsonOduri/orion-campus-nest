@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PixelBadge, PixelSprite, SPRITES } from "@/components/pixel/pixel-art";
-import { askOrion, type ChatResponse } from "@/lib/chat-api";
+import { apiPost, ApiError } from "@/lib/api-client";
 
 // One example per implemented route (docs/query-router.md) so the three
 // backend cases are easy to try from the UI.
@@ -15,21 +15,65 @@ const aiSuggestions = [
   "Which faculty work in NLP and when can I meet them?",
 ];
 
+type Route = "structured" | "semantic" | "hybrid" | "small_talk" | "unsupported";
+
+type AskResponse = {
+  query: string;
+  route: Route;
+  has_answer: boolean;
+  facts: { claim: string; data: Record<string, unknown>; source: string; source_id: string | null }[];
+  snippets: {
+    content: string;
+    document_title: string;
+    section_title: string | null;
+  }[];
+  warnings: string[];
+  answer: string | null;
+  generation_available: boolean;
+};
+
 export type ChatMessage = {
   id: number;
   role: "user" | "ai";
   text: string;
-  route?: ChatResponse["route"];
-  usedTestStudent?: boolean;
-  demo?: boolean;
+  route?: Route;
+  generationUnavailable?: boolean;
 };
 
-const ROUTE_LABEL: Record<ChatResponse["route"], string> = {
+const ROUTE_LABEL: Record<Route, string> = {
   structured: "structured · live DB",
   semantic: "semantic · documents",
   hybrid: "hybrid · faculty + schedule",
+  small_talk: "small talk",
   unsupported: "unsupported",
 };
+
+const NO_ANSWER_HINT =
+  "I can help with things like your next class, timetable for a specific day, attendance/academic regulations, or which faculty work on a topic — try one of those.";
+
+// Used when generation isn't configured (no Gemini key yet) or produced
+// nothing — renders the real, cited retrieval result as text instead of
+// failing silently.
+function formatFallback(ctx: AskResponse): string {
+  if (!ctx.has_answer) {
+    if (ctx.route === "unsupported") {
+      return `I'm not sure how to help with that yet. ${NO_ANSWER_HINT}`;
+    }
+    const reason = ctx.warnings[0];
+    return reason
+      ? `I don't have grounded information for that. (${reason})`
+      : "I don't have grounded information for that.";
+  }
+  const lines: string[] = [];
+  for (const f of ctx.facts) lines.push(`• ${f.claim}`);
+  for (const s of ctx.snippets) {
+    const cite = s.section_title ? `${s.document_title} — ${s.section_title}` : s.document_title;
+    const excerpt = s.content.length > 280 ? `${s.content.slice(0, 280).trim()}…` : s.content.trim();
+    lines.push(`• [${cite}] ${excerpt}`);
+  }
+  if (ctx.warnings.length) lines.push("", ...ctx.warnings.map((w) => `⚠️ ${w}`));
+  return lines.join("\n");
+}
 
 export function ChatBubble({ msg }: { msg: ChatMessage }) {
   const isUser = msg.role === "user";
@@ -45,23 +89,19 @@ export function ChatBubble({ msg }: { msg: ChatMessage }) {
           isUser ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground",
         )}
       >
-        {isUser ? <span className="text-xs font-bold">AM</span> : <Bot className="size-4" />}
+        {isUser ? <span className="text-xs font-bold">ME</span> : <Bot className="size-4" />}
       </span>
       <div className={cn("max-w-[80%] space-y-1.5", isUser && "flex flex-col items-end")}>
-        {!isUser && (msg.route || msg.demo) ? (
+        {!isUser && (msg.route || msg.generationUnavailable) ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {msg.route ? (
               <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                 {ROUTE_LABEL[msg.route]}
               </span>
             ) : null}
-            {msg.demo ? (
+            {msg.generationUnavailable ? (
               <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                demo mode
-              </span>
-            ) : msg.usedTestStudent ? (
-              <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                test student session
+                AI generation not configured
               </span>
             ) : null}
           </div>
@@ -118,24 +158,20 @@ export function AiChatPanel({ compact = false }: { compact?: boolean }) {
     setInput("");
     setTyping(true);
     try {
-      const res = await askOrion({ data: { query: text } });
+      const res = await apiPost<AskResponse>("/ai/ask", { query: text });
       setMessages((m) => [
         ...m,
         {
           id: id + 1,
           role: "ai",
-          text: res.text,
+          text: res.answer ?? formatFallback(res),
           route: res.route,
-          usedTestStudent: res.usedTestStudent,
-          demo: res.demo,
+          generationUnavailable: !res.generation_available,
         },
       ]);
     } catch (error) {
-      console.error("[ai-chat] askOrion failed", error);
-      setMessages((m) => [
-        ...m,
-        { id: id + 1, role: "ai", text: "Sorry, something went wrong reaching ORION's backend." },
-      ]);
+      const message = error instanceof ApiError ? error.message : "Sorry, something went wrong reaching ORION's backend.";
+      setMessages((m) => [...m, { id: id + 1, role: "ai", text: message }]);
     } finally {
       setTyping(false);
     }

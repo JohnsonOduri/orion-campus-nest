@@ -1,14 +1,14 @@
-"""Gemini client — scaffolded for the next slice, NOT called by service.py yet.
+"""Gemini client, called from backend/app/api/ai.py's POST /ai/ask.
 
 Per the task that created this module: "do not add an LLM until the
-routing/retrieval/context layer is independently tested." This file exists
-so GEMINI_API_KEY (present in .env) has a ready, cost-conscious integration
-point once that testing is done — it is not imported by router.py,
-retrieval.py, context.py, or service.py.
+routing/retrieval/context layer is independently tested." Kept as a
+cost-conscious integration point, deliberately not imported by router.py,
+retrieval.py, context.py, or service.py themselves — those stay pure
+retrieval, generation is layered on top by the caller.
 
 Cost-control choices, so a wired-in caller can't accidentally burn the free
 tier:
-  - defaults to `gemini-2.0-flash-lite`, the cheapest/fastest Gemini model
+  - defaults to `gemini-3.5-flash-lite`, the cheapest/fastest Gemini model
     with a free tier, not a Pro model;
   - `max_output_tokens` defaults small (256) — grounded answers from a
     GroundedContext should be short, not essays;
@@ -34,7 +34,7 @@ from typing import Optional
 
 from .types import GroundedContext
 
-DEFAULT_MODEL = "gemini-2.0-flash-lite"
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
@@ -53,9 +53,27 @@ def build_prompt(context: GroundedContext) -> str:
     """Render a GroundedContext into a prompt that only asks the model to
     phrase what's already retrieved — never to introduce new facts."""
     lines = [
-        "Answer the user's question using ONLY the facts and excerpts below. "
-        "If they don't answer the question, say you don't have that information. "
-        "Cite sources by name when you state a fact.",
+        "The facts and excerpts below were already retrieved and matched to "
+        "this exact question by a separate, deterministic system BEFORE you "
+        "saw them — they are not a general-purpose search result you need "
+        "to judge for relevance, they ARE the answer. Your only job is to "
+        "phrase them clearly and cite sources by name, not to re-verify "
+        "whether they're on-topic.\n"
+        "A fact will often use different words or formats than the "
+        "question — a specific date instead of \"yesterday\"/\"tomorrow\", a "
+        "specific time range instead of the exact clock time asked about, "
+        "etc. That is expected and already correct: the retrieval system "
+        "resolved the relative/approximate wording in the question to the "
+        "concrete fact shown. Never refuse or hedge just because a fact's "
+        "wording doesn't literally repeat the question's wording — if a "
+        "fact is present below, treat it as answering the question.\n"
+        "A fact may include parenthetical context (e.g. explaining why an "
+        "answer skips ahead to a later day) — preserve that context in your "
+        "answer instead of dropping it, it's what stops a correct-but-"
+        "surprising answer from reading as wrong.\n"
+        "Only say you don't have that information when the list below is "
+        "empty, or every fact is clearly about a different subject entirely "
+        "(e.g. only mess-menu facts for a question about faculty).",
         "",
         f"Question: {context.query}",
         "",

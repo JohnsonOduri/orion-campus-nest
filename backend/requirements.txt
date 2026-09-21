@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+supabase
+httpx
+python-dotenv
+pydantic[email]
+pytest
+pdfplumber
+requests
+sentence-transformers

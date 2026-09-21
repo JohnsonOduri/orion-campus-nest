@@ -20,7 +20,15 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .extractor import extract_document
-from .normalizer import build_preview, dedupe, normalize_document
+from .normalizer import (
+    build_preview,
+    dedupe,
+    merge_duplicate_course_codes,
+    normalize_branch_names,
+    normalize_document,
+    pair_orphaned_legend_entries,
+    resolve_code_conflicts,
+)
 from .repository import TimetableRepository, load_repository
 from .validator import ValidationReport, validate_records
 
@@ -75,8 +83,21 @@ def run_pipeline(
 
     doc = extract_document(path)
     results = normalize_document(doc)
+    # Section-local code typos (grid references a code its own legend
+    # doesn't have, while the legend has exactly one never-matched entry)
+    # first — needs per-section unresolved/orphaned data, so it runs on
+    # `results` before flattening.
+    pair_orphaned_legend_entries(results)
     records = [r for res in results for r in res.records]
     records, _ = dedupe(records)
+    # Both mutate course_code in place on the same TimetableRecord objects
+    # referenced by `results`, so build_preview's independent re-flatten of
+    # `results` below picks up the corrections too. Order matters: merge
+    # same-name/different-code typos first, then disambiguate any remaining
+    # same-code/different-name genuine conflicts.
+    records = merge_duplicate_course_codes(records)
+    records = resolve_code_conflicts(records)
+    records = normalize_branch_names(records)
 
     known_courses = known_faculty = None
     if import_to_supabase and repo is not None:

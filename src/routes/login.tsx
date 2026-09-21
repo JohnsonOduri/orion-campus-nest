@@ -1,9 +1,15 @@
-import { useState } from "react";
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { AlertCircle } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   PixelClouds,
   PixelParticles,
@@ -11,68 +17,78 @@ import {
   PixelMascot,
   PixelDivider,
 } from "@/components/pixel/pixel-art";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { apiPost, apiBaseUrl, ApiError } from "@/lib/api-client";
+import { useQueryClient } from "@tanstack/react-query";
+import { profileQueryOptions } from "@/hooks/use-profile";
+import { RedirectOverlay } from "@/components/shared/redirect-overlay";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in to ORION — IIIT Kottayam" },
-      { name: "description", content: "Sign in to ORION with your IIIT Kottayam institute Google account." },
+      { name: "description", content: "Sign in to ORION with your IIIT Kottayam email, student ID or Google account." },
       { property: "og:title", content: "Sign in to ORION" },
       { property: "og:description", content: "Access your IIIT Kottayam campus workspace." },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    error: typeof search["error"] === "string" ? search["error"] : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { error?: string | undefined } => {
+    return {
+      error: search['error'] as string | undefined,
+    };
+  },
   component: LoginPage,
 });
 
-const GoogleIcon = () => (
-  <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
-    <path
-      fill="#4285F4"
-      d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.87c2.27-2.09 3.58-5.17 3.58-8.82z"
-    />
-    <path
-      fill="#34A853"
-      d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.87-3c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.11A12 12 0 0 0 12 24z"
-    />
-    <path
-      fill="#FBBC05"
-      d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28V6.61H1.27A12 12 0 0 0 0 12c0 1.94.46 3.77 1.27 5.39l4-3.11z"
-    />
-    <path
-      fill="#EA4335"
-      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.27 6.61l4 3.11C6.22 6.86 8.87 4.75 12 4.75z"
-    />
-  </svg>
-);
+const schema = z.object({
+  email: z.string().email("Enter a valid campus email"),
+  password: z.string().min(6, "At least 6 characters"),
+  remember: z.boolean().optional(),
+});
+
+type LoginResponse = { ok: true; redirect_to: string };
 
 function LoginPage() {
-  const { error } = useSearch({ from: "/login" });
-  const [pending, setPending] = useState(false);
+  const { error } = Route.useSearch();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [redirecting, setRedirecting] = useState(false);
 
-  async function signInWithGoogle() {
-    const client = getSupabaseBrowserClient();
-    if (!client) {
-      toast.error("Sign-in isn't configured in this environment.");
-      return;
+  useEffect(() => {
+    if (error) {
+      toast.error(decodeURIComponent(error));
+      // Remove it from the URL so it doesn't stay stuck there
+      navigate({ to: "/login", replace: true });
     }
-    setPending(true);
-    const { error: signInError } = await client.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (signInError) {
-      toast.error(signInError.message);
-      setPending(false);
+  }, [error, navigate]);
+
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: "", password: "", remember: true },
+  });
+
+  async function onSubmit(values: z.infer<typeof schema>) {
+    try {
+      const result = await apiPost<LoginResponse>("/auth/login", {
+        email: values.email,
+        password: values.password,
+      });
+      await queryClient.invalidateQueries({ queryKey: profileQueryOptions.queryKey });
+      toast.success("Welcome back to ORION");
+      setRedirecting(true);
+      await navigate({ to: result.redirect_to });
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "Sign in failed. Try again.";
+      toast.error(message);
     }
-    // on success the browser navigates away to Google; nothing else to do here.
+  }
+
+  function onGoogleSignIn() {
+    window.location.href = `${apiBaseUrl()}/auth/oauth/google/authorize`;
   }
 
   return (
     <div className="relative grid min-h-screen lg:grid-cols-2">
+      {redirecting && <RedirectOverlay label="Taking you to your workspace…" />}
       <div className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-10">
         <div className="absolute inset-0 gradient-campus opacity-95" />
         <PixelClouds />
@@ -109,29 +125,54 @@ function LoginPage() {
             <span className="font-pixel text-xs text-primary">ORION</span>
           </div>
           <h1 className="mt-6 text-2xl font-bold tracking-tight">Sign in</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Use your IIIT Kottayam institute Google account to continue.
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Use your campus credentials to continue.</p>
 
-          {error ? (
-            <div className="mt-5 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              <p>{decodeURIComponent(error)}</p>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Campus email</Label>
+              <div className="relative">
+                <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input id="email" className="pl-9" {...form.register("email")} />
+              </div>
+              {form.formState.errors.email && (
+                <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+              )}
             </div>
-          ) : null}
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input id="password" type="password" className="pl-9" {...form.register("password")} />
+              </div>
+              {form.formState.errors.password && (
+                <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
+              )}
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox defaultChecked /> Remember me
+              </label>
+            </div>
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Signing in…" : "Continue"}
+            </Button>
+          </form>
 
-          <Button
-            variant="outline"
-            className="mt-6 h-11 w-full gap-2.5"
-            onClick={signInWithGoogle}
-            disabled={pending}
-          >
-            <GoogleIcon />
-            {pending ? "Redirecting to Google…" : "Continue with Google"}
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">or</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <Button variant="outline" className="w-full" onClick={onGoogleSignIn}>
+            Continue with Google
           </Button>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Only @iiitkottayam.ac.in institute accounts can sign in.
+            New here?{" "}
+            <Link to="/register" className="font-medium text-primary hover:underline">
+              Create an account
+            </Link>
           </p>
         </motion.div>
       </div>

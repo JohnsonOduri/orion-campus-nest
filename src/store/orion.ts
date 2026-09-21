@@ -1,15 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// Role/identity live in the server-verified auth context (src/hooks/use-auth.ts,
-// backed by src/lib/auth-api.ts) — never here. This store is UI preference
-// only (theme/sidebar) plus the pre-login marketing tour's "seen it" flag.
+// Role and onboarding status now come from GET /auth/me (see
+// src/hooks/use-profile.ts), backed by real RLS/is_admin() checks — this
+// store only holds UI-only preferences that have no server-side meaning.
 type OrionState = {
-  onboarded: boolean;
   theme: "light" | "dark";
   sidebarCollapsed: boolean;
   aiOpen: boolean;
-  setOnboarded: (v: boolean) => void;
   toggleTheme: () => void;
   setTheme: (t: "light" | "dark") => void;
   toggleSidebar: () => void;
@@ -19,11 +17,9 @@ type OrionState = {
 export const useOrion = create<OrionState>()(
   persist(
     (set, get) => ({
-      onboarded: false,
       theme: "light",
       sidebarCollapsed: false,
       aiOpen: false,
-      setOnboarded: (onboarded) => set({ onboarded }),
       setTheme: (theme) => {
         set({ theme });
         if (typeof document !== "undefined") {
@@ -35,6 +31,6 @@ export const useOrion = create<OrionState>()(
       toggleSidebar: () => set({ sidebarCollapsed: !get().sidebarCollapsed }),
       setAiOpen: (aiOpen) => set({ aiOpen }),
     }),
-    { name: "orion-store", partialize: (s) => ({ onboarded: s.onboarded }) },
+    { name: "orion-store", partialize: (s) => ({ sidebarCollapsed: s.sidebarCollapsed }) },
   ),
 );

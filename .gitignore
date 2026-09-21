@@ -37,6 +37,8 @@ work-done.md
 # Python
 __pycache__/
 *.pyc
+backend/.venv/
+*.egg-info/
 
 # Supabase CLI local state
 supabase/.temp/

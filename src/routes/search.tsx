@@ -1,10 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader, SectionCard } from "@/components/shared/primitives";
 import { Input } from "@/components/ui/input";
 import { PixelBadge } from "@/components/pixel/pixel-art";
-import { announcements, courses, documents, events, faculty } from "@/lib/mock-data";
+import { courses, documents, events } from "@/lib/mock-data";
+import { apiGet } from "@/lib/api-client";
 import { Search } from "lucide-react";
+
+type FacultyMember = { id: number; full_name: string };
+type Announcement = { id: number; title: string };
 
 export const Route = createFileRoute("/search")({
   head: () => ({
@@ -19,11 +24,20 @@ export const Route = createFileRoute("/search")({
 });
 
 function SearchPage() {
+  const facultyQuery = useQuery({
+    queryKey: ["faculty"],
+    queryFn: () => apiGet<FacultyMember[]>("/faculty"),
+  });
+  const announcementsQuery = useQuery({
+    queryKey: ["announcements"],
+    queryFn: () => apiGet<Announcement[]>("/announcements"),
+  });
+
   const groups = [
-    { label: "Faculty", items: faculty.slice(0, 3).map((f) => f.name) },
+    { label: "Faculty", items: (facultyQuery.data ?? []).slice(0, 3).map((f) => f.full_name) },
     { label: "Courses", items: courses.slice(0, 3).map((c) => `${c.code} · ${c.title}`) },
     { label: "Events", items: events.slice(0, 3).map((e) => e.name) },
-    { label: "Announcements", items: announcements.slice(0, 3).map((a) => a.title) },
+    { label: "Announcements", items: (announcementsQuery.data ?? []).slice(0, 3).map((a) => a.title) },
     { label: "Documents", items: documents.slice(0, 3).map((d) => d.name) },
   ];
 

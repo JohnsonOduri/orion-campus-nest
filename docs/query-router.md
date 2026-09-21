@@ -22,9 +22,10 @@ places, or the port will drift from the reference.
 raw query
    │  router.classify()
    ▼
-QueryPlan (route: structured | semantic | hybrid | unsupported)
+QueryPlan (route: structured | semantic | hybrid | small_talk | unsupported)
    │  service._dispatch_structured() / retrieval.semantic_search() /
-   │  retrieval.faculty_topic_and_schedule()
+   │  retrieval.faculty_topic_and_schedule() / (small_talk: canned reply,
+   │  no retrieval call at all)
    ▼
 RetrievalResult (StructuredFact[] + SemanticSnippet[], each cited)
    │  context.build_context()
@@ -35,19 +36,63 @@ GroundedContext (has_answer: bool, facts, snippets, warnings)
 ## 1. Routing (`router.py`)
 
 Pure, offline, regex/keyword-based — no LLM, no network, no cost. Matches
-the STRUCTURED / SEMANTIC / HYBRID / UNSUPPORTED examples in README §8 and
-AGENTS.md §4-§5:
+the STRUCTURED / SEMANTIC / HYBRID / SMALL_TALK / UNSUPPORTED examples in
+README §8 and AGENTS.md §4-§5:
 
 | Pattern | Route | Intent |
 |---|---|---|
 | "next class", "where is my next class" | STRUCTURED | `NEXT_CLASS` |
 | "today" + class/timetable/schedule | STRUCTURED | `DAY_TIMETABLE` |
 | "this week"/"weekly" + class/timetable/schedule | STRUCTURED | `WEEK_TIMETABLE` |
-| a named weekday ("Monday", …) + class/timetable/schedule | STRUCTURED | `DAY_OF_WEEK_TIMETABLE` |
+| a named weekday, "yesterday", or "tomorrow" + class/timetable/schedule | STRUCTURED | `DAY_OF_WEEK_TIMETABLE` |
+| a specific clock time ("10:30", "3pm") + class/timetable/schedule | STRUCTURED | `CLASS_AT_TIME` |
 | "who teaches `<course code>`" | STRUCTURED | `FACULTY_FOR_COURSE` |
+| "`<course code>` about/credits/syllabus/prerequisites", or "what is/tell me about `<course code>`" | STRUCTURED | `COURSE_INFO` |
+| "tell me about `<Title> <Name>`", "who is `<Title> <Name>`", "`<Name>`'s email/office/office hours" | STRUCTURED | `FACULTY_LOOKUP` |
+| mess/canteen/food/menu/breakfast/lunch/dinner/snacks | STRUCTURED | `MESS_TODAY` (`MESS_WEEK` with "this week"/"weekly", `MESS_ON_DAY` with a named weekday/"yesterday"/"tomorrow") |
 | "faculty" + work/research/interest, or "recommend a faculty" | HYBRID | — |
 | attendance/regulation/policy/cgpa/credit/hostel/procedure/curriculum/… | SEMANTIC | — |
+| the *entire* message is a greeting/thanks/farewell/"what can you do"/"how are you" | SMALL_TALK | — |
 | anything else | UNSUPPORTED | — |
+
+**SMALL_TALK is answered without any retrieval call or LLM call.** The
+router itself picks the canned reply text (into `QueryPlan.topic_text`);
+`service.answer_query` wraps it directly into a `StructuredFact` without
+touching Supabase, and `backend/app/api/ai.py` uses that fact's claim as
+the response `answer` verbatim, skipping `llm_client.generate()` entirely —
+so small talk never costs a Gemini call regardless of whether
+`GEMINI_API_KEY` is configured. The match is anchored to the whole message
+(`^...$`), so "hi what is my next class" still routes to `NEXT_CLASS`, not
+small talk — only a message that *is* just small talk short-circuits.
+Five categories: greeting (time-of-day-aware reply — "Good morning/
+afternoon/evening"), thanks, farewell, capabilities ("what can you do",
+"help", "who are you"), and "how are you". Thanks/farewell/"how are you"
+each pick randomly from 2–3 pre-written variants (`router.py`'s
+`_THANKS_REPLIES`/`_BYE_REPLIES`/`_HOW_ARE_YOU_REPLIES`) so repeated small
+talk doesn't read as one hardcoded string — the *routing decision* stays
+fully deterministic (same input always → same `RouteType`), only the reply
+text varies.
+
+`FACULTY_LOOKUP`'s "tell me about `<name>`" pattern **requires** a title
+(Dr./Prof./Mr./Ms./Mrs.) — without one, "tell me about the campus
+regulations" would otherwise be swallowed as if "the campus regulations"
+were a faculty name. The possessive form ("`<Name>`'s email") doesn't
+require a title, relying instead on capitalized-word structure as a
+proper-noun heuristic (case-sensitive on purpose).
+
+`DAY_OF_WEEK_TIMETABLE`'s date resolution (`retrieval._resolve_day_reference`)
+is shared with mess's `MESS_ON_DAY` (`retrieval.mess_on_day`) — one
+implementation of "yesterday"/"tomorrow"/a named weekday → an actual date,
+not two near-identical ones. Mess menu retrieval (`retrieval.mess_today`/
+`mess_week`/`mess_on_day`) also reuses the same row-fetching/weekly-
+rotation-fallback helpers as the REST `GET /mess/today`/`GET /mess/week`
+endpoints (`backend/app/api/mess.py`) — one implementation
+(`retrieval.py`'s `mess_all_active_rows`/`mess_menu_for_day`/
+`split_mess_items`), not two kept in lockstep by hand. A specific meal
+word (breakfast/lunch/dinner/snacks) narrows every mess intent to just
+that meal — found live: leaving all 4 meals in the fact list for one day
+was ambiguous enough that generation sometimes hedged with "I don't have
+that information" even though the exact fact was present.
 
 `QueryPlan` never carries anything that looks like a retrieved fact —
 `reasoning` is an audit/debug string, not an answer (enforced by
@@ -173,13 +218,17 @@ Identical to the timetable API (CLAUDE.md §13-§15, docs/timetable.md §11):
 
 ## 6. Testing
 
-**Offline (`pytest tests/`, part of the standard 104-test suite, no
-network/credentials needed):**
+**Offline (`pytest tests/`, part of the standard test suite — 124 passed/
+15 skipped as of this writing, no network/credentials needed):**
 
-- `tests/test_query_router.py` — 12 tests, pure `classify()` behavior
-  including the three required cases and the UNSUPPORTED fallback.
-- `tests/test_query_context.py` — 5 tests, `build_context`'s
-  has-answer/warning invariant.
+- `tests/test_query_router.py` — pure `classify()` behavior including the
+  three required cases, mess-menu classification, small-talk classification
+  (including that a greeting embedded in a real question is not swallowed),
+  and the UNSUPPORTED fallback.
+- `tests/test_query_context.py` — `build_context`'s has-answer/warning
+  invariant.
+- `tests/test_query_service.py` — confirms the SMALL_TALK path never
+  touches the Supabase client (`answer_query(None, "hi")` must not raise).
 
 **Live end-to-end (`scripts/verify_query_router.py`, not part of `pytest`
 — needs network + Supabase credentials, matching how

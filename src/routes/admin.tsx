@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader, SectionCard, StatCard } from "@/components/shared/primitives";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -12,13 +14,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PixelBadge } from "@/components/pixel/pixel-art";
-import { adminStats, uploads, usageTrend, users } from "@/lib/mock-data";
-import { listCrAccessRequests, reviewCrAccessRequest } from "@/lib/admin-api";
+import { adminStats, usageTrend, users } from "@/lib/mock-data";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Users2, Sparkles, ScanText, HardDrive } from "lucide-react";
+import { Users2, Sparkles, ScanText, HardDrive, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { apiGet, apiPost, ApiError } from "@/lib/api-client";
+import { requireRole } from "@/lib/route-guards";
 
 export const Route = createFileRoute("/admin")({
+  beforeLoad: requireRole(["ADMIN"]),
   head: () => ({
     meta: [
       { title: "Admin Portal — ORION Campus" },
@@ -31,92 +35,113 @@ export const Route = createFileRoute("/admin")({
 });
 
 const icons = [Users2, Sparkles, ScanText, HardDrive];
-const tone = { approved: "success", pending: "warning", rejected: "danger" } as const;
-const crRequestTone = { pending: "warning", approved: "success", rejected: "danger" } as const;
 
-function CrAccessRequestsQueue() {
-  const queryClient = useQueryClient();
-  const { data: requests, isLoading } = useQuery({
-    queryKey: ["cr-access-requests"],
-    queryFn: () => listCrAccessRequests(),
-  });
+type CrRequest = {
+  id: number;
+  submitted_by: string;
+  submitter_note: string | null;
+  created_at: string;
+};
 
-  async function review(requestId: number, approve: boolean) {
-    try {
-      await reviewCrAccessRequest({ data: { requestId, approve } });
-      toast.success(approve ? "CR access approved" : "Request rejected");
-      await queryClient.invalidateQueries({ queryKey: ["cr-access-requests"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update the request.");
-    }
-  }
+type PendingAnnouncement = {
+  id: number;
+  title: string;
+  content: string;
+  category: string | null;
+  department: string | null;
+  batch: string | null;
+  target_role: string | null;
+  submitted_by: string;
+  created_at: string;
+};
 
-  const pending = (requests ?? []).filter((r) => r.status === "pending");
-  const resolved = (requests ?? []).filter((r) => r.status !== "pending").slice(0, 5);
+function ReviewRow({
+  children,
+  onApprove,
+  onReject,
+  pending,
+}: {
+  children: ReactNode;
+  onApprove: () => void;
+  onReject: (reason: string) => void;
+  pending: boolean;
+}) {
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState("");
 
   return (
-    <SectionCard title="CR access requests" description="Students who asked to become a Class Representative" contentClassName="p-0">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Student</TableHead>
-              <TableHead>Requested</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-xs text-muted-foreground">
-                  Loading…
-                </TableCell>
-              </TableRow>
-            )}
-            {!isLoading && pending.length === 0 && resolved.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-xs text-muted-foreground">
-                  No CR access requests yet.
-                </TableCell>
-              </TableRow>
-            )}
-            {[...pending, ...resolved].map((r) => (
-              <TableRow key={r.id}>
-                <TableCell className="text-sm font-medium">
-                  {r.submitterName ?? "Unnamed"}
-                  <div className="font-mono text-[11px] text-muted-foreground">{r.submitterEmail}</div>
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {new Date(r.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <PixelBadge tone={crRequestTone[r.status]}>{r.status}</PixelBadge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {r.status === "pending" ? (
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" onClick={() => review(r.id, true)}>
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => review(r.id, false)}>
-                        Reject
-                      </Button>
-                    </div>
-                  ) : null}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+    <li className="space-y-2 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">{children}</div>
+        <div className="flex shrink-0 gap-2">
+          <Button size="sm" disabled={pending} onClick={onApprove}>
+            <CheckCircle2 className="size-4" /> Approve
+          </Button>
+          <Button size="sm" variant="destructive" disabled={pending} onClick={() => setRejecting((v) => !v)}>
+            <XCircle className="size-4" /> Reject
+          </Button>
+        </div>
       </div>
-    </SectionCard>
+      {rejecting && (
+        <div className="flex gap-2">
+          <Input
+            placeholder="Reason for rejection"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="h-8 text-xs"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pending}
+            onClick={() => {
+              onReject(reason);
+              setRejecting(false);
+              setReason("");
+            }}
+          >
+            Confirm
+          </Button>
+        </div>
+      )}
+    </li>
   );
 }
 
 function AdminPage() {
+  const queryClient = useQueryClient();
+
+  const crRequestsQuery = useQuery({
+    queryKey: ["admin", "cr-requests"],
+    queryFn: () => apiGet<CrRequest[]>("/admin/cr-requests"),
+  });
+  const announcementsQuery = useQuery({
+    queryKey: ["admin", "announcements"],
+    queryFn: () => apiGet<PendingAnnouncement[]>("/admin/announcements"),
+  });
+
+  const reviewCr = useMutation({
+    mutationFn: ({ id, approve, rejection_reason }: { id: number; approve: boolean; rejection_reason?: string }) =>
+      apiPost(`/admin/cr-requests/${id}/review`, { approve, rejection_reason }),
+    onSuccess: (_data, vars) => {
+      toast.success(vars.approve ? "CR access approved" : "CR access request rejected");
+      queryClient.invalidateQueries({ queryKey: ["admin", "cr-requests"] });
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Review failed"),
+  });
+
+  const reviewAnnouncement = useMutation({
+    mutationFn: ({ id, approve, rejection_reason }: { id: number; approve: boolean; rejection_reason?: string }) =>
+      apiPost(`/admin/announcements/${id}/review`, { approve, rejection_reason }),
+    onSuccess: (_data, vars) => {
+      toast.success(vars.approve ? "Announcement published" : "Announcement rejected");
+      queryClient.invalidateQueries({ queryKey: ["admin", "announcements"] });
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Review failed"),
+  });
+
   return (
-    <AppShell allow={["ADMIN"]}>
+    <AppShell>
       <div className="space-y-5">
         <PageHeader badge="Administrator" title="Admin Portal" subtitle="Institute-wide operations and analytics." />
 
@@ -136,8 +161,6 @@ function AdminPage() {
             );
           })}
         </div>
-
-        <CrAccessRequestsQueue />
 
         <div className="grid gap-5 lg:grid-cols-2">
           <SectionCard title="Daily active users">
@@ -169,37 +192,63 @@ function AdminPage() {
           </SectionCard>
         </div>
 
-        <SectionCard title="Approval queue" contentClassName="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Document</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>OCR</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {uploads.map((u) => (
-                  <TableRow key={u.file}>
-                    <TableCell className="font-mono text-xs">{u.file}</TableCell>
-                    <TableCell className="text-xs">{u.type}</TableCell>
-                    <TableCell className="font-mono text-xs">{u.confidence}%</TableCell>
-                    <TableCell>
-                      <PixelBadge tone={tone[u.status as keyof typeof tone]}>{u.status}</PixelBadge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="outline" onClick={() => toast.success(`${u.file} approved`)}>
-                        Review
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+        <SectionCard
+          title="CR access requests"
+          description={`${crRequestsQuery.data?.length ?? 0} pending`}
+          contentClassName="p-0"
+        >
+          {crRequestsQuery.isLoading ? (
+            <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+          ) : !crRequestsQuery.data?.length ? (
+            <p className="p-4 text-sm text-muted-foreground">No pending CR access requests.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {crRequestsQuery.data.map((r) => (
+                <ReviewRow
+                  key={r.id}
+                  pending={reviewCr.isPending}
+                  onApprove={() => reviewCr.mutate({ id: r.id, approve: true })}
+                  onReject={(reason) => reviewCr.mutate({ id: r.id, approve: false, rejection_reason: reason })}
+                >
+                  <p className="truncate font-mono text-xs">{r.submitted_by}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {r.submitter_note ?? "No reason given"} · {new Date(r.created_at).toLocaleString()}
+                  </p>
+                </ReviewRow>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Announcement approvals"
+          description={`${announcementsQuery.data?.length ?? 0} pending`}
+          contentClassName="p-0"
+        >
+          {announcementsQuery.isLoading ? (
+            <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+          ) : !announcementsQuery.data?.length ? (
+            <p className="p-4 text-sm text-muted-foreground">No pending announcements.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {announcementsQuery.data.map((a) => (
+                <ReviewRow
+                  key={a.id}
+                  pending={reviewAnnouncement.isPending}
+                  onApprove={() => reviewAnnouncement.mutate({ id: a.id, approve: true })}
+                  onReject={(reason) =>
+                    reviewAnnouncement.mutate({ id: a.id, approve: false, rejection_reason: reason })
+                  }
+                >
+                  <p className="truncate text-sm font-medium">{a.title}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{a.content}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                    {a.category ?? "General"} · {new Date(a.created_at).toLocaleString()}
+                  </p>
+                </ReviewRow>
+              ))}
+            </ul>
+          )}
         </SectionCard>
 
         <SectionCard title="User management" contentClassName="p-0">
