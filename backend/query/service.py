@@ -60,8 +60,14 @@ def _dispatch_structured(client: Any, plan) -> Any:
         return retrieval.week_timetable(client)
     if plan.structured_intent == StructuredIntent.DAY_OF_WEEK_TIMETABLE:
         return retrieval.day_of_week_timetable(client, plan.topic_text or "")
+    if plan.structured_intent == StructuredIntent.CLASS_AT_TIME:
+        return retrieval.class_at_time(client, plan.topic_text or "")
     if plan.structured_intent == StructuredIntent.FACULTY_FOR_COURSE:
         return retrieval.faculty_for_course(client, plan.course_code)
+    if plan.structured_intent == StructuredIntent.COURSE_INFO:
+        return retrieval.course_info(client, plan.course_code)
+    if plan.structured_intent == StructuredIntent.FACULTY_LOOKUP:
+        return retrieval.faculty_lookup(client, plan.topic_text or "")
     if plan.structured_intent == StructuredIntent.MESS_TODAY:
         return retrieval.mess_today(client, meal=plan.meal)
     if plan.structured_intent == StructuredIntent.MESS_WEEK:

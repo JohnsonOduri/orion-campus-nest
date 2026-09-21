@@ -53,19 +53,27 @@ def build_prompt(context: GroundedContext) -> str:
     """Render a GroundedContext into a prompt that only asks the model to
     phrase what's already retrieved — never to introduce new facts."""
     lines = [
-        "Answer the user's question using ONLY the facts and excerpts below. "
-        "If they don't answer the question, say you don't have that information. "
-        "Cite sources by name when you state a fact. "
+        "The facts and excerpts below were already retrieved and matched to "
+        "this exact question by a separate, deterministic system BEFORE you "
+        "saw them — they are not a general-purpose search result you need "
+        "to judge for relevance, they ARE the answer. Your only job is to "
+        "phrase them clearly and cite sources by name, not to re-verify "
+        "whether they're on-topic.\n"
+        "A fact will often use different words or formats than the "
+        "question — a specific date instead of \"yesterday\"/\"tomorrow\", a "
+        "specific time range instead of the exact clock time asked about, "
+        "etc. That is expected and already correct: the retrieval system "
+        "resolved the relative/approximate wording in the question to the "
+        "concrete fact shown. Never refuse or hedge just because a fact's "
+        "wording doesn't literally repeat the question's wording — if a "
+        "fact is present below, treat it as answering the question.\n"
         "A fact may include parenthetical context (e.g. explaining why an "
         "answer skips ahead to a later day) — preserve that context in your "
-        "answer instead of dropping it, since it's exactly what stops a "
-        "correct-but-surprising answer from reading as wrong. "
-        "If the question uses a relative day word (yesterday, today, "
-        "tomorrow, a weekday name), the facts have ALREADY been resolved to "
-        "that exact calendar date by the retrieval system — a fact stating "
-        "a specific date (e.g. 2026-09-19) IS the answer to a question "
-        "about \"yesterday\", do not refuse just because the fact uses the "
-        "date instead of repeating the relative word.",
+        "answer instead of dropping it, it's what stops a correct-but-"
+        "surprising answer from reading as wrong.\n"
+        "Only say you don't have that information when the list below is "
+        "empty, or every fact is clearly about a different subject entirely "
+        "(e.g. only mess-menu facts for a question about faculty).",
         "",
         f"Question: {context.query}",
         "",

@@ -93,6 +93,158 @@ def test_named_weekday_requires_a_timetable_word():
     assert plan.route == RouteType.UNSUPPORTED
 
 
+def test_specific_time_routes_class_at_time():
+    """The reported bug: "What is my class from 10:30?" fell through every
+    pattern to UNSUPPORTED — no existing regex handled a caller-given clock
+    time, only "now"/today/a named weekday."""
+    plan = classify("What is my class from 10:30?")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.CLASS_AT_TIME
+    assert plan.topic_text == "10:30"
+
+
+def test_specific_time_am_pm_routes_class_at_time():
+    for q, expected in [
+        ("What class do I have at 3pm?", "3pm"),
+        ("what class do I have at 9 am", "9 am"),
+    ]:
+        plan = classify(q)
+        assert plan.route == RouteType.STRUCTURED
+        assert plan.structured_intent == StructuredIntent.CLASS_AT_TIME
+        assert plan.topic_text == expected
+
+
+def test_bare_number_does_not_trigger_class_at_time():
+    """A bare number with no colon and no am/pm must not be mistaken for a
+    time (e.g. a count or unrelated digit in the sentence)."""
+    plan = classify("I have 3 classes today")
+    assert plan.structured_intent != StructuredIntent.CLASS_AT_TIME
+
+
+def test_timetable_tomorrow_routes_day_of_week_timetable():
+    """The same class of bug already found and fixed for mess ("yesterday's
+    dinner") also existed for the general timetable — "tomorrow"/"yesterday"
+    were never recognized, only named weekdays."""
+    plan = classify("What are my classes tomorrow?")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.DAY_OF_WEEK_TIMETABLE
+    assert plan.topic_text == "tomorrow"
+
+
+def test_timetable_yesterday_routes_day_of_week_timetable():
+    plan = classify("What classes did I have yesterday?")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.DAY_OF_WEEK_TIMETABLE
+    assert plan.topic_text == "yesterday"
+
+
+def test_timetable_relative_day_requires_a_timetable_word():
+    """Same conservative requirement as the named-weekday case — "yesterday"
+    alone, with nothing else to disambiguate it, stays unsupported."""
+    plan = classify("What did I have yesterday?")
+    assert plan.route == RouteType.UNSUPPORTED
+
+
+def test_course_info_routes_structured():
+    for q in [
+        "What is ICS 211 about?",
+        "How many credits is CSE 311?",
+        "syllabus for IEG 311",
+        "Tell me about ICS 211",
+    ]:
+        plan = classify(q)
+        assert plan.route == RouteType.STRUCTURED
+        assert plan.structured_intent == StructuredIntent.COURSE_INFO
+        assert plan.course_code
+
+
+def test_who_teaches_wins_over_course_info():
+    """"who teaches" must still route to FACULTY_FOR_COURSE, not COURSE_INFO,
+    even though both patterns could plausibly match the same course code."""
+    plan = classify("Who teaches ICS 211?")
+    assert plan.structured_intent == StructuredIntent.FACULTY_FOR_COURSE
+
+
+def test_faculty_lookup_tell_me_about():
+    plan = classify("Tell me about Dr. Manu Madhavan")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.FACULTY_LOOKUP
+    assert plan.topic_text == "Manu Madhavan"
+
+
+def test_faculty_lookup_who_is():
+    plan = classify("Who is Dr. Sara Renjit")
+    assert plan.structured_intent == StructuredIntent.FACULTY_LOOKUP
+    assert plan.topic_text == "Sara Renjit"
+
+
+def test_faculty_about_requires_a_title():
+    """Without a title, "tell me about X" must NOT be swallowed as a
+    faculty lookup — "tell me about the campus regulations" must still
+    reach SEMANTIC, not misfire as a faculty-name search."""
+    plan = classify("Tell me about the campus regulations")
+    assert plan.route == RouteType.SEMANTIC
+    assert plan.structured_intent != StructuredIntent.FACULTY_LOOKUP
+
+
+def test_faculty_lookup_possessive_email():
+    plan = classify("What is Dr. Sara Renjit's email?")
+    assert plan.structured_intent == StructuredIntent.FACULTY_LOOKUP
+    assert plan.topic_text == "Sara Renjit"
+
+
+def test_faculty_lookup_possessive_office_no_title():
+    plan = classify("Where is Manu Madhavan's office?")
+    assert plan.structured_intent == StructuredIntent.FACULTY_LOOKUP
+    assert plan.topic_text == "Manu Madhavan"
+
+
+def test_faculty_lookup_possessive_office_hours():
+    plan = classify("What are Dr. Manu Madhavan's office hours?")
+    assert plan.structured_intent == StructuredIntent.FACULTY_LOOKUP
+    assert plan.topic_text == "Manu Madhavan"
+
+
+def test_faculty_lookup_cabin_of_name():
+    """The reported bug: "cabin" wasn't recognized as meaning "office", and
+    the "<attribute> of <name>" word order (as opposed to "<name>'s
+    <attribute>") wasn't handled at all."""
+    plan = classify("Where is cabin of Dr Divya Sindhu Lekha?")
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.FACULTY_LOOKUP
+    assert plan.topic_text == "Divya Sindhu Lekha"
+
+
+def test_faculty_lookup_attribute_of_name_variants():
+    for q, expected in [
+        ("Where is the office of Dr. Ananth A?", "Ananth A"),
+        ("What is the email of Dr. Manu Madhavan?", "Manu Madhavan"),
+    ]:
+        plan = classify(q)
+        assert plan.structured_intent == StructuredIntent.FACULTY_LOOKUP
+        assert plan.topic_text == expected
+
+
+def test_faculty_attribute_of_does_not_swallow_hybrid_office_hours():
+    """"faculty office hours ... meet them" (no "of"/"for" a name) must
+    still reach HYBRID, not get misclassified as a FACULTY_LOOKUP."""
+    plan = classify("Which faculty have office hours today and when can I meet them?")
+    assert plan.route == RouteType.HYBRID
+
+
+def test_capabilities_routes_small_talk():
+    for q in ["what can you do", "help", "who are you", "what can you help with"]:
+        plan = classify(q)
+        assert plan.route == RouteType.SMALL_TALK
+        assert "timetable" in plan.topic_text.lower()
+
+
+def test_how_are_you_routes_small_talk():
+    for q in ["how are you", "what's up", "how's it going"]:
+        plan = classify(q)
+        assert plan.route == RouteType.SMALL_TALK
+
+
 def test_client_supplied_batch_is_never_parsed_into_the_plan():
     """A student typing their own batch/section into the message must not
     influence routing or retrieval — personalization comes only from the

@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from backend.query.router import _THANKS_REPLIES  # noqa: E402
 from backend.query.service import answer_query  # noqa: E402
 from backend.query.types import RouteType  # noqa: E402
 
@@ -25,9 +26,11 @@ def test_small_talk_never_touches_the_client():
 
 
 def test_small_talk_reply_is_the_routers_canned_text():
+    """Thanks has multiple reply variants (B2: reply variety) — the fact's
+    claim must be one of the router's known variants, not one fixed string."""
     ctx = answer_query(None, "thanks!")
     assert ctx.route == RouteType.SMALL_TALK
-    assert "welcome" in ctx.facts[0].claim.lower()
+    assert ctx.facts[0].claim in _THANKS_REPLIES
 
 
 def test_unsupported_still_has_no_answer():

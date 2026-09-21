@@ -1,11 +1,12 @@
 """Faculty directory — read-only.
 
-61 real rows exist (extracted from timetable PDFs during ingestion), small
-enough to return in full and let the frontend keep its existing client-side
-search/department-filter UI. email/office_location/office_hours/
-research_interests are still null for every row (enrichment not done yet,
-see CLAUDE.md §24) — the frontend renders those fields conditionally rather
-than showing blank/null text.
+185 real rows, rebuilt from the full institute directory (see
+scripts/rebuild_faculty.py — Data/iiit_kottayam_people.csv). Every row
+carries a `category` (hod/administrative/faculty/professional_support).
+Coverage is still partial for some enrichment fields (email/phone/
+designation/office_location/office_hours/research_interests/profile_url)
+— the frontend renders each conditionally rather than showing blank/null
+text.
 """
 
 from __future__ import annotations
@@ -22,7 +23,10 @@ def list_faculty(request: Request):
     client = get_current_client(request)
     return (
         client.table("faculty")
-        .select("id,full_name,initials,department_id,email,office_location,office_hours,research_interests,status")
+        .select(
+            "id,full_name,initials,department_id,email,phone,designation,office_location,"
+            "office_hours,research_interests,profile_url,category,status"
+        )
         .eq("status", "active")
         .order("full_name")
         .execute()
