@@ -1,4 +1,4 @@
--- Fix for 20260922000001: the stale-vector triggers compare vector columns
+-- Fix for 20260922065942 (gemini_embeddings): the stale-vector triggers compare vector columns
 -- (`is not distinct from`), and pgvector's `=` operator lives in the
 -- `extensions` schema. With `search_path = public` every UPDATE of
 -- document_chunks.content / faculty.research_interests failed with

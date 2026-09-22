@@ -241,7 +241,7 @@ src/lib/
   api-client.ts         # the ONLY way the frontend reaches data now
   timetable.ts
 
-supabase/migrations/    # 22 files as of 2026-09-22
+supabase/migrations/    # 23 files as of 2026-09-22
 ```
 
 Pipeline:

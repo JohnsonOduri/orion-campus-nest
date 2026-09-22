@@ -10,7 +10,7 @@ is NULL. A run only ever writes that one column, one row at a time, so
 stopping it (Ctrl-C, crash, quota exhaustion) at any point leaves every
 already-written row valid; re-running picks up exactly the rows still NULL.
 The original MiniLM `document_chunks.embedding` column is never read or
-written here. The DB triggers from migration 20260922000001 reset a
+written here. The DB triggers from migration 20260922065942 reset a
 vector to NULL whenever its source text changes, so "NULL" also covers
 "stale".
 

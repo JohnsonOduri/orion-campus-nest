@@ -1,8 +1,8 @@
 # Embeddings — Gemini (`gemini-embedding-2`, 768-dim)
 
 Migrated 2026-09-22 from in-process MiniLM (`all-MiniLM-L6-v2`, 384-dim).
-Migrations: `supabase/migrations/20260922000001_gemini_embeddings.sql`,
-`20260922000002_fix_embedding_trigger_search_path.sql`.
+Migrations: `supabase/migrations/20260922065942_gemini_embeddings.sql`,
+`20260922071151_fix_embedding_trigger_search_path.sql`.
 
 | | |
 |---|---|

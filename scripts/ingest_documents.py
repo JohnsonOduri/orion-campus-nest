@@ -10,7 +10,7 @@ Pipeline (README §6 / AGENTS.md §9):
 
 Embeddings: Gemini `gemini-embedding-2`, 768-dim, via backend/query/
 embeddings.py (the same module the API uses for query vectors), written to
-document_chunks.embedding_gemini (migration 20260922000001). Only chunks
+document_chunks.embedding_gemini (migration 20260922065942). Only chunks
 that are actually inserted or whose content changed are embedded, and only
 on --import — a dry run makes no Gemini calls. The legacy 384-dim MiniLM
 `embedding` column is no longer written; a changed chunk's stale MiniLM
