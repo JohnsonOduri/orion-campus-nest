@@ -8,31 +8,59 @@ Status as of 2026-09-22. Full runbook: docs/embeddings.md.
 
 ---
 
-## A. Test now by deploying on Render (already done, needs verifying)
+## A. Test now by deploying on Render
+
+`render.yaml` at the repo root now defines this service as code (added
+2026-09-22, see `docs/backend-requirements.md` §7 for the full writeup and
+what was verified locally). It has **not** been created on Render yet — no
+API access was available in that session. Steps below are what's left.
 
 ### Render setup
 
-- [ ] Create a Web Service from this repo:
+- [ ] Render dashboard → New → Blueprint → connect this repo. It reads
+  `render.yaml` and proposes the `orion-api` web service automatically —
+  build/start commands, health check path and `PYTHON_VERSION` are already
+  set there, nothing to type by hand.
 
-  - Build command: `pip install -r backend/requirements.txt`
-  - Start command: `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT`
-
-- [ ] Set env var `PYTHON_VERSION=3.13` (the version tested locally).
-
-- [ ] Add env vars (secret values set in Render only, never committed):
+- [ ] Fill in the secret env vars `render.yaml` leaves blank (Render will
+  prompt for these on first deploy):
 
   - `GEMINI_API_KEY`
   - `SUPABASE_URL`
   - `SUPABASE_ANON_KEY`
+  - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
   - `FRONTEND_ORIGIN`
-  - `API_BASE_URL`
-  - `COOKIE_SECURE=true`
+  - `API_BASE_URL` — leave a placeholder for the first deploy, then set it
+    to the real assigned `https://orion-api.onrender.com` URL and redeploy.
 
-- [ ] Do **not** set `SUPABASE_SECRET_KEY` on the API service. The API never needs it.
+- [ ] Do **not** set `SUPABASE_SECRET_KEY` on the API service — it's not in
+  `render.yaml` on purpose. The API never needs it.
 
-- [ ] Do **not** set `ORION_EMBEDDING_PROVIDER=minilm` on Render. The Render build has no torch/sentence-transformers installed, so the MiniLM path cannot run there. Render runs on Gemini, with the partial data described above.
+- [ ] Do **not** set `ORION_EMBEDDING_PROVIDER=minilm` on Render.
+  `render.yaml` already fixes it to `gemini`. The Render build has no
+  torch/sentence-transformers installed, so the MiniLM path cannot run
+  there. Render runs on Gemini, with the partial data described above.
+
+- [ ] Before testing login: add the frontend's real callback URL to
+  Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
+  (currently only the localhost one is allowed).
+
+- [ ] **Cookie domain blocker (confirmed against the live Public Suffix
+  List):** `onrender.com` is a registered public suffix, so a frontend on
+  one bare `*.onrender.com` service and this API on another are different
+  "sites" — `SameSite=Lax` cookies will NOT be sent on the frontend's
+  cross-site `fetch` calls, and login will silently fail past the initial
+  `set-session` call. Put the frontend and API on one custom registrable
+  domain (e.g. `app.<domain>` + `api.<domain>`) before relying on login.
 
 ### Things to check
+
+> Already verified locally against a clean venv built from
+> `backend/requirements.txt` alone (docs/backend-requirements.md §7): 128 MB
+> installed, no torch/sentence-transformers, `GET /health` → 200, 75 MB RSS
+> at idle, every protected route → 401 without a cookie. The items below are
+> the same checks against the *real* Render deployment, not a repeat of that
+> local verification.
 
 - [ ] The build log has no `torch` / `sentence-transformers` and the build is fast. Locally the dependencies take 127 MB (they were 1.1 GB before).
 

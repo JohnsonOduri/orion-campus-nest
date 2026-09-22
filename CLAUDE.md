@@ -747,10 +747,17 @@ files.
 Do not claim the system is finished. As of 2026-09-21:
 
 ### Deployed anywhere
-- **Nothing.** The app runs on localhost only; cookie, CORS and OAuth redirect
-  configuration are all localhost-specific. See `docs/backend-requirements.md`
+- **Not yet — configured but not applied.** `render.yaml` (repo root, added
+  2026-09-22) defines the one Python web service for `backend/`, torch-free,
+  health-checked at `/health`. It has not been created/deployed on Render in
+  this session (no `RENDER_API_KEY`/dashboard access here) — the manual steps
+  are in `docs/backend-requirements.md` §7. Cookie, CORS and OAuth redirect
+  configuration are still localhost defaults until real Render/custom-domain
+  URLs are filled into the dashboard env vars. See `docs/backend-requirements.md`
   before provisioning anything — the `SameSite=Lax` session cookie constrains
-  where the frontend and API may live relative to each other.
+  where the frontend and API may live relative to each other (confirmed:
+  `onrender.com` is on the Public Suffix List, so two different `onrender.com`
+  services are different "sites" and will NOT share Lax cookies).
 
 ### CR document upload / OCR pipeline
 - No Supabase Storage bucket exists; `ingestion_jobs` is 0 rows; no upload UI,

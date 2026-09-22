@@ -368,3 +368,125 @@ additional unit, not a rewrite.
 | Free-tier serverless becomes a hard constraint | Option D first, then Option B — not before |
 | Real student load (hundreds) | still one box; Supabase connection pooling is the first thing to look at |
 | U1 and U2 must live on different domains | `SameSite=Lax` must become `None; Secure` — a deliberate, reviewed change |
+
+---
+
+## 7. Render deployment (2026-09-22) — configured, not yet applied
+
+`render.yaml` at the repo root implements Option A: one Python web service
+for `backend/`, no MiniLM/torch, no worker, no cron. It was written and
+verified locally (see below) but **not created on Render in this session** —
+no `RENDER_API_KEY` or dashboard access was available. Everything here is
+ready for a human to apply.
+
+### Service definition (from `render.yaml`)
+
+| | |
+|---|---|
+| Type | Python web service (`runtime: python`) |
+| Build | `pip install -r backend/requirements.txt` |
+| Start | `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| Health check | `GET /health` (already existed — `{"status": "ok"}`, no DB/Gemini call) |
+| Region | `singapore` (closest Render region to Supabase `ap-south-1`) |
+| Plan | `free` — change in the dashboard if the free tier's cold-start/sleep behavior is unacceptable |
+
+### Verified locally before writing this section
+
+- Built a clean venv from `backend/requirements.txt` alone: **128 MB**
+  installed, **no torch, no sentence-transformers**.
+- Ran the exact start command (`uvicorn main:app --host 0.0.0.0 --port
+  $PORT`) against that clean venv: started in <1s, **75 MB RSS** at idle.
+- `GET /health` → 200. Every protected route (`/timetable/day`, `/faculty`,
+  `/mess/today`, `/announcements`, `/ai/ask`, `/auth/me`) → 401 without a
+  session cookie, confirming auth gating runs before any Supabase/Gemini call.
+- `embeddings.embed_query(...)` succeeded live against the real Gemini API
+  (quota was available at test time — it is a **shared, resettable daily
+  quota**, not a permanent block; see docs/embeddings.md §Status).
+- `.venv/bin/python -m pytest tests -q` → 175 passed. `python -m compileall
+  backend` → clean. `npx tsc --noEmit` → clean. `npm run build` → passes.
+
+### Required Render dashboard environment variables
+
+Set as **secrets** (no value lives in `render.yaml`):
+
+| Variable | Source |
+|---|---|
+| `SUPABASE_URL` | Supabase project settings |
+| `SUPABASE_ANON_KEY` | Supabase project settings — anon/publishable key, **not** service-role |
+| `GEMINI_API_KEY` | Google AI Studio |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | already configured on the Supabase Auth provider; kept here only because `config.py` reads them |
+| `API_BASE_URL` | this service's own Render URL, once assigned (e.g. `https://orion-api.onrender.com`, or the custom domain once set) |
+| `FRONTEND_ORIGIN` | the frontend's exact origin, no trailing slash |
+
+Set as **fixed values** (already in `render.yaml`):
+
+| Variable | Value | Why |
+|---|---|---|
+| `PYTHON_VERSION` | `3.13.7` | matches the version this was developed/tested against |
+| `ORION_EMBEDDING_PROVIDER` | `gemini` | keeps this service MiniLM/torch-free, per the deployment goal — see the caveat below |
+| `COOKIE_SECURE` | `true` | Render terminates TLS in front of the app; cookies must still say `Secure` |
+
+**`SUPABASE_SECRET_KEY` is deliberately absent.** No router uses it; adding
+it to Render would be a real privilege-escalation risk for no benefit
+(CLAUDE.md §13). It stays confined to `scripts/*` run locally/in a trusted
+environment, never in this service.
+
+### Known blocker: cookies won't work across two `onrender.com` subdomains
+
+Verified against the live Public Suffix List
+(`publicsuffix.org`/`publicsuffix/list` on GitHub): **`onrender.com` is a
+listed public suffix.** That means `orion-api.onrender.com` and
+`orion-frontend.onrender.com` are different "sites" under the same-site
+cookie algorithm, not different origins on one site. `SameSite=Lax` cookies
+(`backend/app/core/cookies.py`) are sent on top-level GET navigation across
+sites, but **not** on cross-site `fetch`/XHR — which is exactly how
+`src/lib/api-client.ts` calls this API (`credentials: "include"`). Deployed
+as two bare `onrender.com` services, login will appear to succeed
+(`set-session` returns 200) but every subsequent API call will arrive with
+no cookie and 401.
+
+**Fix:** put the frontend and this API on the same registrable custom
+domain before relying on login in production — e.g. `app.example.edu` and
+`api.example.edu` (same `example.edu` site; Lax cookies flow across
+subdomains of one site). This needs a real domain, which is outside what
+this session can provision. Do **not** work around it by switching to
+`SameSite=None` — that reopens the CSRF surface `SameSite=Lax` exists to
+close, and the task that requested this deployment was explicit not to
+make that change casually.
+
+### Known blocker: the Gemini embedding backfill is incomplete
+
+Live-checked against Supabase at deployment-configuration time:
+**992 / 1,269 `document_chunks` and 0 / 146 `faculty` rows have a Gemini
+vector** (docs/embeddings.md §Status — unchanged since the migration
+session). `ORION_EMBEDDING_PROVIDER=gemini` is still the right choice for
+Render (keeps the service light, matches the deployment goal), but it means
+regulation, hostel-rules, procedure and faculty-research questions will
+return "temporarily unavailable" / no match until
+`scripts/reembed_gemini.py --target all` is run to completion against a
+reset quota. Structured queries (timetable/mess/announcements/faculty
+directory) are unaffected. The alternative — `ORION_EMBEDDING_PROVIDER=minilm`
+— would restore full semantic coverage immediately but requires installing
+`backend/requirements-minilm-rollback.txt` (~1.1 GB, brings torch back),
+which defeats the point of this deployment; it is documented as a rollback
+path, not recommended here.
+
+### Manual steps (cannot be done from this session)
+
+1. Render dashboard → New → Blueprint → connect this GitHub repo → it will
+   read `render.yaml` and propose the `orion-api` service.
+2. Fill in the secret env vars listed above (`SUPABASE_URL`,
+   `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `GOOGLE_CLIENT_ID`,
+   `GOOGLE_CLIENT_SECRET`, `API_BASE_URL`, `FRONTEND_ORIGIN`).
+3. Deploy, then copy the assigned `https://<name>.onrender.com` URL back
+   into `API_BASE_URL` if it wasn't known yet, and redeploy.
+4. In Supabase Dashboard → Authentication → URL Configuration, add the
+   frontend's real callback URL (`https://<frontend-origin>/auth/callback`)
+   to the redirect allowlist — it is currently only
+   `http://localhost:8080/auth/callback`.
+5. Decide the frontend's hosting so it shares a registrable domain with
+   `orion-api` (see the cookie blocker above) before testing login.
+6. Once the Gemini daily quota resets, run
+   `.venv/bin/python scripts/reembed_gemini.py --target all` from a trusted
+   local/CI environment (needs `SUPABASE_SECRET_KEY`, never Render) to
+   finish the backfill.

@@ -1,0 +1,77 @@
+# Render Blueprint for the ORION FastAPI backend (backend/main.py).
+#
+# One Python web service — no MiniLM/torch, no worker, no cron (CLAUDE.md
+# §17/§36, docs/backend-requirements.md Option A). Document ingestion
+# (scripts/*.py) stays a separate, trusted, service-role-key workflow and is
+# never run inside this service.
+#
+# Secrets (marked sync: false below) must be entered in the Render
+# dashboard — this file never carries values for them.
+#
+# IMPORTANT — cookie/domain constraint (docs/backend-requirements.md,
+# CLAUDE.md §13): sessions are httpOnly cookies with SameSite=Lax. Two
+# different *.onrender.com services are different "sites" (onrender.com is
+# on the Public Suffix List), so a frontend on one onrender.com subdomain
+# calling this API on another WILL NOT authenticate — Lax cookies are not
+# sent on cross-site fetch/XHR. Put the frontend and this API on the same
+# registrable custom domain (e.g. app.example.edu + api.example.edu) before
+# relying on login working in production.
+
+services:
+  - type: web
+    name: orion-api
+    runtime: python
+    plan: free
+    region: singapore # closest Render region to Supabase ap-south-1 (Mumbai)
+    branch: main
+    rootDir: .
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.7
+
+      # --- Supabase: request-scoped only. No service-role key here — the
+      # API forwards each caller's own JWT and never bypasses RLS
+      # (CLAUDE.md §13, backend/app/services/supabase_clients.py). ---
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+
+      # --- Google OAuth (values only; the flow itself is frontend-driven,
+      # see backend/app/api/oauth.py — these are read for completeness by
+      # config.py but not required by any code path that runs on Render) ---
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+      # --- Gemini: generation (llm_client.py) + embeddings (embeddings.py).
+      # Server only. Without it, structured answers still work; semantic/
+      # hybrid retrieval degrades to a warning instead of erroring. ---
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # docs/embeddings.md: the Gemini backfill is NOT complete as of this
+      # deploy (992/1269 document chunks, 0/146 faculty embedded) — regulation/
+      # hostel/faculty-research questions will find nothing until it finishes.
+      # Kept as "gemini" (not "minilm") to keep this service MiniLM/torch-free,
+      # per the deployment goal; see render.yaml's top comment and the final
+      # report for the tradeoff.
+      - key: ORION_EMBEDDING_PROVIDER
+        value: gemini
+
+      # --- This service's own address + the one frontend origin CORS/cookies
+      # trust (backend/main.py, backend/app/core/config.py). Fill in the real
+      # Render URL / frontend URL in the dashboard once both are known —
+      # placeholders here would silently break CORS. ---
+      - key: API_BASE_URL
+        sync: false # e.g. https://orion-api.onrender.com
+      - key: FRONTEND_ORIGIN
+        sync: false # e.g. https://app.<your-domain> — exact origin, no trailing slash
+
+      - key: COOKIE_SECURE
+        value: "true" # Render terminates TLS; the app always sees http internally, but the cookie must still say Secure
