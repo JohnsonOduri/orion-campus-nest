@@ -223,3 +223,10 @@ def test_out_of_scope_never_invents_a_record():
 def test_only_the_students_own_regulations_say_they_apply():
     assert "apply to you" in compose._cohort_label("UG Regulations (2021-25 batch)", "21-25", "regulations")
     assert "apply to you" not in compose._cohort_label("Hostel Rules and Regulations (July 2026)", "21-25", "policy")
+
+
+def test_requirement_question_prefers_the_clause_with_the_number():
+    """Regression (smoke test, 2026-09-22): R.5.2 mentions "attendance
+    requirements" but R.5.1 states the 80% rule — the rule must win."""
+    passages, _ = documents.best_passages("What is the attendance requirement?", [_snip(REGS)])
+    assert "80% attendance" in passages[0].text

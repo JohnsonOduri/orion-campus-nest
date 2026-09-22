@@ -40,7 +40,7 @@ _SYNONYMS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\b(squad|committee|members?)\b.*\bragg|\bragg\w*\b.*\b(squad|committee|members?)\b", re.I),
      "anti ragging squad committee members office memorandum"),
     (re.compile(r"\b(cgpa|gpa|sgpa)\b", re.I), "cgpa grade point average credits weighted"),
-    (re.compile(r"\bgrad(ing|es?)\b", re.I), "grade letter grade points"),
+    (re.compile(r"\b(grading|grade\s+points?|grad(e|ing)\s+(system|scale)|letter\s+grades?)\b", re.I), "grade letter grade points"),
     (re.compile(r"\bdrop\w*\b", re.I), "drop courses faculty adviser approval weeks"),
     (re.compile(r"\bwithdraw\w*\b", re.I), "withdrawal withdraw semester"),
     (re.compile(r"\b(fail\w*|backlogs?|arrears?)\b", re.I), "fail F grade repeat backlog"),
@@ -52,6 +52,7 @@ _SYNONYMS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\b(below|less\s+than|short\w*|don'?t\s+meet|do\s+not\s+meet|not\s+meet)\b", re.I),
      "percentage less than penalty L grade insufficient repeat"),
     (re.compile(r"\bsummer\b", re.I), "summer term"),
+    (re.compile(r"\b(requirements?|required|need\s+to|have\s+to|minimum|at\s+least)\b", re.I), "minimum should must"),
     (re.compile(r"\b(dual\s+degree|b\.?tech[\s-]*ms)\b", re.I), "B.Tech-MS dual degree eligibility"),
     (re.compile(r"\btranscripts?\b", re.I), "transcript request fee academic office"),
     (re.compile(r"\bcertificates?\b", re.I), "certificate verification fee"),
@@ -63,6 +64,9 @@ _STOP = {
     "me", "my", "we", "our", "you", "your", "it", "its", "this", "that", "there", "be", "if", "at", "by",
     "with", "about", "any", "should", "would", "will", "tell", "please", "rule", "rules", "regarding",
     "happen", "happens", "get", "have", "has", "from", "as", "per", "much", "many",
+    # Describe the kind of question, not its topic (the synonym table maps
+    # them to what documents actually say: "minimum", "should", "must").
+    "requirement", "requirements", "required",
 }
 
 
@@ -267,6 +271,11 @@ def best_passages(query: str, snippets: list[SemanticSnippet], max_units: int = 
             s *= 0.4  # a bare heading
         if re.search(r"\d", unit) and re.search(r"\d|%|\bpm\b|\bam\b|\bhow\s+(many|much|long)\b|\bwhen\b|\btime\b|\bfee\b", query, re.I):
             s *= 1.15
+        # "What is the X requirement / minimum / limit?" is answered by the
+        # clause that states the number, not one that merely mentions X.
+        if re.search(r"\d+\s*%|\bminimum\s+(of\s+)?\d", unit, re.I) and re.search(
+                r"\b(requirements?|required|minimum|maximum|limit|at\s+least|how\s+(many|much))\b", query, re.I):
+            s *= 1.35
         scored.append((s, idx))
     scored.sort(reverse=True)
     best_score, best_idx = scored[0]
