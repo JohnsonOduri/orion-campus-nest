@@ -25,4 +25,5 @@ def build_context(result: RetrievalResult) -> GroundedContext:
         snippets=result.snippets,
         warnings=warnings,
         has_answer=has_answer,
+        plan=result.plan,
     )

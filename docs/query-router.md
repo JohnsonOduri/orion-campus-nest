@@ -1,5 +1,27 @@
 # Query Router / Retrieval / Context Layer
 
+> **2026-09-22 — current architecture (supersedes the "LLM" and "embedding"
+> notes below where they conflict).** Answers no longer depend on Gemini:
+>
+> 1. `followup.resolve()` turns "Who teaches it?" into a full question using
+>    the last turns of the conversation.
+> 2. `router.classify()` — 25+ intents incl. academic calendar, exam windows,
+>    announcements, wardens, institutional roles, research topics, my courses,
+>    profile, classroom, free time, out-of-scope records; broad "what are the
+>    hostel/anti-ragging rules" get an overview; unmatched *questions* go to
+>    document search (after trying to recognise a course/faculty name).
+> 3. `service.answer_query()` dispatches to `retrieval.py` / `campus.py`
+>    (Supabase, caller's JWT) or `documents.search()` — Postgres full-text
+>    search via `search_document_chunks`, cohort-filtered in SQL.
+> 4. `compose.compose()` writes the Markdown reply from the rows / quotes the
+>    best clause (`documents.best_passages`), always with a `*Source:*` line.
+> 5. `ai.answer()` optionally lets Gemini reword a quoted rule
+>    (`ORION_LLM_MODE=auto|off`, circuit breaker on failure).
+>
+> Evaluation: `AI-task.md` (question bank) → `scripts/run_ai_task.py` →
+> `AI-task-results.md`. Vector search (`retrieval.semantic_search`,
+> `faculty_topic_and_schedule`) is kept as an optional path and still tested.
+
 Deterministic query routing → structured/semantic/hybrid retrieval →
 grounding-ready context. No LLM call anywhere in this layer (see §5).
 

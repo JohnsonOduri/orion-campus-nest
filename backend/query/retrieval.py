@@ -168,6 +168,9 @@ def next_class(
     # find the class that genuinely comes after it and fold both into the
     # answer, instead of pretending we can't say.
     is_ongoing, when_phrase, gap_note = _phrase_for_entry(data, at_ist, ongoing_label)
+    # Structured copies for the answer composer (the claim string stays the
+    # grounding text for the LLM path).
+    fact_data = {**data, "_role": "ongoing" if is_ongoing else "next", "_when": when_phrase, "_gap": gap_note.strip(" ()")}
     if is_ongoing:
         end_time = data.get("end_time") or "23:59:59"
         followup_ist = datetime.combine(at_ist.date(), dt_time.fromisoformat(end_time))
@@ -179,6 +182,7 @@ def next_class(
         )
         if followup_data and followup_data != data:
             f_when_phrase, f_gap_note = _phrase_for_entry(followup_data, followup_ist, ongoing_label)[1:]
+            fact_data["_followup"] = {**followup_data, "_when": f_when_phrase, "_gap": f_gap_note.strip(" ()")}
             claim += (
                 f" After that, next class: {_entry_label(followup_data)} "
                 f"{f_when_phrase}, {followup_data.get('start_time')}-{followup_data.get('end_time')}{f_gap_note}"
@@ -192,7 +196,7 @@ def next_class(
         )
     fact = StructuredFact(
         claim=claim.strip(),
-        data=data,
+        data=fact_data,
         source="orion_next_class RPC (live timetable)",
         source_id=data.get("source_id"),
     )
@@ -247,9 +251,30 @@ def class_at_time(client: Any, time_text: str) -> RetrievalResult:
     return result
 
 
+def _date_rpc_args(on_date: Optional[str]) -> dict:
+    """Args for orion_day_timetable/orion_week_timetable. `p_on_date` is
+    OMITTED (never sent as an explicit null) when `on_date` is None.
+
+    Found live (AI-test.md, 2026-09-22): "What classes do I have today?"
+    confidently answered "no classes" for a student with an ongoing class
+    at that exact moment. Root cause, reproduced with a real authenticated
+    RPC call: supabase-py's `.rpc(name, {"p_on_date": None, ...})` sends a
+    literal JSON `null`, and PostgreSQL only applies a function parameter's
+    `default` when the argument is OMITTED from the call — an explicit NULL
+    is a real value, not "use the default". `orion_active_entries`'s SQL
+    compares `p_on_date` directly (`e.valid_from <= p_on_date`, etc.)
+    without a `p_on_date is null` guard, so every row's comparison against
+    NULL evaluates to NULL (not true) and the query returns zero rows —
+    confirmed empirically: 6 entries with the key omitted, 0 with it
+    explicitly null, same student, same moment, real JWT both times."""
+    args = {"p_user_id": None}
+    if on_date is not None:
+        args["p_on_date"] = on_date
+    return args
+
+
 def day_timetable(client: Any, on_date: Optional[str] = None) -> RetrievalResult:
-    args = {"p_user_id": None, "p_on_date": on_date}
-    res = client.rpc("orion_day_timetable", args).execute()
+    res = client.rpc("orion_day_timetable", _date_rpc_args(on_date)).execute()
     entries = res.data or []
     facts = [
         StructuredFact(
@@ -265,8 +290,7 @@ def day_timetable(client: Any, on_date: Optional[str] = None) -> RetrievalResult
 
 
 def week_timetable(client: Any, on_date: Optional[str] = None) -> RetrievalResult:
-    args = {"p_user_id": None, "p_on_date": on_date}
-    res = client.rpc("orion_week_timetable", args).execute()
+    res = client.rpc("orion_week_timetable", _date_rpc_args(on_date)).execute()
     entries = res.data or []
     facts = [
         StructuredFact(
@@ -433,7 +457,7 @@ def faculty_lookup(client: Any, name_text: str) -> RetrievalResult:
     cleaned = name_text.strip()
     rows = (
         client.table("faculty")
-        .select("full_name,initials,email,office_location,office_hours,research_interests,status")
+        .select("full_name,initials,designation,email,office_location,office_hours,research_interests,status")
         .ilike("full_name", f"%{cleaned}%")
         .eq("status", "active")
         .limit(3)

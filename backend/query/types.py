@@ -35,6 +35,19 @@ class StructuredIntent(str, Enum):
     MESS_TODAY = "mess_today"
     MESS_WEEK = "mess_week"
     MESS_ON_DAY = "mess_on_day"
+    # Added 2026-09-22 (AI-task.md): data that was in Supabase but that the
+    # assistant had no way to reach.
+    ACADEMIC_CALENDAR = "academic_calendar"
+    EXAM_SCHEDULE = "exam_schedule"
+    ANNOUNCEMENTS = "announcements"
+    HOSTEL_WARDENS = "hostel_wardens"
+    FACULTY_ROLE = "faculty_role"
+    FACULTY_RESEARCH = "faculty_research"
+    MY_COURSES = "my_courses"
+    MY_PROFILE = "my_profile"
+    CLASSROOM = "classroom"
+    FREE_TIME = "free_time"
+    OUT_OF_SCOPE = "out_of_scope"
     NONE = "none"
 
 
@@ -64,6 +77,9 @@ class QueryPlan:
     # never from free-text query parsing, per AGENTS.md §17)
     semantic_filters: dict[str, str] = field(default_factory=dict)
     reasoning: str = ""
+    # Free-form hints for the answer composer (e.g. {"focus": "first"} for
+    # "what is my first class tomorrow", {"course_name": "..."}).
+    hints: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -75,6 +91,7 @@ class QueryPlan:
             "course_code": self.course_code,
             "semantic_filters": self.semantic_filters,
             "reasoning": self.reasoning,
+            "hints": self.hints,
         }
 
 
@@ -129,11 +146,19 @@ class GroundedContext:
     snippets: list[SemanticSnippet]
     warnings: list[str]
     has_answer: bool
+    # The router's plan (intent, topic, hints) — the answer composer needs it
+    # to phrase an answer for the question that was actually asked.
+    plan: Optional[QueryPlan] = None
+
+    @property
+    def intent(self) -> StructuredIntent:
+        return self.plan.structured_intent if self.plan else StructuredIntent.NONE
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "query": self.query,
             "route": self.route.value,
+            "intent": self.intent.value,
             "has_answer": self.has_answer,
             "facts": [
                 {"claim": f.claim, "data": f.data, "source": f.source, "source_id": f.source_id}

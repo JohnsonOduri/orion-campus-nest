@@ -118,19 +118,28 @@ def test_semantic_search_embeds_once_and_calls_gemini_rpc(spy):
     assert res.warnings == []
 
 
-def test_semantic_route_uses_semantic_retrieval(spy):
-    sb = FakeSupabase({"match_document_chunks_gemini": [CHUNK]})
-    ctx = answer_query(sb, "What is the attendance requirement?")
+# 2026-09-22: the answer path uses Postgres full-text search
+# (search_document_chunks) — no embedding call, no Gemini quota. The vector
+# functions above stay as an optional path and keep their own tests.
+LEXICAL = {**CHUNK, "rank": 1.2, "chunk_index": 3}
+
+
+def test_semantic_route_uses_lexical_search_and_never_embeds(spy):
+    sb = FakeSupabase({"search_document_chunks": [LEXICAL]})
+    ctx = answer_query(sb, "What is the attendance requirement?", profile={"semester": 3, "cohort": "2021_2025"})
     assert ctx.route == RouteType.SEMANTIC
-    assert len(spy.calls) == 1
-    assert sb.rpc_calls[0][0] == "match_document_chunks_gemini"
+    assert spy.calls == []
+    names = [n for n, _ in sb.rpc_calls]
+    assert names and set(names) == {"search_document_chunks"}
+    # cohort isolation: the student's regulation family is sent to SQL
+    assert all(params["cohort_family"] == "21-25" for _, params in sb.rpc_calls)
     assert ctx.has_answer
 
 
 def test_no_matches_is_an_honest_no_answer(spy):
-    ctx = answer_query(FakeSupabase({"match_document_chunks_gemini": []}), "What is the attendance requirement?")
+    ctx = answer_query(FakeSupabase({"search_document_chunks": []}), "What is the attendance requirement?")
     assert ctx.has_answer is False
-    assert any("no document chunks matched" in w for w in ctx.warnings)
+    assert any("no document passages matched" in w for w in ctx.warnings)
 
 
 # ------------------------------------------------------------- structured path
@@ -152,31 +161,26 @@ def test_structured_query_never_embeds(spy, monkeypatch):
 # ----------------------------------------------------------------- hybrid path
 
 
-def test_hybrid_faculty_uses_stored_vectors_and_schedule(spy):
-    fac = {
-        "id": 7,
-        "full_name": "Dr. A",
-        "initials": "AA",
-        "email": "a@x",
-        "office_location": None,
-        "office_hours": None,
-        "research_interests": "Natural Language Processing",
-        "similarity": 0.72,
-    }
-    sched = [{"entry_id": 1, "timetable_entries": {"day_of_week": 2, "start_time": "10:30", "end_time": "11:25", "courses": {"course_code": "CS401"}}}]
-    sb = FakeSupabase({"match_faculty_research": [fac], "timetable_entry_faculty": sched})
+def test_hybrid_faculty_matches_research_text_and_schedule_without_embeddings(spy):
+    fac = [
+        {"id": 7, "full_name": "Dr. A", "initials": "AA", "designation": "Assistant Professor", "email": "a@x",
+         "office_location": None, "office_hours": None, "status": "active",
+         "research_interests": "Natural Language Processing; Machine Learning"},
+        {"id": 8, "full_name": "Dr. B", "initials": "BB", "designation": "Assistant Professor", "email": "b@x",
+         "office_location": None, "office_hours": None, "status": "active",
+         "research_interests": "VLSI Design; Embedded Systems"},
+    ]
+    sched = [{"timetable_entries": {"day_of_week": 2, "start_time": "10:30", "end_time": "11:25", "status": "active",
+                                    "courses": {"course_code": "CS401"}}}]
+    sb = FakeSupabase({"faculty": fac, "timetable_entry_faculty": sched})
     ctx = answer_query(sb, "Which faculty work on NLP and when can I meet them?")
 
     assert ctx.route == RouteType.HYBRID
-    assert len(spy.calls) == 1 and spy.calls[0][0] == "NLP"
-    assert spy.calls[0][1]["task"] == embeddings.QUERY_TASK_SEARCH
-    name, params = sb.rpc_calls[0]
-    assert name == "match_faculty_research" and len(params["query_embedding"]) == DIM
-    # never reads the faculty corpus to embed it at request time
-    assert "faculty" not in sb.tables
-    fact = ctx.facts[0]
-    assert fact.data["teaching_slots"][0]["course_code"] == "CS401"
-    assert fact.data["availability_basis"] == "teaching_schedule_only"
+    assert spy.calls == []  # no Gemini call
+    assert [f.data["faculty"]["full_name"] for f in ctx.facts] == ["Dr. A"]
+    assert ctx.facts[0].data["teaching_slots"][0]["course_code"] == "CS401"
+    # office hours are never invented
+    assert ctx.facts[0].data["faculty"]["office_hours"] is None
 
 
 def test_hybrid_drops_rows_below_threshold(spy):
@@ -197,19 +201,18 @@ def test_hybrid_drops_rows_below_threshold(spy):
         embeddings.EmbeddingResponseError("expected 768"),
     ],
 )
-def test_embedding_failure_degrades_to_warning(monkeypatch, exc):
+def test_answers_do_not_depend_on_gemini_embeddings(monkeypatch, exc):
+    """Gemini being down or out of quota changes nothing on the answer path."""
     monkeypatch.setattr(embeddings, "embed_query", EmbedSpy(exc=exc))
-    for q in ("What is the attendance requirement?", "Which faculty work on NLP and when can I meet them?"):
-        sb = FakeSupabase()
-        ctx = answer_query(sb, q)
-        assert ctx.has_answer is False
-        assert any("temporarily unavailable" in w for w in ctx.warnings)
-        assert sb.rpc_calls == []  # never queried with no vector
+    sb = FakeSupabase({"search_document_chunks": [LEXICAL]})
+    ctx = answer_query(sb, "What is the attendance requirement?")
+    assert ctx.has_answer is True
+    assert not any("temporarily unavailable" in w for w in ctx.warnings)
 
 
 def test_rpc_failure_degrades_to_warning(spy):
     err = APIError({"message": "function does not exist", "code": "42883"})
-    ctx = answer_query(FakeSupabase({"match_document_chunks_gemini": err}), "What is the attendance requirement?")
+    ctx = answer_query(FakeSupabase({"search_document_chunks": err}), "What is the attendance requirement?")
     assert ctx.has_answer is False
     assert any("temporarily unavailable" in w for w in ctx.warnings)
     # internals are not echoed to the user

@@ -49,10 +49,30 @@ def _api_key() -> str:
     return key
 
 
-def build_prompt(context: GroundedContext) -> str:
+def build_prompt(context: GroundedContext, history: Optional[list[dict[str, str]]] = None) -> str:
     """Render a GroundedContext into a prompt that only asks the model to
-    phrase what's already retrieved — never to introduce new facts."""
-    lines = [
+    phrase what's already retrieved — never to introduce new facts.
+
+    `history` (oldest first, each `{"role": "user"|"assistant", "content": str}`)
+    is the last few conversation turns, used ONLY so the model can resolve
+    references like "it"/"that" back to the earlier turn and keep a
+    consistent tone — it is never treated as a source of facts. The facts
+    for THIS turn still come exclusively from `context`, produced by the
+    router/retrieval layer from the current query alone (see
+    backend/query/service.py — history is not fed into routing).
+    """
+    lines = []
+    if history:
+        lines.append(
+            "Recent conversation so far (for tone/reference resolution only — "
+            "the facts below, not this history, are the source of truth for "
+            "this answer):"
+        )
+        for turn in history:
+            speaker = "User" if turn["role"] == "user" else "ORION"
+            lines.append(f"{speaker}: {turn['content']}")
+        lines.append("")
+    lines += [
         "The facts and excerpts below were already retrieved and matched to "
         "this exact question by a separate, deterministic system BEFORE you "
         "saw them — they are not a general-purpose search result you need "
@@ -93,6 +113,7 @@ def build_prompt(context: GroundedContext) -> str:
 def generate(
     context: GroundedContext,
     *,
+    history: Optional[list[dict[str, str]]] = None,
     model: str = DEFAULT_MODEL,
     max_output_tokens: int = 256,
     temperature: float = 0.1,
@@ -102,7 +123,7 @@ def generate(
     if not context.has_answer:
         return None
 
-    prompt = build_prompt(context)
+    prompt = build_prompt(context, history)
     body = json.dumps(
         {
             "contents": [{"parts": [{"text": prompt}]}],
@@ -125,3 +146,75 @@ def generate(
         return None
     parts = candidates[0].get("content", {}).get("parts", [])
     return "".join(p.get("text", "") for p in parts) or None
+
+
+# --------------------------------------------------------------------------
+# Optional passage rephrasing (2026-09-22).
+#
+# ORION answers every question without an LLM (backend/query/compose.py).
+# When Gemini is available it may reword ONE retrieved document passage into
+# a short plain-English answer — nothing else. Failures (quota exhausted,
+# network, timeout) trip a circuit breaker so later requests skip Gemini
+# entirely instead of each paying for another failed call; the composer's
+# verbatim-quote answer is used meanwhile.
+
+import os as _os
+import time as _time
+import urllib.error as _urlerror
+
+_breaker_open_until = 0.0
+
+
+class LLMUnavailable(RuntimeError):
+    pass
+
+
+def llm_mode() -> str:
+    """ORION_LLM_MODE: "auto" (default — use Gemini for document answers
+    when it's reachable) or "off" (never call it)."""
+    return (_os.environ.get("ORION_LLM_MODE") or "auto").strip().lower()
+
+
+def llm_available() -> bool:
+    return llm_mode() != "off" and bool(_os.environ.get("GEMINI_API_KEY")) and _time.monotonic() >= _breaker_open_until
+
+
+def _trip(seconds: float) -> None:
+    global _breaker_open_until
+    _breaker_open_until = _time.monotonic() + seconds
+
+
+def rephrase_passage(question: str, passage: str, document_title: str, *, model: str = DEFAULT_MODEL, timeout: float = 8.0) -> str:
+    """Rewrite `passage` as a direct 1-3 sentence answer to `question`.
+    Raises LLMUnavailable on any failure (caller falls back to the quote)."""
+    if not llm_available():
+        raise LLMUnavailable("LLM disabled or circuit open")
+    prompt = (
+        "Answer the student's question using ONLY the rule quoted below, in 1-3 plain sentences. "
+        "Keep every number, time, percentage and condition exactly as written. Do not add anything "
+        "that is not in the quote. If the quote does not answer the question, reply exactly: NO_ANSWER\n\n"
+        f"Question: {question}\n\nQuoted rule (from {document_title}):\n\"{passage}\""
+    )
+    body = json.dumps({
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"maxOutputTokens": 200, "temperature": 0.0},
+    }).encode()
+    req = urllib.request.Request(
+        f"{_API_BASE}/{model}:generateContent?key={_api_key()}",
+        data=body, headers={"Content-Type": "application/json"}, method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            payload = json.loads(resp.read())
+    except _urlerror.HTTPError as exc:
+        # 429 = free-tier quota exhausted: don't try again for a while.
+        _trip(1800 if exc.code == 429 else 300)
+        raise LLMUnavailable(f"HTTP {exc.code}") from exc
+    except Exception as exc:  # noqa: BLE001 - timeouts, DNS, TLS: all degrade
+        _trip(120)
+        raise LLMUnavailable(exc.__class__.__name__) from exc
+    parts = ((payload.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
+    text = "".join(p.get("text", "") for p in parts).strip()
+    if not text or "NO_ANSWER" in text:
+        raise LLMUnavailable("model found no answer in the passage")
+    return text

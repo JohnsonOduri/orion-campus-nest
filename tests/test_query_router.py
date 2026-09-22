@@ -23,10 +23,17 @@ def test_next_class_routes_structured():
 
 
 def test_next_class_phrasing_variants():
-    for q in ["Where is my next class?", "What class do I have right now?"]:
+    for q in ["What is my next class?", "What class do I have right now?"]:
         plan = classify(q)
         assert plan.route == RouteType.STRUCTURED
         assert plan.structured_intent == StructuredIntent.NEXT_CLASS
+
+
+def test_where_is_my_next_class_also_answers_the_room():
+    """2026-09-22: "where" asks for a place, so it routes to CLASSROOM, which
+    answers with the next class AND the section's allocated room."""
+    plan = classify("Where is my next class?")
+    assert plan.structured_intent == StructuredIntent.CLASSROOM
 
 
 def test_attendance_routes_semantic():
@@ -139,10 +146,10 @@ def test_timetable_yesterday_routes_day_of_week_timetable():
 
 
 def test_timetable_relative_day_requires_a_timetable_word():
-    """Same conservative requirement as the named-weekday case — "yesterday"
-    alone, with nothing else to disambiguate it, stays unsupported."""
-    plan = classify("What did I have yesterday?")
-    assert plan.route == RouteType.UNSUPPORTED
+    """A day reference alone isn't enough — but "did I have" is: in a
+    student assistant "What did I have yesterday?" means classes (AI-task.md)."""
+    assert classify("What did I have yesterday?").structured_intent == StructuredIntent.DAY_OF_WEEK_TIMETABLE
+    assert classify("It rained yesterday").route == RouteType.UNSUPPORTED
 
 
 def test_course_info_routes_structured():
@@ -269,8 +276,9 @@ def test_empty_query_unsupported():
 
 
 def test_ambiguous_query_unsupported():
-    plan = classify("hello there")
-    assert plan.route == RouteType.UNSUPPORTED
+    assert classify("hello there").route == RouteType.SMALL_TALK  # a greeting, not ambiguous
+    for q in ["asdkfj qwer nonsense query", "I met him on Monday", "ok"]:
+        assert classify(q).route == RouteType.UNSUPPORTED, q
 
 
 def test_mess_today_routes_structured():
@@ -369,4 +377,7 @@ def test_plan_never_carries_fabricated_answer_data():
         "course_code",
         "semantic_filters",
         "reasoning",
+        "hints",
     }
+    # hints are phrasing cues taken from the question itself, never data
+    assert all(isinstance(v, str) for v in d["hints"].values())
