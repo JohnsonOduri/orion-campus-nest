@@ -17,7 +17,9 @@ REFRESH_TOKEN_COOKIE = "orion_refresh_token"
 
 
 def set_session_cookies(response: Response, access_token: str, refresh_token: str) -> None:
-    common = dict(httponly=True, secure=config.COOKIE_SECURE, samesite="lax", path="/")
+    # samesite is config.COOKIE_SAMESITE ("lax" unless deliberately overridden
+    # for a cross-site frontend/API deployment — see config.py's docstring).
+    common = dict(httponly=True, secure=config.COOKIE_SECURE, samesite=config.COOKIE_SAMESITE, path="/")
     response.set_cookie(ACCESS_TOKEN_COOKIE, access_token, **common)
     response.set_cookie(REFRESH_TOKEN_COOKIE, refresh_token, **common)
 

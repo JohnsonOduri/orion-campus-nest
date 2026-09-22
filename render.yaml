@@ -5,28 +5,43 @@
 # (scripts/*.py) stays a separate, trusted, service-role-key workflow and is
 # never run inside this service.
 #
+# Matches the live service (srv-dap4h48ae00c73921ee0, created manually
+# before this file existed, then reconfigured 2026-09-22 to match this
+# blueprint — see docs/backend-requirements.md §7): name, region, rootDir
+# and the build/start commands below are the service's actual settings, not
+# aspirational ones. Keep them in sync so a future Blueprint re-sync in the
+# Render dashboard can't spin up a second, differently-configured service.
+#
 # Secrets (marked sync: false below) must be entered in the Render
 # dashboard — this file never carries values for them.
 #
 # IMPORTANT — cookie/domain constraint (docs/backend-requirements.md,
-# CLAUDE.md §13): sessions are httpOnly cookies with SameSite=Lax. Two
-# different *.onrender.com services are different "sites" (onrender.com is
-# on the Public Suffix List), so a frontend on one onrender.com subdomain
-# calling this API on another WILL NOT authenticate — Lax cookies are not
-# sent on cross-site fetch/XHR. Put the frontend and this API on the same
-# registrable custom domain (e.g. app.example.edu + api.example.edu) before
-# relying on login working in production.
+# CLAUDE.md §13): sessions are httpOnly cookies with SameSite=Lax. The
+# frontend is deployed on Vercel (*.vercel.app or a custom domain) and this
+# API on Render (*.onrender.com) — two different registrable domains, a
+# harder version of the same constraint (verified: CORS on this service
+# already correctly allows only the exact configured FRONTEND_ORIGIN and
+# rejects every other origin — checked live with a cross-origin OPTIONS
+# preflight). SameSite=Lax cookies are NOT sent on the frontend's cross-site
+# fetch/XHR calls to this API, so login will not work as deployed. Fixing
+# this is a deliberate choice between: (a) SameSite=None; Secure — safe here
+# specifically because CORS is real and Content-Type: application/json
+# forces a preflight, so no other origin can trigger a state-changing
+# request; or (b) a shared custom domain for both. Neither is applied here —
+# this is a security-relevant decision left for a human to make explicitly,
+# not something to flip silently (see docs/backend-requirements.md §7 for
+# the full writeup).
 
 services:
   - type: web
-    name: orion-api
+    name: orion-campus-nest
     runtime: python
     plan: free
-    region: singapore # closest Render region to Supabase ap-south-1 (Mumbai)
+    region: oregon # set when the service was first created; Render does not allow changing region post-creation
     branch: main
-    rootDir: .
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     autoDeploy: true
     envVars:
@@ -35,7 +50,11 @@ services:
 
       # --- Supabase: request-scoped only. No service-role key here — the
       # API forwards each caller's own JWT and never bypasses RLS
-      # (CLAUDE.md §13, backend/app/services/supabase_clients.py). ---
+      # (CLAUDE.md §13, backend/app/services/supabase_clients.py).
+      # SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY are NOT listed here
+      # on purpose — do not add them to this service; see the final report
+      # for why the live service still has them set (flagged, not fixed
+      # automatically) and needs a human to remove them. ---
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
@@ -59,19 +78,16 @@ services:
       # deploy (992/1269 document chunks, 0/146 faculty embedded) — regulation/
       # hostel/faculty-research questions will find nothing until it finishes.
       # Kept as "gemini" (not "minilm") to keep this service MiniLM/torch-free,
-      # per the deployment goal; see render.yaml's top comment and the final
-      # report for the tradeoff.
+      # per the deployment goal; see the final report for the tradeoff.
       - key: ORION_EMBEDDING_PROVIDER
         value: gemini
 
       # --- This service's own address + the one frontend origin CORS/cookies
-      # trust (backend/main.py, backend/app/core/config.py). Fill in the real
-      # Render URL / frontend URL in the dashboard once both are known —
-      # placeholders here would silently break CORS. ---
+      # trust (backend/main.py, backend/app/core/config.py). ---
       - key: API_BASE_URL
-        sync: false # e.g. https://orion-api.onrender.com
+        value: https://orion-campus-nest.onrender.com
       - key: FRONTEND_ORIGIN
-        sync: false # e.g. https://app.<your-domain> — exact origin, no trailing slash
+        value: https://orion-campus-nest.vercel.app # update if a custom domain is added later — exact origin, no trailing slash
 
       - key: COOKIE_SECURE
         value: "true" # Render terminates TLS; the app always sees http internally, but the cookie must still say Secure

@@ -53,6 +53,26 @@ FRONTEND_ORIGIN: str = os.environ.get("FRONTEND_ORIGIN", "http://localhost:8080"
 # deployments must run behind https and leave this true.
 COOKIE_SECURE: bool = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
 
+# SameSite for the session cookies (core/cookies.py). Default "lax" is
+# unchanged from the original design and is correct whenever the frontend
+# and this API share one registrable domain. Set to "none" ONLY when they
+# are genuinely on different sites (e.g. a Vercel frontend calling a Render
+# API) — that combination requires COOKIE_SECURE=true (browsers reject
+# SameSite=None without Secure) and only stays safe if CORS keeps rejecting
+# every origin except FRONTEND_ORIGIN, since SameSite=None alone provides no
+# CSRF protection on its own; the strict single-origin CORS in main.py is
+# what's actually standing in for it. This is a deliberate deployment
+# decision, not a default — see docs/backend-requirements.md §7. Never pair
+# "none" with a wildcard CORS origin.
+_COOKIE_SAMESITE_VALUES = {"lax", "strict", "none"}
+COOKIE_SAMESITE: str = os.environ.get("COOKIE_SAMESITE", "lax").strip().lower()
+if COOKIE_SAMESITE not in _COOKIE_SAMESITE_VALUES:
+    raise RuntimeError(
+        f"COOKIE_SAMESITE={COOKIE_SAMESITE!r} is not valid — must be one of {sorted(_COOKIE_SAMESITE_VALUES)}"
+    )
+if COOKIE_SAMESITE == "none" and not COOKIE_SECURE:
+    raise RuntimeError("COOKIE_SAMESITE=none requires COOKIE_SECURE=true (browsers reject SameSite=None without Secure)")
+
 
 def require_configured() -> None:
     """Fail fast and loudly at startup rather than on the first request."""
