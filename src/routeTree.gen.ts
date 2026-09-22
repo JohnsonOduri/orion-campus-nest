@@ -22,6 +22,7 @@ import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as ExamsRouteImport } from './routes/exams'
 import { Route as FacultyRouteImport } from './routes/faculty'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LogsRouteImport } from './routes/logs'
 import { Route as MessRouteImport } from './routes/mess'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -96,6 +97,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogsRoute = LogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MessRoute = MessRouteImport.update({
   id: '/mess',
   path: '/mess',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/exams': typeof ExamsRoute
   '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
+  '/logs': typeof LogsRoute
   '/mess': typeof MessRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/exams': typeof ExamsRoute
   '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
+  '/logs': typeof LogsRoute
   '/mess': typeof MessRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/exams': typeof ExamsRoute
   '/faculty': typeof FacultyRoute
   '/login': typeof LoginRoute
+  '/logs': typeof LogsRoute
   '/mess': typeof MessRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/exams'
     | '/faculty'
     | '/login'
+    | '/logs'
     | '/mess'
     | '/onboarding'
     | '/profile'
@@ -246,6 +256,7 @@ export interface FileRouteTypes {
     | '/exams'
     | '/faculty'
     | '/login'
+    | '/logs'
     | '/mess'
     | '/onboarding'
     | '/profile'
@@ -269,6 +280,7 @@ export interface FileRouteTypes {
     | '/exams'
     | '/faculty'
     | '/login'
+    | '/logs'
     | '/mess'
     | '/onboarding'
     | '/profile'
@@ -293,6 +305,7 @@ export interface RootRouteChildren {
   ExamsRoute: typeof ExamsRoute
   FacultyRoute: typeof FacultyRoute
   LoginRoute: typeof LoginRoute
+  LogsRoute: typeof LogsRoute
   MessRoute: typeof MessRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
@@ -396,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/logs': {
+      id: '/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof LogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mess': {
       id: '/mess'
       path: '/mess'
@@ -469,6 +489,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExamsRoute: ExamsRoute,
   FacultyRoute: FacultyRoute,
   LoginRoute: LoginRoute,
+  LogsRoute: LogsRoute,
   MessRoute: MessRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,

@@ -2,46 +2,25 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
   CalendarDays,
-  CheckCircle2,
-  Clock,
   CloudSun,
-  GraduationCap,
   MapPin,
   Sparkles,
-  TrendingUp,
   UtensilsCrossed,
   Users,
   Megaphone,
-  FileText,
   Upload,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader, SectionCard, StatCard } from "@/components/shared/primitives";
+import { SectionCard } from "@/components/shared/primitives";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useProfile } from "@/hooks/use-profile";
 import { Badge } from "@/components/ui/badge";
-import {
-  PixelBadge,
-  PixelDivider,
-  PixelParticles,
-  PixelSkyline,
-  PixelSprite,
-  SPRITES,
-} from "@/components/pixel/pixel-art";
-import {
-  assignments,
-  attendanceTrend,
-  conversations,
-  courses,
-  exams,
-  student,
-  aiSuggestions,
-} from "@/lib/mock-data";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { PixelBadge, PixelDivider, PixelParticles, PixelSkyline } from "@/components/pixel/pixel-art";
+import { assignments, exams, student } from "@/lib/mock-data";
 import {
   DAY_NAMES,
   deriveStatus,
@@ -203,16 +182,8 @@ function Dashboard() {
           </div>
         </motion.section>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Attendance" value={student.attendance} suffix="%" delta="+2.4%" icon={<CheckCircle2 className="size-4" />} />
-          <StatCard label="CGPA" value={student.cgpa} icon={<GraduationCap className="size-4" />} tone="accent" />
-          <StatCard label="Credits earned" value={student.credits.earned} suffix={`/${student.credits.total}`} icon={<TrendingUp className="size-4" />} tone="success" />
-          <StatCard label="Open assignments" value={assignments.length} icon={<FileText className="size-4" />} tone="warning" />
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid gap-5">
           <SectionCard
-            className="lg:col-span-2"
             title="Today's classes"
             description={`${DAY_NAMES[now.getDay()] ?? "Today"} · ${dayEntries.length} session${dayEntries.length === 1 ? "" : "s"}`}
             action={
@@ -262,48 +233,6 @@ function Dashboard() {
               </ul>
             )}
           </SectionCard>
-
-          <div className="space-y-5">
-            <SectionCard title="AI suggestions" description="Personalised for today">
-              <div className="space-y-2">
-                {aiSuggestions.slice(0, 3).map((s) => (
-                  <Link
-                    key={s}
-                    to="/ai"
-                    className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-2.5 text-xs transition-colors hover:border-primary/60"
-                  >
-                    <Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary" />
-                    <span>{s}</span>
-                  </Link>
-                ))}
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Attendance trend" description="Last 6 months">
-              <div className="h-32">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={attendanceTrend} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="att" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--color-chart-2)" stopOpacity={0.6} />
-                        <stop offset="100%" stopColor="var(--color-chart-2)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={11} stroke="var(--color-muted-foreground)" />
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--color-card)",
-                        border: "1px solid var(--color-border)",
-                        borderRadius: 10,
-                        fontSize: 12,
-                      }}
-                    />
-                    <Area type="monotone" dataKey="value" stroke="var(--color-chart-1)" strokeWidth={2} fill="url(#att)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </SectionCard>
-          </div>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-3">
@@ -407,8 +336,7 @@ function Dashboard() {
             )}
           </SectionCard>
 
-          <div className="space-y-5">
-            <SectionCard title="Faculty directory">
+          <SectionCard title="Faculty directory">
               {facultyQuery.isLoading ? (
                 <p className="text-sm text-muted-foreground">Loading…</p>
               ) : (
@@ -428,47 +356,13 @@ function Dashboard() {
                   ))}
                 </ul>
               )}
-              <Button asChild variant="outline" size="sm" className="mt-4 w-full">
-                <Link to="/faculty">
-                  <Users className="size-4" /> Directory
-                </Link>
-              </Button>
-            </SectionCard>
-
-            <SectionCard title="Recent conversations">
-              <ul className="space-y-2">
-                {conversations.slice(0, 4).map((c) => (
-                  <li key={c.title} className="flex items-center gap-2 text-xs">
-                    <Clock className="size-3.5 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{c.title}</span>
-                    <span className="ml-auto shrink-0 font-mono text-[10px] text-muted-foreground">{c.time}</span>
-                  </li>
-                ))}
-              </ul>
-            </SectionCard>
-          </div>
+            <Button asChild variant="outline" size="sm" className="mt-4 w-full">
+              <Link to="/faculty">
+                <Users className="size-4" /> Directory
+              </Link>
+            </Button>
+          </SectionCard>
         </div>
-
-        <SectionCard title="Academic progress" description={`${courses.length} active courses`}>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((c) => (
-              <div key={c.code} className="rounded-lg border border-border p-3 hover-lift">
-                <div className="flex items-center justify-between">
-                  <p className="font-mono text-xs font-bold text-primary">{c.code}</p>
-                  <PixelSprite size={2} rows={[...SPRITES.star]} />
-                </div>
-                <p className="mt-1 truncate text-sm font-medium">{c.title}</p>
-                <Progress value={c.progress} className="mt-2 h-1.5" />
-                <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">
-                  {c.progress}% complete · {c.attendance}% attendance
-                </p>
-              </div>
-            ))}
-          </div>
-          <Button asChild variant="outline" size="sm" className="mt-4">
-            <Link to="/courses">Open courses</Link>
-          </Button>
-        </SectionCard>
       </div>
     </AppShell>
   );

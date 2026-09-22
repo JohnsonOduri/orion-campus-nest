@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Sparkles,
   CalendarDays,
-  BookOpen,
   Users,
   UtensilsCrossed,
   Megaphone,
@@ -21,8 +20,7 @@ import {
   Upload,
   ShieldCheck,
   CalendarRange,
-  FileText,
-  PartyPopper,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -41,7 +39,7 @@ import { useProfile, profileQueryOptions } from "@/hooks/use-profile";
 import { apiPost } from "@/lib/api-client";
 import { toast } from "sonner";
 import { FloatingAiButton } from "@/components/ai/ai-chat";
-import { PixelBadge, PixelParticles, PixelSprite, SPRITES } from "@/components/pixel/pixel-art";
+import { PixelBadge, PixelSprite, SPRITES } from "@/components/pixel/pixel-art";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 
@@ -51,18 +49,36 @@ const studentNav: NavItem[] = [
   { to: "/timetable", label: "Timetable", icon: CalendarDays },
   { to: "/calendar", label: "Calendar", icon: CalendarRange },
   { to: "/exams", label: "Exams", icon: GraduationCap },
-  { to: "/courses", label: "Courses", icon: BookOpen },
   { to: "/faculty", label: "Faculty", icon: Users },
-  { to: "/clubs", label: "Clubs & Events", icon: PartyPopper },
   { to: "/mess", label: "Mess", icon: UtensilsCrossed },
-  { to: "/documents", label: "Documents", icon: FileText },
   { to: "/announcements", label: "Announcements", icon: Megaphone },
 ];
 
-const bottomNav: NavItem[] = [
+// Admins manage the institution rather than attending it, so the
+// student-facing pages (timetable, exams, mess) are dropped here — the
+// routes still exist, they're just not part of an admin's own navigation.
+const adminNav: NavItem[] = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/ai", label: "AI Chat", icon: Sparkles },
+  { to: "/calendar", label: "Calendar", icon: CalendarRange },
+  { to: "/faculty", label: "Faculty", icon: Users },
+  { to: "/announcements", label: "Announcements", icon: Megaphone },
+  { to: "/logs", label: "Logs", icon: ScrollText },
+];
+
+const studentBottomNav: NavItem[] = [
   { to: "/dashboard", label: "Home", icon: LayoutDashboard },
   { to: "/timetable", label: "Classes", icon: CalendarDays },
   { to: "/mess", label: "Mess", icon: UtensilsCrossed },
+  { to: "/profile", label: "Profile", icon: User },
+];
+
+// Mirrors adminNav rather than leaving an admin with Classes/Mess shortcuts
+// they no longer have in the sidebar.
+const adminBottomNav: NavItem[] = [
+  { to: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { to: "/admin", label: "Admin", icon: ShieldCheck },
+  { to: "/logs", label: "Logs", icon: ScrollText },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
@@ -112,10 +128,12 @@ function NavLinks({ items, collapsed, onNavigate }: { items: NavItem[]; collapse
 function SidebarBody({
   collapsed,
   onNavigate,
+  campusItems,
   workspaceItems,
 }: {
   collapsed: boolean;
   onNavigate?: (() => void) | undefined;
+  campusItems: NavItem[];
   workspaceItems: NavItem[];
 }) {
   return (
@@ -136,7 +154,7 @@ function SidebarBody({
               Campus
             </p>
           )}
-          <NavLinks items={studentNav} collapsed={collapsed} onNavigate={onNavigate} />
+          <NavLinks items={campusItems} collapsed={collapsed} onNavigate={onNavigate} />
         </div>
         {workspaceItems.length > 0 && (
           <div>
@@ -157,16 +175,6 @@ function SidebarBody({
           <NavLinks items={accountNav} collapsed={collapsed} onNavigate={onNavigate} />
         </div>
       </div>
-      {!collapsed && (
-        <div className="relative m-3 overflow-hidden rounded-xl border border-border bg-secondary/50 p-3">
-          <PixelParticles count={8} />
-          <p className="relative text-xs font-semibold">Semester 6 progress</p>
-          <p className="relative mt-1 font-mono text-[11px] text-muted-foreground">118 / 160 credits</p>
-          <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-background">
-            <div className="h-full gradient-campus" style={{ width: "74%" }} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -177,6 +185,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: profile } = useProfile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const isAdmin = profile?.role === "ADMIN";
+  // A CR keeps the full student navigation alongside the CR Portal link, so
+  // they can move between their own student view and the portal freely.
+  const campusItems = isAdmin ? adminNav : studentNav;
+  const bottomNav = isAdmin ? adminBottomNav : studentBottomNav;
 
   const workspaceItems = workspaceNav.filter((item) => {
     if (!profile) return false;
@@ -209,7 +223,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           sidebarCollapsed ? "w-[72px]" : "w-64",
         )}
       >
-        <SidebarBody collapsed={sidebarCollapsed} workspaceItems={workspaceItems} />
+        <SidebarBody collapsed={sidebarCollapsed} campusItems={campusItems} workspaceItems={workspaceItems} />
       </aside>
 
       <div className={cn("transition-[padding] duration-300", sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-64")}>
@@ -223,7 +237,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 bg-sidebar p-0">
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
-                <SidebarBody collapsed={false} onNavigate={() => setMobileOpen(false)} workspaceItems={workspaceItems} />
+                <SidebarBody
+                  collapsed={false}
+                  onNavigate={() => setMobileOpen(false)}
+                  campusItems={campusItems}
+                  workspaceItems={workspaceItems}
+                />
               </SheetContent>
             </Sheet>
 
