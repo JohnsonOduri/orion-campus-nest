@@ -1,95 +1,182 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { CalendarClock, Info, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader, SectionCard } from "@/components/shared/primitives";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader, QueryState, SectionCard } from "@/components/shared/primitives";
+import { PixelBadge } from "@/components/pixel/pixel-art";
 import { Button } from "@/components/ui/button";
-import { PixelBadge, PixelSprite, SPRITES } from "@/components/pixel/pixel-art";
-import { exams } from "@/lib/mock-data";
-import { Download, MapPin, Timer } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { titleCase, useExams, type CalendarEvent, type ExamRow } from "@/lib/campus";
+import { daysFromToday, formatDate, formatTime, relativeDays } from "@/lib/dates";
 
 export const Route = createFileRoute("/exams")({
   head: () => ({
     meta: [
-      { title: "Exams & Hall Tickets — ORION Campus" },
-      { name: "description", content: "Upcoming exams, venues, seat numbers, countdowns, hall tickets and past results." },
+      { title: "Exams — ORION Campus" },
+      {
+        name: "description",
+        content: "Exam windows and published exam schedules for IIIT Kottayam.",
+      },
       { property: "og:title", content: "Exams — ORION" },
-      { property: "og:description", content: "Hall tickets, venues, seat numbers and results." },
+      { property: "og:description", content: "Exam windows and schedules." },
     ],
   }),
   component: ExamsPage,
 });
 
-function ExamsPage() {
-  const upcoming = exams.filter((e) => e.status === "upcoming");
-  const completed = exams.filter((e) => e.status === "completed");
+type Window = { name: string; start: CalendarEvent; end?: CalendarEvent };
 
+// Pairs "X Starts" with the matching "X Ends" event from the calendar.
+function windows(events: CalendarEvent[]): Window[] {
+  const base = (n: string) =>
+    n
+      .toLowerCase()
+      .replace(/\s*&\s*semester\s+ends?$/, "")
+      .replace(/\s+(starts?|begins?|ends?)$/, "")
+      .replace(/\bexam\b/, "examination");
+  const used = new Set<number>();
+  const out: Window[] = [];
+  for (const e of events) {
+    if (used.has(e.id)) continue;
+    used.add(e.id);
+    const partner = events.find(
+      (x) => !used.has(x.id) && base(x.event_name) === base(e.event_name),
+    );
+    if (partner) used.add(partner.id);
+    out.push({
+      name: e.event_name.replace(/\s+(starts?|begins?)$/i, ""),
+      start: e,
+      ...(partner ? { end: partner } : {}),
+    });
+  }
+  return out;
+}
+
+function status(w: Window): { label: string; tone: "danger" | "warning" | "muted" | "primary" } {
+  const s = daysFromToday(w.start.event_date);
+  const e = w.end ? daysFromToday(w.end.event_date) : s;
+  if (e < 0) return { label: "Done", tone: "muted" };
+  if (s <= 0) return { label: "Ongoing", tone: "danger" };
+  if (s <= 14) return { label: relativeDays(w.start.event_date), tone: "warning" };
+  return { label: relativeDays(w.start.event_date), tone: "primary" };
+}
+
+function ExamsPage() {
+  const query = useExams();
   return (
     <AppShell>
       <div className="space-y-5">
         <PageHeader
-          badge="Mid-semester"
+          badge="Odd semester 2026–27"
           title="Exams"
-          subtitle="Reporting time is 30 minutes before each session."
+          subtitle="Exam windows from the academic calendar."
           actions={
-            <Button size="sm">
-              <Download className="size-4" /> Hall ticket
+            <Button asChild size="sm" variant="outline">
+              <Link to="/ai" search={{ q: "When do the end semester exams start?" }}>
+                <Sparkles className="size-4" /> Ask ORION
+              </Link>
             </Button>
           }
         />
-
-        <div className="surface-card flex flex-wrap items-center gap-4 p-5">
-          <PixelSprite size={5} rows={[...SPRITES.trophy]} />
-          <div>
-            <p className="text-sm font-semibold">First exam in 14 days</p>
-            <p className="font-mono text-xs text-muted-foreground">CS304 · 18 Aug 2026 · 09:30 · Hall A · Seat A-42</p>
-          </div>
-          <PixelBadge tone="warning" className="ml-auto">
-            <Timer className="size-3" /> Countdown active
-          </PixelBadge>
-        </div>
-
-        <Tabs defaultValue="upcoming">
-          <TabsList>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="completed">Results</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="upcoming" className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">
-            {upcoming.map((e) => (
-              <div key={e.code} className="surface-card hover-lift p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-primary">{e.code}</span>
-                  <PixelBadge tone="primary">{e.date}</PixelBadge>
-                </div>
-                <p className="mt-2 text-sm font-semibold">{e.title}</p>
-                <p className="mt-1 font-mono text-[11px] text-muted-foreground">{e.time}</p>
-                <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="size-3.5" /> {e.venue} · Seat {e.seat}
-                </p>
-              </div>
-            ))}
-          </TabsContent>
-
-          <TabsContent value="completed" className="pt-4">
-            <SectionCard contentClassName="p-0">
-              <ul className="divide-y divide-border">
-                {completed.map((e) => (
-                  <li key={e.code} className="flex items-center gap-3 p-4">
-                    <span className="font-mono text-xs font-bold text-primary">{e.code}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{e.title}</p>
-                      <p className="font-mono text-[11px] text-muted-foreground">
-                        {e.date} · {e.venue}
-                      </p>
-                    </div>
-                    <PixelBadge tone="success">{e.grade}</PixelBadge>
-                  </li>
-                ))}
-              </ul>
-            </SectionCard>
-          </TabsContent>
-        </Tabs>
+        <QueryState
+          query={query}
+          isEmpty={(d) => d.exams.length === 0 && d.calendar.length === 0}
+          emptyTitle="No exam dates yet"
+          emptyMessage="Exam dates haven't been published in ORION for this semester."
+          skeletonRows={5}
+        >
+          {(data) => <ExamsBody exams={data.exams} calendar={data.calendar} />}
+        </QueryState>
       </div>
     </AppShell>
+  );
+}
+
+function ExamsBody({ exams, calendar }: { exams: ExamRow[]; calendar: CalendarEvent[] }) {
+  const ws = windows(calendar);
+  const next = ws.find((w) => daysFromToday((w.end ?? w.start).event_date) >= 0);
+
+  return (
+    <div className="space-y-5">
+      {next ? (
+        <div className="surface-card flex flex-wrap items-center gap-4 p-5">
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-destructive/10 text-destructive">
+            <CalendarClock className="size-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              Next exam window
+            </p>
+            <p className="text-base font-semibold">{next.name}</p>
+            <p className="text-sm text-muted-foreground">
+              {formatDate(next.start.event_date, { weekday: true })}
+              {next.end ? ` – ${formatDate(next.end.event_date, { weekday: true })}` : ""}
+            </p>
+          </div>
+          <PixelBadge tone={status(next).tone}>{status(next).label}</PixelBadge>
+        </div>
+      ) : null}
+
+      {exams.length === 0 ? (
+        <div className="flex gap-3 rounded-2xl border border-border bg-muted/40 p-4 text-sm">
+          <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <p className="text-muted-foreground">
+            The exam timetable for individual courses hasn't been published in ORION yet. The
+            windows below come from the official academic calendar; your course exams will fall
+            inside them.
+          </p>
+        </div>
+      ) : (
+        <SectionCard title="Your exam schedule" contentClassName="p-0">
+          <ul className="divide-y divide-border">
+            {exams.map((e) => (
+              <li key={e.id} className="flex flex-wrap items-center gap-3 p-4">
+                <span className="font-mono text-xs font-bold text-primary">
+                  {e.courses?.course_code}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    {titleCase(e.courses?.course_name)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {e.exam_type} · {formatDate(e.exam_date, { weekday: true })}
+                    {e.start_time ? ` · ${formatTime(e.start_time)}` : ""}
+                    {e.rooms?.room_no ? ` · ${e.rooms.room_no}` : ""}
+                  </p>
+                </div>
+                <PixelBadge tone={daysFromToday(e.exam_date) < 0 ? "muted" : "warning"}>
+                  {relativeDays(e.exam_date)}
+                </PixelBadge>
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
+      )}
+
+      <SectionCard title="Exam windows this semester" contentClassName="p-0">
+        <ul className="divide-y divide-border">
+          {ws.map((w) => {
+            const st = status(w);
+            return (
+              <li
+                key={w.start.id}
+                className={cn(
+                  "flex flex-wrap items-center gap-3 p-4",
+                  st.label === "Done" && "opacity-60",
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{w.name}</p>
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {formatDate(w.start.event_date, { weekday: true })}
+                    {w.end ? ` – ${formatDate(w.end.event_date, { weekday: true })}` : ""}
+                  </p>
+                </div>
+                <PixelBadge tone={st.tone}>{st.label}</PixelBadge>
+              </li>
+            );
+          })}
+        </ul>
+      </SectionCard>
+    </div>
   );
 }

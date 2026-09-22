@@ -133,3 +133,40 @@ export function CardSkeleton({ rows = 3 }: { rows?: number }) {
     </div>
   );
 }
+
+/**
+ * Loading → error (with retry) → empty → content, for any TanStack query.
+ * Pages never render an empty-looking screen when the API is actually down.
+ */
+export function QueryState<T>({
+  query,
+  isEmpty,
+  emptyTitle,
+  emptyMessage,
+  skeletonRows = 3,
+  children,
+}: {
+  query: { data: T | undefined; isLoading: boolean; isError: boolean; refetch: () => unknown };
+  isEmpty?: (data: T) => boolean;
+  emptyTitle: string;
+  emptyMessage: string;
+  skeletonRows?: number;
+  children: (data: T) => ReactNode;
+}) {
+  if (query.isLoading) return <CardSkeleton rows={skeletonRows} />;
+  if (query.isError || query.data === undefined) {
+    return (
+      <div role="alert" className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+        <p className="text-sm font-semibold">Couldn't load this right now</p>
+        <p className="max-w-xs text-xs text-muted-foreground">
+          ORION's server didn't respond. Check your connection and try again.
+        </p>
+        <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+  if (isEmpty?.(query.data)) return <EmptyState title={emptyTitle} message={emptyMessage} />;
+  return <>{children(query.data)}</>;
+}

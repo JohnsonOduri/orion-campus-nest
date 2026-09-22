@@ -1,26 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import {
-  CalendarDays,
-  CloudSun,
-  MapPin,
-  Sparkles,
-  UtensilsCrossed,
-  Users,
-  Megaphone,
-  Upload,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { CalendarDays, Sparkles, UtensilsCrossed, Users, Megaphone, Upload } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
 import { SectionCard } from "@/components/shared/primitives";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { useProfile } from "@/hooks/use-profile";
 import { Badge } from "@/components/ui/badge";
-import { PixelBadge, PixelDivider, PixelParticles, PixelSkyline } from "@/components/pixel/pixel-art";
-import { assignments, exams, student } from "@/lib/mock-data";
+import {
+  PixelBadge,
+  PixelDivider,
+  PixelParticles,
+  PixelSkyline,
+} from "@/components/pixel/pixel-art";
+import { titleCase, useCalendar, useMyCourses } from "@/lib/campus";
+import { daysFromToday, formatDate, relativeDays } from "@/lib/dates";
 import {
   DAY_NAMES,
   deriveStatus,
@@ -32,15 +29,24 @@ import {
 } from "@/lib/timetable";
 
 type TimetableResponse = { student: StudentContext | null; entries: TimetableEntry[] };
-type FacultyMember = { id: number; full_name: string; initials: string | null; office_location: string | null };
 type MessRow = { id: number; meal: string; items: string[] };
-type Announcement = { id: number; title: string; content: string; category: string | null; created_at: string; published_at: string | null };
+type Announcement = {
+  id: number;
+  title: string;
+  content: string;
+  category: string | null;
+  created_at: string;
+  published_at: string | null;
+};
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — ORION Campus Companion" },
-      { name: "description", content: "Today's classes, attendance, deadlines, mess menu and AI suggestions at a glance." },
+      {
+        name: "description",
+        content: "Today's classes, upcoming dates, the mess menu and announcements at a glance.",
+      },
       { property: "og:title", content: "ORION Dashboard" },
       { property: "og:description", content: "Your campus day, summarised by ORION." },
     ],
@@ -80,11 +86,15 @@ function CrAccessCard() {
   const status = statusQuery.data;
 
   return (
-    <SectionCard title="Become a Class Representative" description="Author announcements once approved by an admin">
+    <SectionCard
+      title="Become a Class Representative"
+      description="Author announcements once approved by an admin"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Upload className="size-4" />
-          {status?.approval_status === "pending" && "Your CR access request is pending admin review."}
+          {status?.approval_status === "pending" &&
+            "Your CR access request is pending admin review."}
           {status?.approval_status === "rejected" &&
             `Your last request was rejected${status.rejection_reason ? `: ${status.rejection_reason}` : "."}`}
           {!status && "Request CR access to author campus announcements."}
@@ -105,7 +115,56 @@ function CrAccessCard() {
   );
 }
 
+function useIstNow(): Date | null {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    const tick = () => setNow(new Date());
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+function istParts(d: Date) {
+  const time = d.toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
+  const date = d.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
+  const hour = Number(
+    d.toLocaleString("en-IN", { hour: "numeric", hour12: false, timeZone: "Asia/Kolkata" }),
+  );
+  return {
+    time,
+    date,
+    greeting: hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening",
+  };
+}
+
 function Dashboard() {
+  const { data: profile } = useProfile();
+  const clock = useIstNow();
+  const parts = clock ? istParts(clock) : null;
+  const firstName = (profile?.display_name || profile?.full_name || "").split(/\s+/)[0] ?? "";
+  const calendar = useCalendar();
+  const myCourses = useMyCourses();
+  const upcoming = (calendar.data ?? []).filter((e) => daysFromToday(e.event_date) >= 0);
+  const examWindows = upcoming
+    .filter((e) => e.event_type === "exam" || e.event_type === "result")
+    .slice(0, 3);
+  const comingUp = upcoming.filter((e) => e.event_type !== "exam").slice(0, 4);
+  const teachers = [
+    ...new Map(
+      (myCourses.data ?? []).flatMap((c) => c.faculty.map((f) => [f, c] as const)),
+    ).entries(),
+  ].slice(0, 5);
   const dayQuery = useQuery({
     queryKey: ["timetable", "day"],
     queryFn: () => apiGet<TimetableResponse>("/timetable/day"),
@@ -116,10 +175,6 @@ function Dashboard() {
   const live = withStatus.find((x) => x.status === "live")?.entry;
   const next = withStatus.find((x) => x.status === "upcoming")?.entry;
 
-  const facultyQuery = useQuery({
-    queryKey: ["faculty"],
-    queryFn: () => apiGet<FacultyMember[]>("/faculty"),
-  });
   const messQuery = useQuery({
     queryKey: ["mess", "today"],
     queryFn: () => apiGet<MessRow[]>("/mess/today"),
@@ -141,14 +196,22 @@ function Dashboard() {
           <PixelParticles count={14} />
           <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <PixelBadge tone="muted" className="bg-primary-foreground/15 text-primary-foreground">
-                Semester {student.semester} · {student.branch.split(" ")[0]}
-              </PixelBadge>
+              {profile?.semester ? (
+                <PixelBadge
+                  tone="muted"
+                  className="bg-primary-foreground/15 text-primary-foreground"
+                >
+                  Semester {profile.semester} · Section {profile.section}
+                </PixelBadge>
+              ) : null}
               <h1 className="mt-3 text-2xl font-bold tracking-tight text-primary-foreground sm:text-3xl">
-                Good morning, Aarav 👋
+                {parts ? parts.greeting : "Welcome"}
+                {firstName ? `, ${firstName}` : ""}
               </h1>
               <p className="mt-1.5 max-w-md text-sm text-primary-foreground/85">
-                {live ? `${entryLabel(live)} is live${live.room ? ` in ${live.room}` : ""}.` : "No class running right now."}{" "}
+                {live
+                  ? `${entryLabel(live)} is live${live.room ? ` in ${live.room}` : ""}.`
+                  : "No class running right now."}{" "}
                 {next ? `Next: ${entryLabel(next)} at ${formatTime(next.start_time)}.` : ""}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -169,13 +232,15 @@ function Dashboard() {
                 </Button>
               </div>
             </div>
-            <div className="hidden shrink-0 text-right sm:block">
-              <p className="font-mono text-3xl font-bold text-primary-foreground">11:42</p>
-              <p className="text-xs text-primary-foreground/80">Tue, 04 Aug 2026</p>
-              <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary-foreground/85">
-                <CloudSun className="size-4" /> 29°C · Humid, Kottayam
-              </p>
-            </div>
+            {parts ? (
+              <div
+                className="hidden shrink-0 text-right sm:block"
+                aria-label="Current time in Kottayam"
+              >
+                <p className="font-mono text-3xl font-bold text-primary-foreground">{parts.time}</p>
+                <p className="text-xs text-primary-foreground/80">{parts.date} · Kottayam</p>
+              </div>
+            ) : null}
           </div>
           <div className="pointer-events-none absolute right-0 bottom-0 left-0 opacity-40">
             <PixelSkyline />
@@ -200,7 +265,10 @@ function Dashboard() {
             ) : (
               <ul className="divide-y divide-border">
                 {withStatus.map(({ entry: c, status }) => (
-                  <li key={c.id} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 sm:px-5">
+                  <li
+                    key={c.id}
+                    className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 sm:px-5"
+                  >
                     <div className="w-14 shrink-0 font-mono text-xs text-muted-foreground">
                       <p className="font-semibold text-foreground">{formatTime(c.start_time)}</p>
                       <p>{formatTime(c.end_time)}</p>
@@ -209,17 +277,27 @@ function Dashboard() {
                       className="h-10 w-1 shrink-0 pixelated"
                       style={{
                         background:
-                          status === "live" ? "var(--accent)" : status === "done" ? "var(--border)" : "var(--primary)",
+                          status === "live"
+                            ? "var(--accent)"
+                            : status === "done"
+                              ? "var(--border)"
+                              : "var(--primary)",
                       }}
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">
                         {entryLabel(c)}{" "}
-                        {c.course_name && <span className="font-mono text-xs text-muted-foreground">{c.course_name}</span>}
+                        {c.course_name && (
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {c.course_name}
+                          </span>
+                        )}
                       </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {(c.faculty_names ?? []).join(", ") || "—"} · <MapPin className="inline size-3" /> {c.room ?? "—"}
-                      </p>
+                      {(c.faculty_names ?? []).length || c.room ? (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {[(c.faculty_names ?? []).join(", "), c.room].filter(Boolean).join(" · ")}
+                        </p>
+                      ) : null}
                     </div>
                     {status === "live" ? (
                       <PixelBadge tone="success">Live</PixelBadge>
@@ -236,43 +314,67 @@ function Dashboard() {
         </div>
 
         <div className="grid gap-5 lg:grid-cols-3">
-          <SectionCard title="Assignments" description="Due this fortnight">
-            <ul className="space-y-3.5">
-              {assignments.map((a) => (
-                <li key={a.title}>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-medium">{a.title}</p>
-                    <PixelBadge tone={a.progress === 0 ? "danger" : "warning"}>{a.left}</PixelBadge>
-                  </div>
-                  <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                    {a.course} · due {a.due}
-                  </p>
-                  <Progress value={a.progress} className="mt-2 h-1.5" />
-                </li>
-              ))}
-            </ul>
+          <SectionCard
+            title="Coming up"
+            description="From the academic calendar"
+            action={
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/calendar">Calendar</Link>
+              </Button>
+            }
+          >
+            {calendar.isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : comingUp.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nothing else on the calendar this semester.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {comingUp.map((e) => (
+                  <li key={e.id} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{e.event_name}</p>
+                      <p className="font-mono text-[11px] text-muted-foreground">
+                        {formatDate(e.event_date, { weekday: true })}
+                      </p>
+                    </div>
+                    <PixelBadge tone={e.event_type === "deadline" ? "warning" : "primary"}>
+                      {relativeDays(e.event_date)}
+                    </PixelBadge>
+                  </li>
+                ))}
+              </ul>
+            )}
           </SectionCard>
 
-          <SectionCard title="Upcoming exams" description="Mid-semester block">
-            <ul className="space-y-3">
-              {exams
-                .filter((e) => e.status === "upcoming")
-                .map((e) => (
-                  <li key={e.code} className="flex items-center gap-3 rounded-lg border border-border p-2.5">
-                    <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary/60 font-mono text-[10px] font-bold">
-                      {e.date.split(" ")[0]}
+          <SectionCard title="Exams" description="Exam windows this semester">
+            {calendar.isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : examWindows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No upcoming exams on the calendar.</p>
+            ) : (
+              <ul className="space-y-3">
+                {examWindows.map((e) => (
+                  <li
+                    key={e.id}
+                    className="flex items-center gap-3 rounded-lg border border-border p-2.5"
+                  >
+                    <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary/60 text-center font-mono text-[10px] leading-tight font-bold whitespace-pre-line">
+                      {formatDate(e.event_date).replace(" ", "\n")}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{e.title}</p>
+                      <p className="truncate text-sm font-medium">{e.event_name}</p>
                       <p className="font-mono text-[11px] text-muted-foreground">
-                        {e.time} · {e.venue} · Seat {e.seat}
+                        {relativeDays(e.event_date)}
                       </p>
                     </div>
                   </li>
                 ))}
-            </ul>
+              </ul>
+            )}
             <Button asChild variant="outline" size="sm" className="mt-4 w-full">
-              <Link to="/exams">Hall tickets</Link>
+              <Link to="/exams">All exam dates</Link>
             </Button>
           </SectionCard>
 
@@ -286,7 +388,9 @@ function Dashboard() {
                 {(messQuery.data ?? []).map((m) => (
                   <li key={m.id} className="rounded-lg border border-border p-2.5">
                     <p className="text-sm font-medium capitalize">{m.meal}</p>
-                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{m.items.join(" · ")}</p>
+                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                      {m.items.join(" · ")}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -314,7 +418,10 @@ function Dashboard() {
             ) : (
               <ul className="space-y-3">
                 {(announcementsQuery.data ?? []).slice(0, 3).map((a) => (
-                  <li key={a.id} className="flex gap-3 rounded-lg border border-border p-3 hover-lift">
+                  <li
+                    key={a.id}
+                    className="flex gap-3 rounded-lg border border-border p-3 hover-lift"
+                  >
                     <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
                       <Megaphone className="size-4" />
                     </span>
@@ -336,29 +443,31 @@ function Dashboard() {
             )}
           </SectionCard>
 
-          <SectionCard title="Faculty directory">
-              {facultyQuery.isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading…</p>
-              ) : (
-                <ul className="space-y-2.5">
-                  {(facultyQuery.data ?? []).slice(0, 4).map((f) => (
-                    <li key={f.id} className="flex items-center gap-2.5">
-                      <span className="grid size-8 place-items-center rounded-lg bg-secondary/60 text-[11px] font-bold">
-                        {f.initials ?? f.full_name[0]}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium">{f.full_name}</p>
-                        {f.office_location && (
-                          <p className="truncate font-mono text-[10px] text-muted-foreground">{f.office_location}</p>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+          <SectionCard title="Your teachers" description="From your courses this semester">
+            {myCourses.isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : teachers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No teachers found in your timetable.</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {teachers.map(([name, course]) => (
+                  <li key={name} className="flex items-center gap-2.5">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-secondary/60 text-[11px] font-bold">
+                      {name.replace(/^(Dr|Prof|Mr|Ms|Mrs)\.?\s*/i, "").charAt(0)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-medium">{name}</p>
+                      <p className="truncate font-mono text-[10px] text-muted-foreground">
+                        {course.course_code} · {titleCase(course.course_name)}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
             <Button asChild variant="outline" size="sm" className="mt-4 w-full">
               <Link to="/faculty">
-                <Users className="size-4" /> Directory
+                <Users className="size-4" /> Faculty directory
               </Link>
             </Button>
           </SectionCard>
