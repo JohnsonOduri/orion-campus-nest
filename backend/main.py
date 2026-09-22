@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from postgrest.exceptions import APIError
 
-from app.api import admin, ai, announcements, auth, cr, faculty, mess, oauth, registration, timetable
+from app.api import admin, ai, announcements, auth, campus, cr, faculty, mess, oauth, registration, timetable, tts
 from app.core import config
 from app.services import gotrue_http
 
@@ -29,6 +29,7 @@ async def lifespan(_app: FastAPI):
         yield
     finally:
         gotrue_http.close_client()
+        tts.close_client()
 
 
 app = FastAPI(title="ORION API", lifespan=lifespan)
@@ -60,6 +61,8 @@ app.include_router(faculty.router)
 app.include_router(mess.router)
 app.include_router(announcements.router)
 app.include_router(ai.router)
+app.include_router(tts.router)
+app.include_router(campus.router)
 
 
 @app.get("/health")

@@ -20,9 +20,11 @@ AI chat's query router so both surfaces answer from one implementation.
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 from fastapi import APIRouter, Request
+
+from query.campus import today_ist
 
 from query.retrieval import mess_all_active_rows, mess_menu_for_day, split_mess_items
 
@@ -35,7 +37,7 @@ router = APIRouter(prefix="/mess", tags=["mess"])
 def today_menu(request: Request):
     client = get_current_client(request)
     all_rows = mess_all_active_rows(client)
-    rows = mess_menu_for_day(all_rows, date.today())
+    rows = mess_menu_for_day(all_rows, today_ist())
     return split_mess_items(sorted(rows, key=lambda r: r["meal"]))
 
 
@@ -43,7 +45,7 @@ def today_menu(request: Request):
 def week_menu(request: Request):
     client = get_current_client(request)
     all_rows = mess_all_active_rows(client)
-    today = date.today()
+    today = today_ist()  # institute date (IST), not the server's UTC date
     week_start = today - timedelta(days=today.weekday())
 
     result: list[dict] = []

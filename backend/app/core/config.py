@@ -74,6 +74,26 @@ if COOKIE_SAMESITE == "none" and not COOKIE_SECURE:
     raise RuntimeError("COOKIE_SAMESITE=none requires COOKIE_SECURE=true (browsers reject SameSite=None without Secure)")
 
 
+# --- Text-to-speech (docs/tts.md) -------------------------------------------
+# "browser": the frontend speaks with the device's own SpeechSynthesis — zero
+# infrastructure, the current prototype default. "kokoro": the frontend asks
+# THIS service for audio (POST /tts/speech), which proxies to a Kokoro
+# OpenAI-compatible server at KOKORO_BASE_URL. The Kokoro URL never reaches
+# the browser. Browser TTS stays the fallback either way.
+_TTS_PROVIDERS = {"browser", "kokoro"}
+TTS_PROVIDER: str = os.environ.get("TTS_PROVIDER", "browser").strip().lower()
+if TTS_PROVIDER not in _TTS_PROVIDERS:
+    raise RuntimeError(f"TTS_PROVIDER={TTS_PROVIDER!r} is not valid — must be one of {sorted(_TTS_PROVIDERS)}")
+
+# Default is :8880, not Kokoro's own default :8000 — that is this API's port.
+KOKORO_BASE_URL: str = os.environ.get("KOKORO_BASE_URL", "http://localhost:8880").rstrip("/")
+KOKORO_VOICE: str = os.environ.get("KOKORO_VOICE", "af_heart").strip()
+try:
+    KOKORO_SPEED: float = float(os.environ.get("KOKORO_SPEED", "1.0"))
+except ValueError as exc:
+    raise RuntimeError("KOKORO_SPEED must be a number, e.g. 1.0") from exc
+
+
 def require_configured() -> None:
     """Fail fast and loudly at startup rather than on the first request."""
     missing = [

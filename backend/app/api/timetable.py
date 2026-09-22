@@ -17,9 +17,9 @@ status) in one place, in TypeScript.
 
 from __future__ import annotations
 
-from datetime import date
-
 from fastapi import APIRouter, Request
+
+from query.campus import today_ist
 
 from .deps import get_current_client
 
@@ -34,7 +34,7 @@ def _student_context(client) -> dict | None:
 def day_timetable(request: Request):
     client = get_current_client(request)
     ctx = _student_context(client)
-    entries = client.rpc("orion_day_timetable", {"p_on_date": date.today().isoformat()}).execute().data
+    entries = client.rpc("orion_day_timetable", {"p_on_date": today_ist().isoformat()}).execute().data
     return {"student": ctx, "entries": entries or []}
 
 
@@ -42,7 +42,7 @@ def day_timetable(request: Request):
 def week_timetable(request: Request):
     client = get_current_client(request)
     ctx = _student_context(client)
-    entries = client.rpc("orion_week_timetable", {"p_on_date": date.today().isoformat()}).execute().data
+    entries = client.rpc("orion_week_timetable", {"p_on_date": today_ist().isoformat()}).execute().data
     return {"student": ctx, "entries": entries or []}
 
 

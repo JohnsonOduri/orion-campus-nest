@@ -91,3 +91,9 @@ services:
 
       - key: COOKIE_SECURE
         value: "true" # Render terminates TLS; the app always sees http internally, but the cookie must still say Secure
+
+      # --- Voice output (docs/tts.md). "browser" = the device's own voice,
+      # no extra service. Kokoro needs a separate >=2 GB RAM instance (paid);
+      # to enable it later set TTS_PROVIDER=kokoro + KOKORO_BASE_URL here. ---
+      - key: TTS_PROVIDER
+        value: browser
