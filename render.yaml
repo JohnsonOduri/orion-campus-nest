@@ -87,7 +87,7 @@ services:
       - key: API_BASE_URL
         value: https://orion-campus-nest.onrender.com
       - key: FRONTEND_ORIGIN
-        value: https://orion-campus-nest.vercel.app # update if a custom domain is added later — exact origin, no trailing slash
+        value: https://orion-iiitk.vercel.app # the project's real verified alias (checked live — the guessed orion-campus-nest.vercel.app 404s); update if the domain changes
 
       - key: COOKIE_SECURE
         value: "true" # Render terminates TLS; the app always sees http internally, but the cookie must still say Secure
