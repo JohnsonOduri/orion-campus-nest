@@ -38,7 +38,6 @@ import { useOrion } from "@/store/orion";
 import { useProfile, profileQueryOptions } from "@/hooks/use-profile";
 import { apiPost } from "@/lib/api-client";
 import { toast } from "sonner";
-import { FloatingAiButton } from "@/components/ai/ai-chat";
 import { PixelBadge, PixelSprite, SPRITES } from "@/components/pixel/pixel-art";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -69,6 +68,7 @@ const adminNav: NavItem[] = [
 const studentBottomNav: NavItem[] = [
   { to: "/dashboard", label: "Home", icon: LayoutDashboard },
   { to: "/timetable", label: "Classes", icon: CalendarDays },
+  { to: "/ai", label: "ORION", icon: Sparkles },
   { to: "/mess", label: "Mess", icon: UtensilsCrossed },
   { to: "/profile", label: "Profile", icon: User },
 ];
@@ -77,6 +77,7 @@ const studentBottomNav: NavItem[] = [
 // they no longer have in the sidebar.
 const adminBottomNav: NavItem[] = [
   { to: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { to: "/ai", label: "ORION", icon: Sparkles },
   { to: "/admin", label: "Admin", icon: ShieldCheck },
   { to: "/logs", label: "Logs", icon: ScrollText },
   { to: "/profile", label: "Profile", icon: User },
@@ -179,7 +180,7 @@ function SidebarBody({
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, fill = false }: { children: ReactNode; fill?: boolean }) {
   const { sidebarCollapsed, toggleSidebar, theme, setTheme } = useOrion();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { data: profile } = useProfile();
@@ -227,7 +228,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className={cn("transition-[padding] duration-300", sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-64")}>
-        <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
           <div className="flex h-14 items-center gap-2 px-3 sm:px-5">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
@@ -318,18 +319,29 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1400px] px-3 pt-4 pb-28 sm:px-5 md:pb-10">{children}</main>
+        <main
+          className={cn(
+            "mx-auto w-full max-w-[1400px]",
+            fill
+              ? // Exactly the space between the header and the mobile bottom nav — the page
+                // itself never scrolls; the child manages its own scrolling (AI chat).
+                "flex h-[calc(100dvh-3.5rem-env(safe-area-inset-top)-4rem-env(safe-area-inset-bottom))] min-h-0 flex-col sm:px-5 sm:pt-4 md:h-[calc(100dvh-3.5rem-env(safe-area-inset-top))] md:pb-4"
+              : "px-3 pt-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-5 md:pb-10",
+          )}
+        >
+          {children}
+        </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md md:hidden">
-        <div className="grid grid-cols-4">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
+        <div className="grid grid-cols-5">
           {bottomNav.map((item) => {
             const Icon = item.icon;
             return (
               <Link
                 key={item.to}
                 to={item.to}
-                className="flex flex-col items-center gap-1 py-2.5 text-[11px] text-muted-foreground transition-colors [&.active]:text-primary"
+                className="flex h-16 flex-col items-center justify-center gap-1 text-[11px] text-muted-foreground transition-colors [&.active]:text-primary"
                 activeProps={{ className: "active" }}
               >
                 <Icon className="size-5" />
@@ -339,8 +351,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </div>
       </nav>
-
-      <FloatingAiButton />
     </div>
   );
 }

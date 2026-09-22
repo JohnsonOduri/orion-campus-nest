@@ -26,7 +26,7 @@ const getCookieHeader = createIsomorphicFn()
   .server(() => getRequest().headers.get("cookie") ?? undefined)
   .client(() => undefined);
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function send(path: string, init?: RequestInit): Promise<Response> {
   const cookie = getCookieHeader();
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -42,18 +42,44 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const body = await res.json().catch(() => null);
     throw new ApiError(res.status, body?.detail ?? `Request failed (${res.status})`);
   }
+  return res;
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await send(path, init);
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+/** POST expecting a binary body back (e.g. audio from /tts/speech). */
+export async function apiPostBlob(
+  path: string,
+  body: unknown,
+  opts?: { signal?: AbortSignal },
+): Promise<Blob> {
+  const init: RequestInit = { method: "POST", body: JSON.stringify(body) };
+  if (opts?.signal) init.signal = opts.signal;
+  const res = await send(path, init);
+  return res.blob();
 }
 
 export function apiGet<T>(path: string): Promise<T> {
   return request<T>(path, { method: "GET" });
 }
 
-export function apiPost<T>(path: string, body?: unknown): Promise<T> {
+export function apiPost<T>(
+  path: string,
+  body?: unknown,
+  opts?: { signal?: AbortSignal },
+): Promise<T> {
   const init: RequestInit = { method: "POST" };
+  if (opts?.signal) init.signal = opts.signal;
   if (body !== undefined) init.body = JSON.stringify(body);
   return request<T>(path, init);
+}
+
+export function apiDelete<T>(path: string): Promise<T> {
+  return request<T>(path, { method: "DELETE" });
 }
 
 export function apiBaseUrl(): string {
