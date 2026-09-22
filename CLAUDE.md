@@ -699,7 +699,9 @@ timetable      /timetable/day  /timetable/week  /timetable/next
 faculty        /faculty
 mess           /mess/today  /mess/week
 announcements  /announcements
-ai             /ai/ask
+ai             /ai/ask  /ai/conversations [+ /{id}/messages, DELETE /{id}]
+tts            /tts/config  /tts/speech   (Kokoro proxy — docs/tts.md)
+campus         /calendar /exams /courses /courses/mine /documents /me/academic
 health         /health
 ```
 
@@ -717,6 +719,11 @@ Rules that must not be regressed:
   clean 400, not an opaque 500.
 - The frontend reaches all of this through `src/lib/api-client.ts`, which
   forwards the incoming `Cookie` header during SSR.
+- **Voice output goes through `ttsService` (`src/lib/ai/tts.ts`) only.** UI
+  code never calls `speechSynthesis` or `/tts/*` directly. Provider is chosen
+  server-side by `TTS_PROVIDER` (`browser` deployed; `kokoro` verified
+  locally). Kokoro is only ever reached via the authenticated `/tts/speech`
+  proxy — never expose `KOKORO_BASE_URL` to the browser (docs/tts.md).
 
 `src/lib/query/`, `src/lib/chat-api.ts`, `src/lib/timetable-api.ts` and
 `src/lib/supabase-server.ts` **no longer exist** — `backend/query/` is the one
@@ -732,7 +739,13 @@ npx tsc --noEmit                      => clean
 npm run build                         => passes
 ```
 
-Test coverage is Python-side only: extraction, normalization, validation,
+Update 2026-09-22 (evening): `pytest` 262 passed, `npm test` 23 passed, build
+passes; the AI question bank (`AI-task.md`, 134 questions) runs end-to-end via
+`scripts/run_ai_task.py` with 0 errors. Earlier the same day: `npm test` (Vitest) now covers the speech sanitizer and
+the `AudioManager` (interrupts, stale audio, Kokoro→browser fallback); pytest
+adds `tests/test_tts_router.py` and `tests/test_ai_router.py`.
+
+Original note — test coverage was Python-side only: extraction, normalization, validation,
 idempotency, expiry, timetable retrieval, next-class behaviour, activities,
 identity isolation, query routing, context, service. **There are no tests for
 the FastAPI routers** (auth, cookies, role gating, CR/admin review) and none
@@ -784,7 +797,16 @@ Do not claim the system is finished. As of 2026-09-21:
   until it finishes. The MiniLM column/RPC remain as the rollback path
   (docs/embeddings.md).
 
+### AI answers (2026-09-22)
+- **Gemini is optional now.** Every answer is composed from Supabase rows or a
+  quoted document clause (`backend/query/compose.py`, `documents.py`); document
+  search is Postgres full-text (`search_document_chunks`), not embeddings.
+  Keep it that way: never make an answer depend on the LLM. See
+  `docs/query-router.md` (top) and `production-tasks.md`.
+
 ### UI
+- Live (2026-09-22): every page — no route imports mock data any more
+  (`src/lib/mock-data.ts` deleted). Earlier list kept below for history.
 - Live: `/timetable`, `/faculty`, `/mess`, `/announcements`, `/cr`, `/login`,
   `/register`, the AI chat.
 - Still mock: `/calendar`, `/clubs`, `/courses`, `/documents`, `/exams`,

@@ -18,6 +18,18 @@
 
 ---
 
+## 2026-09-22 — AI without Gemini, portal off mock data
+
+- ✅ AI answers composed from data / quoted rules; Gemini optional (circuit
+  breaker). Full-text document search with cohort isolation. 25+ intents,
+  follow-ups, out-of-scope handling. `AI-task.md` 134 questions: 0 errors.
+- ✅ `/calendar`, `/exams`, `/courses`, `/documents`, `/profile`, `/clubs`,
+  `/search`, dashboard: live data; misleading mock UI removed.
+- ✅ IST date fix for timetable/mess APIs; rate limits; anon EXECUTE revoked.
+- Remaining items that need a person: `production-tasks.md` §6.
+
+---
+
 ## Architecture as of this audit
 
 The project changed shape on 2026-09-21. It is no longer a frontend talking to
