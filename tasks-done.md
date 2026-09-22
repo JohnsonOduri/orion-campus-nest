@@ -83,11 +83,17 @@ data that had existed in the database for days is finally on screen.
 ## Phase 1 — Auth, Dashboard, AI Chat, PostgreSQL, RAG, Timetable, Faculty, Courses, Announcements
 
 ### 1.1 Authentication — ✅ **Done (FastAPI + Supabase GoTrue)**
-- Email/password (`/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/me`) and
-  **Google OAuth with PKCE** (`/auth/oauth/google/authorize` → `/callback`).
+- **Google is the only sign-in method** (`/auth/signup`/`/auth/login`
+  password endpoints removed 2026-09-22): the browser drives the OAuth/PKCE
+  handshake itself (`src/lib/supabase-browser.ts`), then POSTs the resulting
+  tokens once to `/auth/oauth/google/set-session` — chosen over a fully
+  backend-driven flow because that required the FastAPI service to be
+  running just to start the Google redirect.
 - **Sessions are httpOnly cookies** set by the API (`orion_access_token`,
-  `orion_refresh_token`, `SameSite=Lax`, `Secure` via `COOKIE_SECURE`) — the
-  browser never holds a Supabase token, so XSS cannot lift a session.
+  `orion_refresh_token`, `SameSite=Lax`, `Secure` via `COOKIE_SECURE`).
+  Google sign-in's tokens do pass through `sessionStorage` briefly during
+  the handshake (unavoidable for a redirect-based OAuth flow) before being
+  actively wiped once the cookie handoff completes — see CLAUDE.md §13.
 - Database-side rules (captured in
   `20260913000001_capture_live_auth_drift.sql`): domain-restricted signup hook,
   `handle_new_user()` role assignment, `prevent_role_self_escalation` trigger,

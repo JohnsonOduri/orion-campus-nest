@@ -935,8 +935,8 @@ npx tsc --noEmit   # typecheck
 
 | Area | Endpoints |
 |---|---|
-| Auth | `POST /auth/signup` `/auth/login` `/auth/logout` · `GET /auth/me` · `POST /auth/register` |
-| Google OAuth (PKCE) | `GET /auth/oauth/google/authorize` → `/auth/oauth/google/callback` |
+| Auth | `POST /auth/logout` · `GET /auth/me` · `POST /auth/register` (Google is the only sign-in method) |
+| Google OAuth (frontend-driven) | `POST /auth/oauth/google/set-session` |
 | Timetable | `GET /timetable/day` `/timetable/week` `/timetable/next` |
 | Directory & campus | `GET /faculty` · `GET /mess/today` `/mess/week` · `GET /announcements` |
 | CR | `POST /cr/access-request` · `GET /cr/access-request/status` · `GET`/`POST /cr/announcements` |

@@ -1,20 +1,33 @@
 # Authentication, Roles, and CR Access
 
-> **Read this first (2026-09-21).** The **database-side** rules below — the
+> **Read this first (2026-09-22).** The **database-side** rules below — the
 > domain-restricted signup hook, `handle_new_user()` role assignment, the
 > `prevent_role_self_escalation` trigger, `is_admin()`, the RLS policies, and
 > the CR request/approval RPC with its audit trail — are **still live and in
 > force**, and are now captured in
 > `supabase/migrations/20260913000001_capture_live_auth_drift.sql`.
 >
-> The **frontend/session sections are historical**. That implementation
-> (`src/lib/auth-api.ts`, `supabase-browser.ts`, `use-auth.ts`, `auth-gate.tsx`,
-> `/auth/callback`, `/complete-profile`) was replaced on 2026-09-21 by the
-> FastAPI service in `backend/app/`: sign-in, Google OAuth (PKCE), registration
-> and the CR/admin queues are now API endpoints, and sessions are httpOnly
-> cookies set by that service rather than `@supabase/ssr` cookies written in
-> the browser. The removed code is preserved on branch
-> `backup/frontend-auth-9b8c915`. Current API surface: `CLAUDE.md` §15.
+> **Frontend/session history, and what's true again now:** on 2026-09-21,
+> the original frontend-driven flow described in §1/§2 below (`@supabase/ssr`,
+> `src/lib/auth-api.ts`, `use-auth.ts`, `auth-gate.tsx`, `/complete-profile`)
+> was replaced by a fully backend-driven flow: FastAPI in `backend/app/`
+> owned sign-in, Google OAuth (server-side PKCE), registration and the
+> CR/admin queues, all via httpOnly cookies it set directly. On 2026-09-22,
+> **Google sign-in only** moved back to being frontend-driven — the
+> backend-driven PKCE `/authorize`→`/callback` pair required the FastAPI
+> service to be running just to start the Google redirect, which was a real
+> usability problem. The new implementation lives in
+> `src/lib/supabase-browser.ts`, `src/routes/login.tsx`, and
+> `src/routes/auth.callback.tsx` (route path `/auth/callback`, same name as
+> the pre-2026-09-21 original, rewritten fresh rather than recovered — see
+> CLAUDE.md's OAuth plan notes). The Google/PKCE mechanics in §1 below (the
+> `supabase.auth.signInWithOAuth` snippet, `redirectTo`) are accurate again;
+> **§2's cookie description is not** — sessions are still httpOnly cookies
+> set by the FastAPI service (`POST /auth/oauth/google/set-session`), not
+> `@supabase/ssr` cookies written in the browser, and password login/
+> registration/CR/admin are still FastAPI endpoints, unchanged from the
+> 2026-09-21 rebuild. Current API surface and the Google-sign-in security
+> tradeoff: `CLAUDE.md` §13/§15.
 
 Google-only sign-in, restricted to the institute email domain (with one
 explicit test exception), server-verified roles, and a request/approval

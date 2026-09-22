@@ -573,6 +573,37 @@ Service-role bypasses RLS and is reserved for trusted server-side operations suc
 
 Never expose it in frontend/browser code or `NEXT_PUBLIC_*` variables. Never commit it.
 
+## Google sign-in token handling
+
+**Google is the only sign-in method** (removed 2026-09-22: password
+signup/login, `/auth/signup` and `/auth/login`, no longer exist — the
+account itself is created automatically on first Google sign-in via
+`handle_new_user()`, same as before). Do not re-add a password login form
+without discussing it — the whole session/cookie model below assumes
+exactly one sign-in path.
+
+The browser drives the OAuth/PKCE handshake itself (`src/lib/supabase-browser.ts`,
+`src/routes/login.tsx`, `src/routes/auth.callback.tsx`), then POSTs the
+resulting tokens to `POST /auth/oauth/google/set-session` exactly once,
+which sets the same httpOnly cookies. This was chosen over the previous
+fully backend-driven flow (`/auth/oauth/google/authorize` →
+`/auth/oauth/google/callback`) because that design required the FastAPI
+service to be running just to *start* the redirect to Google — a real
+usability problem, not a hypothetical one.
+
+Consequence, stated plainly rather than glossed over: for the duration of
+the handshake, both tokens sit in the browser tab's `sessionStorage`
+(never `localStorage` — a redirect-surviving PKCE flow needs *some*
+persistent-across-navigation storage, and `sessionStorage` is the
+narrowest option that still works; verified against
+`@supabase/auth-js`'s `GoTrueClient` source, not assumed). Any XSS active
+in that exact window could read them. `auth.callback.tsx` calls
+`supabase.auth.signOut({ scope: "local" })` immediately after the
+`set-session` POST succeeds, to shrink that window to "during the
+handshake only" rather than "for as long as the tab stays open" — but it
+does not eliminate it. Do not extend this pattern to any other auth path
+without the same tradeoff being explicit.
+
 ## Identity rule
 
 For normal callers:
@@ -654,8 +685,11 @@ The implementation pins relevant day/time behavior consistently to UTC.
 TanStack Start route handler. Routers:
 
 ```text
-auth           /auth/signup /auth/login /auth/logout /auth/me
-oauth          /auth/oauth/google/authorize  /auth/oauth/google/callback   (PKCE)
+auth           /auth/logout /auth/me   (Google is the only sign-in method;
+               no /auth/signup or /auth/login — removed 2026-09-22)
+oauth          /auth/oauth/google/set-session   (frontend-driven; browser
+               drives the Google/PKCE handshake via supabase-js, POSTs the
+               resulting tokens here once — see §13)
 registration   /auth/register                     -> complete_registration
 cr             /cr/access-request [+ /status]  /cr/announcements [GET, POST]
 admin          /admin/cr-requests [+ /{id}/review]

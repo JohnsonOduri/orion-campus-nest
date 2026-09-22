@@ -44,18 +44,21 @@ U3 (scripts, service-role key) ────────────────�
 
 ### FR-1 — Authentication and session transport *(built)*
 
-- Email/password signup + login (`POST /auth/signup`, `/auth/login`,
-  `/auth/logout`, `GET /auth/me`) and **Google OAuth with PKCE**
-  (`GET /auth/oauth/google/authorize` → `/auth/oauth/google/callback`),
-  both against Supabase GoTrue.
+- **Google is the only sign-in method** (`GET /auth/me`, `POST /auth/logout`
+  against Supabase GoTrue; no password signup/login — removed 2026-09-22):
+  the browser drives the OAuth/PKCE handshake itself via supabase-js, then
+  POSTs the resulting tokens once to `POST /auth/oauth/google/set-session`,
+  which sets the session cookies (see `docs/auth.md`, CLAUDE.md §13's
+  "Google sign-in token handling").
 - Signup is restricted to `@iiitkottayam.ac.in` **in the database** by a
   Before-User-Created auth hook; role assignment, role-escalation blocking and
   CR approval are database functions, not application code
   (`20260913000001_capture_live_auth_drift.sql`, `docs/auth.md`).
 - **Sessions are httpOnly cookies set by U2** (`orion_access_token`,
-  `orion_refresh_token`, plus a short-lived `orion_oauth_pkce_verifier`),
-  `SameSite=Lax`, `Secure` controlled by `COOKIE_SECURE`. The browser never
-  holds a Supabase token in JS.
+  `orion_refresh_token`), `SameSite=Lax`, `Secure` controlled by
+  `COOKIE_SECURE`. The Google sign-in tokens do pass through frontend JS/
+  `sessionStorage` briefly during the handshake before that handoff — see
+  CLAUDE.md §13 for why and how that window is minimized.
 
 **Deployment consequences — these are hard constraints, not preferences:**
 
@@ -70,9 +73,10 @@ U3 (scripts, service-role key) ────────────────�
 3. CORS is locked to exactly one origin with credentials enabled
    (`FRONTEND_ORIGIN`) — every preview deployment on a new URL needs that
    variable set, or it will fail CORS *and* cookies.
-4. The Google redirect URL (`API_BASE_URL/auth/oauth/google/callback`) must be
-   added to the Supabase Auth allowlist per environment. Only `localhost` is
-   allowlisted today.
+4. The Google redirect URL is now the **frontend's own origin**
+   (`FRONTEND_ORIGIN/auth/callback`, e.g. `http://localhost:8080/auth/callback`
+   in dev) — not U2's — and must be added to the Supabase Auth allowlist per
+   environment. Only `localhost` is allowlisted today.
 5. U2 holds **no** service-role key in any current router — every request runs
    on the caller's own JWT under RLS. Keep it that way.
 

@@ -1,15 +1,8 @@
-import { useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   PixelClouds,
   PixelParticles,
@@ -17,16 +10,13 @@ import {
   PixelMascot,
   PixelDivider,
 } from "@/components/pixel/pixel-art";
-import { apiPost, apiBaseUrl, ApiError } from "@/lib/api-client";
-import { useQueryClient } from "@tanstack/react-query";
-import { profileQueryOptions } from "@/hooks/use-profile";
-import { RedirectOverlay } from "@/components/shared/redirect-overlay";
+import { supabase } from "@/lib/supabase-browser";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in to ORION — IIIT Kottayam" },
-      { name: "description", content: "Sign in to ORION with your IIIT Kottayam email, student ID or Google account." },
+      { name: "description", content: "Sign in to ORION with your IIIT Kottayam Google account." },
       { property: "og:title", content: "Sign in to ORION" },
       { property: "og:description", content: "Access your IIIT Kottayam campus workspace." },
     ],
@@ -39,19 +29,13 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-const schema = z.object({
-  email: z.string().email("Enter a valid campus email"),
-  password: z.string().min(6, "At least 6 characters"),
-  remember: z.boolean().optional(),
-});
-
-type LoginResponse = { ok: true; redirect_to: string };
+// Shared with src/routes/auth.callback.tsx, which is the only other caller
+// of a backend auth endpoint that returns this shape.
+export type LoginResponse = { ok: true; redirect_to: string };
 
 function LoginPage() {
   const { error } = Route.useSearch();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     if (error) {
@@ -61,34 +45,21 @@ function LoginPage() {
     }
   }, [error, navigate]);
 
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "", remember: true },
-  });
-
-  async function onSubmit(values: z.infer<typeof schema>) {
-    try {
-      const result = await apiPost<LoginResponse>("/auth/login", {
-        email: values.email,
-        password: values.password,
-      });
-      await queryClient.invalidateQueries({ queryKey: profileQueryOptions.queryKey });
-      toast.success("Welcome back to ORION");
-      setRedirecting(true);
-      await navigate({ to: result.redirect_to });
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Sign in failed. Try again.";
-      toast.error(message);
-    }
-  }
-
-  function onGoogleSignIn() {
-    window.location.href = `${apiBaseUrl()}/auth/oauth/google/authorize`;
+  async function onGoogleSignIn() {
+    // Frontend-driven: the browser talks to Supabase directly, so this
+    // works even if the FastAPI backend isn't running yet — the backend is
+    // only needed once for the /auth/callback handoff (see
+    // src/routes/auth.callback.tsx), the same way it's needed for every
+    // other feature (timetable, mess, etc.) once you're signed in.
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) toast.error(error.message);
   }
 
   return (
     <div className="relative grid min-h-screen lg:grid-cols-2">
-      {redirecting && <RedirectOverlay label="Taking you to your workspace…" />}
       <div className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-10">
         <div className="absolute inset-0 gradient-campus opacity-95" />
         <PixelClouds />
@@ -125,54 +96,16 @@ function LoginPage() {
             <span className="font-pixel text-xs text-primary">ORION</span>
           </div>
           <h1 className="mt-6 text-2xl font-bold tracking-tight">Sign in</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Use your campus credentials to continue.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Use your @iiitkottayam.ac.in Google account to continue.
+          </p>
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Campus email</Label>
-              <div className="relative">
-                <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="email" className="pl-9" {...form.register("email")} />
-              </div>
-              {form.formState.errors.email && (
-                <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="password" type="password" className="pl-9" {...form.register("password")} />
-              </div>
-              {form.formState.errors.password && (
-                <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
-              )}
-            </div>
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Checkbox defaultChecked /> Remember me
-              </label>
-            </div>
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Signing in…" : "Continue"}
-            </Button>
-          </form>
-
-          <div className="my-5 flex items-center gap-3">
-            <span className="h-px flex-1 bg-border" />
-            <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">or</span>
-            <span className="h-px flex-1 bg-border" />
-          </div>
-
-          <Button variant="outline" className="w-full" onClick={onGoogleSignIn}>
+          <Button className="mt-6 w-full" onClick={onGoogleSignIn}>
             Continue with Google
           </Button>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            New here?{" "}
-            <Link to="/register" className="font-medium text-primary hover:underline">
-              Create an account
-            </Link>
+            First time here? Signing in with Google creates your account automatically.
           </p>
         </motion.div>
       </div>

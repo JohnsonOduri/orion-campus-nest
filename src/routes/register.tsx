@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Mail, Lock, User } from "lucide-react";
+import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,14 +19,18 @@ import { RedirectOverlay } from "@/components/shared/redirect-overlay";
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "Create your ORION account — IIIT Kottayam" },
-      { name: "description", content: "Create your ORION account with your IIIT Kottayam campus email." },
+      { title: "Complete your ORION profile — IIIT Kottayam" },
+      { name: "description", content: "Finish setting up your ORION account with your academic details." },
     ],
   }),
   component: RegisterPage,
 });
 
-const baseSchema = z.object({
+// Every visitor here has already signed in with Google (src/routes/login.tsx,
+// src/routes/auth.callback.tsx) — this page only ever completes the academic
+// profile for an already-authenticated, not-yet-onboarded account. There is
+// no separate email/password signup path anymore.
+const schema = z.object({
   full_name: z.string().min(2, "Enter your full name"),
   semester: z.coerce.number({ invalid_type_error: "Required" }).int().min(1, "Required").max(8),
   department: z.string().min(1, "Required"),
@@ -36,26 +40,9 @@ const baseSchema = z.object({
   programme: z.string().min(1, "Required"),
 });
 
-const schema = baseSchema.extend({
-  email: z.string().email("Enter a valid campus email"),
-  password: z.string().min(8, "At least 8 characters"),
-});
+type FormValues = z.infer<typeof schema>;
 
-const authedSchema = baseSchema.extend({
-  email: z.string().optional(),
-  // Already authenticated via Google — password is completely optional.
-  // If provided it must be at least 8 chars (Supabase minimum).
-  password: z.string().refine((v) => !v || v.length >= 8, {
-    message: "At least 8 characters",
-  }).optional(),
-});
-
-type FormValues = z.infer<typeof authedSchema>;
-
-type SignupResponse = { ok: true; redirect_to: string; message?: string };
 type RegisterResponse = { success: true; cohort: string };
-
-const CURRENT_YEAR = new Date().getFullYear();
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -63,22 +50,25 @@ function RegisterPage() {
   const { data: profile, isLoading } = useProfile();
   const [redirecting, setRedirecting] = useState(false);
 
-  // If already fully onboarded, go straight to dashboard
   useEffect(() => {
-    if (!isLoading && profile && profile.onboarded) {
+    if (isLoading) return;
+    if (!profile) {
+      // Never signed in — nothing to complete. Google sign-in creates the
+      // account, so this page has no standalone entry point of its own.
+      setRedirecting(true);
+      navigate({ to: "/login", replace: true });
+      return;
+    }
+    if (profile.onboarded) {
       setRedirecting(true);
       navigate({ to: "/dashboard", replace: true });
     }
   }, [isLoading, profile, navigate]);
 
-  const isAuthed = !isLoading && !!profile && !profile.onboarded;
-
   const form = useForm<FormValues>({
-    resolver: zodResolver(isAuthed ? authedSchema : schema),
+    resolver: zodResolver(schema),
     defaultValues: {
       full_name: "",
-      email: "",
-      password: "",
       semester: "" as any,
       department: "",
       batch: "",
@@ -94,8 +84,7 @@ function RegisterPage() {
     }
   }, [profile, form]);
 
-  // Show a minimal loading state while we check auth
-  if (isLoading) {
+  if (isLoading || !profile || profile.onboarded) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-sm text-muted-foreground">Loading…</p>
@@ -105,24 +94,6 @@ function RegisterPage() {
 
   async function onSubmit(values: FormValues) {
     try {
-      if (!profile) {
-        const signup = await apiPost<SignupResponse>("/auth/signup", {
-          email: values.email!,
-          password: values.password!,
-          full_name: values.full_name,
-        });
-
-        if (signup.message) {
-          // Email confirmation required before a session exists — registration
-          // (student_profiles) needs an authenticated session, so it can't
-          // continue yet.
-          toast.success(signup.message);
-          setRedirecting(true);
-          await navigate({ to: "/login" });
-          return;
-        }
-      }
-
       await apiPost<RegisterResponse>("/auth/register", {
         full_name: values.full_name,
         semester: values.semester,
@@ -131,7 +102,6 @@ function RegisterPage() {
         section: values.section,
         admission_year: values.admission_year,
         programme: values.programme,
-        password: values.password || undefined,
       });
 
       await queryClient.invalidateQueries({ queryKey: profileQueryOptions.queryKey });
@@ -174,13 +144,9 @@ function RegisterPage() {
             <PixelMascot size={4} />
             <span className="font-pixel text-xs text-primary">ORION</span>
           </div>
-          <h1 className="mt-6 text-2xl font-bold tracking-tight">
-            {profile ? "Complete your profile" : "Create your account"}
-          </h1>
+          <h1 className="mt-6 text-2xl font-bold tracking-tight">Complete your profile</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {profile
-              ? "Fill in your academic details to continue to your dashboard."
-              : "Use your @iiitkottayam.ac.in campus email."}
+            Fill in your academic details to continue to your dashboard.
           </p>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
@@ -192,32 +158,6 @@ function RegisterPage() {
               </div>
               {form.formState.errors.full_name && (
                 <p className="text-xs text-destructive">{form.formState.errors.full_name.message}</p>
-              )}
-            </div>
-
-            {!isAuthed && (
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Campus email</Label>
-                <div className="relative">
-                  <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="email" className="pl-9" {...form.register("email")} />
-                </div>
-                {form.formState.errors.email && (
-                  <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password">
-                {isAuthed ? "Set a password (optional — you can sign in via Google)" : "Password"}
-              </Label>
-              <div className="relative">
-                <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="password" type="password" className="pl-9" {...form.register("password")} />
-              </div>
-              {form.formState.errors.password && (
-                <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
               )}
             </div>
 
@@ -305,35 +245,23 @@ function RegisterPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting
-                ? isAuthed ? "Saving…" : "Creating account…"
-                : isAuthed ? "Save and continue" : "Create account"}
+              {form.formState.isSubmitting ? "Saving…" : "Save and continue"}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            {isAuthed ? (
-              <>
-                Wrong account?{" "}
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await apiPost("/auth/logout", {});
-                    queryClient.invalidateQueries({ queryKey: profileQueryOptions.queryKey });
-                  }}
-                  className="font-medium text-primary hover:underline"
-                >
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{" "}
-                <Link to="/login" className="font-medium text-primary hover:underline">
-                  Sign in
-                </Link>
-              </>
-            )}
+            Wrong account?{" "}
+            <button
+              type="button"
+              onClick={async () => {
+                await apiPost("/auth/logout", {});
+                queryClient.invalidateQueries({ queryKey: profileQueryOptions.queryKey });
+                navigate({ to: "/login" });
+              }}
+              className="font-medium text-primary hover:underline"
+            >
+              Sign out
+            </button>
           </p>
         </motion.div>
       </div>
