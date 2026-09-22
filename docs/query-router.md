@@ -131,10 +131,13 @@ Wraps the existing `document_chunks` pgvector corpus
 `match_document_chunks(query_embedding, match_count, filter_cohort,
 filter_category, filter_document_type, as_of)` — `security invoker` (RLS
 still applies), added in migration `20260911020000_add_match_document_chunks_rpc.sql`.
-It wraps the corpus; it does not re-embed or re-ingest anything. The query
-is embedded locally with the same model used at ingestion time
-(`sentence-transformers/all-MiniLM-L6-v2`, 384-dim) so query and corpus
-vectors share one space. Validity filtering (`valid_from`/`valid_until`) is
+It wraps the corpus; it does not re-embed or re-ingest anything.
+
+> **Updated 2026-09-22:** the API now calls `match_document_chunks_gemini`
+> (same signature and filters, 768-dim) and embeds the query with Gemini
+> `gemini-embedding-2` through `backend/query/embeddings.py` — the same module
+> used at ingestion time, so query and corpus vectors share one space. The
+> MiniLM RPC above is kept only as a rollback path. See `docs/embeddings.md`. Validity filtering (`valid_from`/`valid_until`) is
 applied inside the RPC in addition to the `documents` RLS policy, so an
 expired document never surfaces regardless of caller role.
 
@@ -326,10 +329,10 @@ skeleton beyond the existing typing-indicator dots.
   cohort filter but nothing calls it yet — a real per-student endpoint must
   pass the student's own cohort explicitly before this is safe to expose
   as "the" answer to a cohort-sensitive question (CLAUDE.md §20).
-- **Small local embedding model.** `all-MiniLM-L6-v2` (384-dim) is
-  noticeably weaker on bare acronyms than a larger/hosted model would be —
-  see the `min_similarity` tuning note in `retrieval.py`. Revisit if the
-  embedding model ever changes.
+- **Embedding model.** Gemini `gemini-embedding-2` (768-dim) since
+  2026-09-22; the faculty `min_similarity` constant (`FACULTY_MIN_SIMILARITY`
+  in `retrieval.py`) was recalibrated for it — Gemini cosine scores for
+  unrelated text sit far higher than MiniLM's. Revisit if the model changes.
 - **No reranking.** Retrieval is single-pass cosine similarity; README §9's
   "reranking if required" step doesn't exist yet.
 - **No LLM/generation.** This entire layer stops at `GroundedContext` —

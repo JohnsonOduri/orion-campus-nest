@@ -105,37 +105,43 @@ round trip to Supabase. **Deploy U2 in or near ap-south-1 (Mumbai)** — every
 one of these endpoints pays that hop, some of them twice (profile lookup +
 query).
 
-### FR-3 — Semantic retrieval with in-process embeddings *(built — the binding constraint)*
+### FR-3 — Semantic retrieval with hosted embeddings *(built; no longer a deployment constraint)*
 
-- Corpus: **17 documents / 17 versions / 1,269 chunks**, 384-dim vectors,
-  searched through the `match_document_chunks` RPC with cohort / category /
-  document-type / validity filters.
-- **Query embeddings are computed inside U2**, not bought from an API:
-  `backend/query/retrieval.py` lazily loads
-  `sentence-transformers/all-MiniLM-L6-v2`. This was a deliberate zero-cost
-  decision, and it is what makes U2 heavy.
+> **Changed 2026-09-22** (docs/embeddings.md). Previously the API loaded
+> `sentence-transformers/all-MiniLM-L6-v2` in-process, which made U2 a
+> ~1.1 GB, ≥2 GB-RAM, must-stay-warm service. That is gone.
 
-Measured footprint:
+- Corpus: **17 documents / 17 versions / 1,269 chunks**, 768-dim Gemini
+  vectors (`document_chunks.embedding_gemini`), searched through the
+  `match_document_chunks_gemini` RPC with cohort / category / document-type /
+  validity filters. Faculty research vectors are stored
+  (`faculty.research_embedding`) and searched via `match_faculty_research`.
+- **Query embeddings come from the Gemini API** (`gemini-embedding-2`) —
+  exactly one call per SEMANTIC/HYBRID request, none for STRUCTURED ones.
 
-| Item | Value |
-|---|---|
-| `backend/requirements.txt` closure | **~1.1 GB installed** (`sentence-transformers` → `torch` dominates) |
-| Model weights | ~90 MB, downloaded on first use, then cached on disk |
-| Resident memory once loaded | several hundred MB above baseline Python |
-| First request after a cold start | seconds (torch import + model load) |
-| Warm embedding latency | tens of ms |
+Measured 2026-09-22 on the dev laptop (clean venvs built from the old and new
+`backend/requirements.txt`):
+
+| Item | MiniLM (before) | Gemini (after) |
+|---|---|---|
+| `requirements.txt` closure installed | **1.1 GB** (torch dominates) | **127 MB** |
+| API startup (`import main`) | 0.28 s warm-disk | 0.30 s warm-disk |
+| First semantic query in a fresh process | **10.1 s** warm-disk / 36.5 s cold-disk (torch import + model load) | +0.15 s (`google-genai` import + client) plus one API call |
+| Peak RSS after first query embedding | **497–581 MB** | **86 MB** |
+| Query embedding latency | ~6 ms warm (local CPU) | network round trip — see docs/embeddings.md §Measurements |
+| Model weights / cache dir | ~90 MB, must persist | none |
 
 **Deployment consequences:**
 
-1. U2 needs **≥2 GB RAM** and a **long-lived, warm process**. A scale-to-zero
-   platform re-pays the torch import and model load on every cold start.
-2. The image is ~1–2 GB. Platforms with small bundle/image limits are out.
-3. The model cache must survive restarts (a writable cache dir or a
-   bake-into-image step), or every deploy re-downloads it.
-4. **Known inefficiency, worth fixing before it becomes a hosting argument:**
-   the faculty hybrid search (`faculty_research_search`) re-embeds *every*
-   faculty research-interest string **on every request** instead of using
-   stored vectors. That is CPU burned per query and grows with the directory.
+1. U2 is now a light, I/O-bound service: no model memory, no warm-up, small
+   image. Scale-to-zero platforms are no longer ruled out by FR-3 (FR-1's
+   cookie/domain rule still applies).
+2. Outbound HTTPS to `generativelanguage.googleapis.com` is required for
+   semantic/hybrid answers (it already was for generation), and
+   `GEMINI_API_KEY` is a server-only secret.
+3. Free-tier embedding quota is **100 texts/minute** (measured). Interactive
+   queries don't wait out a quota window — they degrade to a
+   "temporarily unavailable" warning; batch jobs pace themselves.
 
 ### FR-4 — Grounded generation *(built)*
 
@@ -159,12 +165,12 @@ code change, not a platform change, but the timeout headroom matters now.
 ### FR-5 — Request concurrency model *(built, needs a deliberate setting)*
 
 Every FastAPI handler is a plain `def`, not `async def` — Starlette therefore
-runs each one in a threadpool. Combined with FR-3's CPU-bound embedding step,
-throughput is bounded by CPU, not by I/O waiting.
+runs each one in a threadpool. Since 2026-09-22 there is no CPU-bound
+embedding step (FR-3), so throughput is bounded by I/O waiting on Supabase and
+Gemini, which the threadpool handles well.
 
-**Deployment consequence:** size for **1–2 uvicorn workers with ≥2 GB each**,
-not for many tiny replicas — each replica pays the full model memory cost.
-This is fine: real load is a few dozen students, not thousands.
+**Deployment consequence:** 1–2 small uvicorn workers (~256–512 MB) are
+enough for real load (a few dozen students).
 
 ### FR-6 — Ingestion pipeline *(built as scripts, not as a service)*
 
@@ -178,7 +184,7 @@ PDFs, classroom details, academic calendar, mess menu, hostel wardens,
 |---|---|---|
 | `pdfplumber` | geometry-first extraction (never naive text dump) | small |
 | `pytesseract` + the **`tesseract` system binary** | scanned PDFs with no text layer | system package + per-language tessdata |
-| `sentence-transformers` / `torch` | corpus embeddings | ~1.1 GB (shared with U2) |
+| `google-genai` | corpus embeddings (Gemini API, since 2026-09-22) | small |
 | `supabase` (service-role) | trusted writes | small |
 
 **Deployment consequences:** U3 is the **only** unit that holds the
@@ -263,8 +269,8 @@ shared file.
 | Requirement | Target | Driven by |
 |---|---|---|
 | Region | ap-south-1 / Mumbai, co-located with Supabase | FR-2 |
-| U2 memory | ≥2 GB, warm | FR-3 |
-| U2 image size | 1–2 GB tolerated | FR-3 |
+| U2 memory | ~256–512 MB (was ≥2 GB before the 2026-09-22 embedding migration) | FR-3 |
+| U2 image size | small (~130 MB of Python deps) | FR-3 |
 | Request timeout | ≥30 s | FR-4 |
 | Cold starts | avoid for U2 | FR-3 |
 | Same-site frontend + API domain | mandatory | FR-1 |
@@ -282,8 +288,8 @@ Current scale, for honesty about sizing: **7 profiles** (3 STUDENT, 2 CR,
 
 ## 4. Screening test for any candidate platform
 
-1. Long-lived container, ≥2 GB RAM, no forced scale-to-zero — **FR-3**.
-2. 1–2 GB image accepted, with a persistent or baked model cache — **FR-3**.
+1. ~~Long-lived container, ≥2 GB RAM, no forced scale-to-zero~~ — lifted by the 2026-09-22 Gemini embedding migration — **FR-3**.
+2. ~~1–2 GB image with a model cache~~ — no longer needed — **FR-3**.
 3. Available in/near ap-south-1 — **FR-2**.
 4. Can serve U1 and U2 under **one registrable domain** — **FR-1**.
 5. ≥30 s request timeout — **FR-4**.
@@ -313,8 +319,7 @@ Supabase unchanged; U3 stays a laptop workflow.
 ### Option B — Serverless functions for U2
 
 - ✅ Zero-ops, free tier, per-branch previews.
-- ❌ FR-3 is disqualifying as written: torch + model in a function is too large
-  and too cold-start-sensitive.
+- ✅ ~~FR-3 disqualifying (torch + model in a function)~~ — resolved by Option D (2026-09-22).
 - ⚠️ FR-1's `SameSite=Lax` cookie rule usually breaks here, because the
   function host is a different site from the frontend host.
 - **Viable only after Option D.**
@@ -329,7 +334,7 @@ a daily cron.
 - ✅ Clean secret boundary: the request-serving unit never holds service-role.
 - ❌ Two units to operate; the worker image is the heavy one.
 
-### Option D — Move embeddings out of the request path
+### Option D — Move embeddings out of the request path *(done 2026-09-22 — Gemini API, stored faculty vectors)*
 
 Replace in-process MiniLM with a hosted embedding API, a tiny dedicated
 embedding service, or precomputed vectors (which would also fix FR-3's faculty
@@ -344,13 +349,12 @@ re-embedding).
 
 ### Recommendation
 
-**Option A now, Option C when CR uploads begin.** One warm ~2 GB container in
-Mumbai beside Supabase, with the frontend on the same registrable domain,
-satisfies everything that is built today at near-zero cost. Add the worker
-container (plus Storage bucket and cron) as the first step of FR-7 — that is an
-additional unit, not a rewrite. Treat Option D as an optimization to revisit if
-hosting cost or cold starts ever actually bite; do the cheap half of it (store
-faculty embeddings) either way.
+**Option A now, Option C when CR uploads begin.** One small container
+(~512 MB is ample since Option D landed on 2026-09-22) in Mumbai beside
+Supabase, with the frontend on the same registrable domain, satisfies
+everything that is built today at near-zero cost. Add the worker container
+(plus Storage bucket and cron) as the first step of FR-7 — that is an
+additional unit, not a rewrite.
 
 ---
 
@@ -360,7 +364,7 @@ faculty embeddings) either way.
 |---|---|
 | FR-7 (CR upload/OCR) starts | worker container + Storage bucket + queue become mandatory → Option C |
 | Streaming answers are added | needs a platform comfortable with long-lived streaming responses |
-| Embedding model changes | re-embed all 1,269 chunks; revisit the 0.19 similarity threshold |
+| Embedding model changes | re-embed with `scripts/reembed_gemini.py` into a new parallel column; revisit `FACULTY_MIN_SIMILARITY` |
 | Free-tier serverless becomes a hard constraint | Option D first, then Option B — not before |
 | Real student load (hundreds) | still one box; Supabase connection pooling is the first thing to look at |
 | U1 and U2 must live on different domains | `SameSite=Lax` must become `None; Secure` — a deliberate, reviewed change |

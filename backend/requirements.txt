@@ -7,4 +7,4 @@ pydantic[email]
 pytest
 pdfplumber
 requests
-sentence-transformers
+google-genai>=2.0

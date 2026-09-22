@@ -8,9 +8,13 @@ Pipeline (README §6 / AGENTS.md §9):
     file validation -> extraction (text layer, or OCR for scans)
     -> sensitive-data screening -> chunking -> embedding -> Supabase
 
-Embeddings: sentence-transformers/all-MiniLM-L6-v2, 384-dim, local and free
-— there is no embedding-capable API key configured for this project
-(migration 20260911010000 resized document_chunks.embedding accordingly).
+Embeddings: Gemini `gemini-embedding-2`, 768-dim, via backend/query/
+embeddings.py (the same module the API uses for query vectors), written to
+document_chunks.embedding_gemini (migration 20260922000001). Only chunks
+that are actually inserted or whose content changed are embedded, and only
+on --import — a dry run makes no Gemini calls. The legacy 384-dim MiniLM
+`embedding` column is no longer written; a changed chunk's stale MiniLM
+vector is cleared rather than left pointing at old text (docs/embeddings.md).
 
 OCR: tesseract via pytesseract, only for the 3 anti-ragging PDFs that are
 scanned images with no text layer (verified in Data/analysis.md §1). Every
@@ -41,12 +45,17 @@ import json
 import os
 import re
 import sys
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
 import pdfplumber
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from backend.query import embeddings  # noqa: E402
 
 # ------------------------------------------------------------- document specs
 
@@ -343,19 +352,23 @@ def build_document_preview(spec: DocSpec, warnings: list[str]) -> Optional[dict]
 
 # ---------------------------------------------------------------------- embed
 
-def embed_chunks(previews: list[dict]) -> None:
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer("all-MiniLM-L6-v2")
-    all_texts = [c["content"] for d in previews for c in d["chunks"]]
-    if not all_texts:
-        return
-    vectors = model.encode(all_texts, batch_size=64, show_progress_bar=False, normalize_embeddings=True)
-    i = 0
-    for d in previews:
-        for c in d["chunks"]:
-            c["embedding"] = vectors[i].tolist()
-            i += 1
+def embed_rows(rows: list[dict], document_title: str) -> None:
+    """Fill row["embedding_gemini"] for chunk rows about to be written.
+    Small paced batches; transient failures back off inside the embeddings
+    module, and a hard failure aborts the import before any row without a
+    vector is written for this document."""
+    batch_size = int(os.environ.get("ORION_EMBED_BATCH_SIZE", 16))
+    min_interval = embeddings.batch_interval_s(batch_size)
+    for start in range(0, len(rows), batch_size):
+        batch = rows[start : start + batch_size]
+        if start:
+            time.sleep(min_interval)
+        vectors = embeddings.embed_documents(
+            [r["content"] for r in batch],
+            [embeddings.chunk_title(document_title, r.get("section_title")) for r in batch],
+        )
+        for r, v in zip(batch, vectors):
+            r["embedding_gemini"] = v
 
 
 # --------------------------------------------------------------------- import
@@ -458,7 +471,6 @@ def import_previews(previews: list[dict], approved_by: str) -> dict:
                 "version_id": version_id,
                 "chunk_index": c["chunk_index"],
                 "content": c["content"],
-                "embedding": c["embedding"],
                 "page_start": c["page_start"],
                 "page_end": c["page_end"],
                 "section_title": c["section_title"],
@@ -472,6 +484,10 @@ def import_previews(previews: list[dict], approved_by: str) -> dict:
                 to_update.append((cur["id"], row))
             else:
                 totals["chunks_unchanged"] += 1
+        embed_rows(to_insert + [row for _, row in to_update], d["title"])
+        for _, row in to_update:
+            # Content changed: the old MiniLM vector describes the old text.
+            row["embedding"] = None
         for start in range(0, len(to_insert), 100):
             client.table("document_chunks").insert(to_insert[start : start + 100]).execute()
         for cid, row in to_update:
@@ -521,14 +537,10 @@ def main() -> int:
         if d:
             previews.append(d)
 
-    print("\nembedding (sentence-transformers/all-MiniLM-L6-v2, local)...")
-    embed_chunks(previews)
-
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     preview_path = out / "documents_preview.json"
-    slim = [{**d, "chunks": [{k: v for k, v in c.items() if k != "embedding"} for c in d["chunks"]]} for d in previews]
-    preview_path.write_text(json.dumps({"documents": slim, "warnings": warnings}, indent=2))
+    preview_path.write_text(json.dumps({"documents": previews, "warnings": warnings}, indent=2))
 
     total_chunks = sum(len(d["chunks"]) for d in previews)
     print(f"\ndocuments:    {len(previews)}")
@@ -545,7 +557,7 @@ def main() -> int:
     print(f"preview:      {preview_path}")
 
     if not args.do_import:
-        print("\ndry run complete — re-run with --import to write to Supabase")
+        print("\ndry run complete (no embeddings computed) — re-run with --import to embed + write to Supabase")
         return 0
 
     if not args.approved_by:
@@ -553,6 +565,9 @@ def main() -> int:
         return 2
 
     load_env()
+    if not embeddings.is_configured():
+        print("error: --import needs GEMINI_API_KEY to embed chunks", file=sys.stderr)
+        return 2
     stats = import_previews(previews, args.approved_by)
     print("\nfinal stats:", json.dumps(stats, indent=2))
     return 0

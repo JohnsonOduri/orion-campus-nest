@@ -235,12 +235,13 @@ backend/query/          # routing / retrieval / context / Gemini client
   context.py
   service.py
   llm_client.py
+  embeddings.py         # the ONLY Gemini embedding caller (docs/embeddings.md)
 
 src/lib/
   api-client.ts         # the ONLY way the frontend reaches data now
   timetable.ts
 
-supabase/migrations/    # 20 files as of 2026-09-21
+supabase/migrations/    # 22 files as of 2026-09-22
 ```
 
 Pipeline:
@@ -374,7 +375,7 @@ hostel_wardens          78
 
 documents               17
 document_versions       17
-document_chunks       1269      (384-dim local MiniLM embeddings)
+document_chunks       1269      (384-dim MiniLM `embedding` on all rows; 768-dim Gemini `embedding_gemini` on 992 — backfill in progress, docs/embeddings.md)
 
 ingestion_jobs           0
 ingestion_runs          25
@@ -768,8 +769,13 @@ Do not claim the system is finished. As of 2026-09-21:
   there is **no reranking, no streaming, and no post-generation grounding
   check**, and the authenticated student's cohort is not consistently applied
   to semantic retrieval.
-- `faculty_research_search` re-embeds the whole faculty corpus per request
-  instead of storing vectors — a real performance defect.
+- Embeddings moved to Gemini `gemini-embedding-2` (768-dim) on 2026-09-22;
+  faculty research vectors are stored (`faculty.research_embedding`), no
+  longer re-embedded per request. **Backfill incomplete**: 992/1,269 chunks
+  and 0/146 faculty rows embedded (free-tier daily cap) — run
+  `scripts/reembed_gemini.py` and keep `ORION_EMBEDDING_PROVIDER=minilm`
+  until it finishes. The MiniLM column/RPC remain as the rollback path
+  (docs/embeddings.md).
 
 ### UI
 - Live: `/timetable`, `/faculty`, `/mess`, `/announcements`, `/cr`, `/login`,
@@ -1376,9 +1382,9 @@ Unless the user asks for something else, prioritize:
    domain, `COOKIE_SECURE=true`, production redirect URL allowlisted.
 2. **CR document upload → OCR → admin approval** — the last big unbuilt slice,
    and the reason a second (worker) container will be needed.
-3. **AI answer quality**: store faculty embeddings instead of re-embedding per
-   request; apply the student's cohort to semantic retrieval; add a grounding
-   check.
+3. **AI answer quality**: apply the student's cohort to semantic retrieval;
+   add a grounding check. (Stored faculty embeddings: done 2026-09-22 with the
+   Gemini embedding migration.)
 4. **Finish UI wiring** (`/calendar`, `/courses`, `/exams`, `/documents`,
    `/clubs`, `/notifications`, and the mock remnants elsewhere).
 5. **Data gaps**: a current mess menu, an exams source, `departments` + the

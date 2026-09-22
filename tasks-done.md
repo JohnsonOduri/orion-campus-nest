@@ -135,16 +135,18 @@ data that had existed in the database for days is finally on screen.
   `supabase db push` still needs reconciling before it can be trusted.
 
 ### 1.5 RAG — 🟡 **Partial**
-- 17 documents / 17 versions / **1,269 chunks**, 384-dim local MiniLM
-  embeddings, retrieved through `match_document_chunks` with cohort / category /
-  document-type / validity filters.
+- 17 documents / 17 versions / **1,269 chunks**, 768-dim Gemini
+  (`gemini-embedding-2`) embeddings since 2026-09-22, retrieved through
+  `match_document_chunks_gemini` with cohort / category / document-type /
+  validity filters. The 384-dim MiniLM column + `match_document_chunks` are kept
+  only as a rollback path (docs/embeddings.md).
 - Generation is now wired (§1.3), so retrieve → ground → answer is complete
   end-to-end for the first time.
 - **Not done:** reranking; the authenticated student's cohort is not passed into
   semantic retrieval consistently; no grounding validation.
-- **Performance defect:** `faculty_research_search` re-embeds every faculty
-  research-interest string on **every request** instead of storing vectors
-  (`backend/query/retrieval.py`).
+- ~~Performance defect: faculty research search re-embedded every faculty
+  research-interest string on every request~~ — fixed 2026-09-22: vectors are
+  stored once in `faculty.research_embedding`; a request embeds only the topic.
 
 ### 1.6 Timetable — ✅ **Done (Semesters 3, 5, 7)**
 - PDF → layout-aware extraction → normalization → strict validation → preview
@@ -304,7 +306,7 @@ timetable_entry_faculty 838
 academic_calendar       30      mess_menus             124
 announcements            1      hostel_wardens          78
 documents               17      document_versions       17
-document_chunks       1269   (384-dim)
+document_chunks       1269   (768-dim Gemini; 384-dim MiniLM kept for rollback)
 ingestion_runs          25      approval_requests        2      audit_logs    3
 departments              0      exams                    0      ingestion_jobs 0
 ```
@@ -330,8 +332,9 @@ the proven `tesseract` path → preview/confirm → admin publish + `audit_logs`
 This needs the second container from Option C, so decide it alongside item 1.
 
 ### 3. Close the loop on AI answer quality
-- Store faculty research-interest embeddings instead of re-embedding the whole
-  directory per request (§1.5) — correctness-neutral, pure cost/latency win.
+- ~~Store faculty research-interest embeddings instead of re-embedding the whole
+  directory per request~~ — done 2026-09-22 (`faculty.research_embedding`,
+  `match_faculty_research`).
 - Pass the authenticated student's cohort into semantic retrieval every time.
 - Add a post-generation grounding check, and streaming if wanted.
 

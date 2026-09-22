@@ -1,0 +1,5 @@
+# ROLLBACK ONLY — do not install in the normal API image.
+# Restores the legacy in-process MiniLM query embeddings (384-dim) used by
+# ORION_EMBEDDING_PROVIDER=minilm; pulls in torch (~1 GB). docs/embeddings.md §Rollback.
+-r requirements.txt
+sentence-transformers

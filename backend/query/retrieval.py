@@ -12,20 +12,27 @@ existing orion_* RPCs do.
 Structured retrieval wraps the existing orion_* RPCs (docs/timetable.md) —
 nothing about the timetable security model or RPC contracts changes here.
 Semantic retrieval wraps the existing pgvector `document_chunks` corpus
-(scripts/ingest_documents.py) via a new `match_document_chunks` RPC
+(scripts/ingest_documents.py) via the `match_document_chunks_gemini` RPC
 (security invoker, so RLS still applies) — this *wraps* pgvector search, it
-does not replace it or start a new ingestion pipeline.
+does not replace it or start a new ingestion pipeline. Query vectors come
+from backend/query/embeddings.py (Gemini, 768-dim) — exactly one embedding
+call per semantic/hybrid request, never one on a STRUCTURED request.
 """
 
 from __future__ import annotations
 
+import logging
+import os
 import re
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 from typing import Any, Optional
 
+from . import embeddings
 from .types import QueryPlan, RetrievalResult, SemanticSnippet, StructuredFact, StructuredIntent
 
-_EMBED_MODEL = None
+logger = logging.getLogger("orion.retrieval")
+
+_LEGACY_MINILM_MODEL = None
 
 # The institute's real local time (Asia/Kolkata, IST, UTC+5:30) — every
 # "today"/"is this already over" comparison in this module must be done
@@ -50,18 +57,28 @@ def _today_ist() -> date:
     return _now_ist().date()
 
 
-def _embed(text: str) -> list[float]:
-    """Local embeddings (sentence-transformers/all-MiniLM-L6-v2, 384-dim) —
-    same model used at ingestion time (scripts/ingest_documents.py), so
-    query and corpus vectors live in the same space. Loaded lazily and
-    cached: the model is ~90MB and this module may be imported without ever
-    needing it (a pure STRUCTURED query never touches this)."""
-    global _EMBED_MODEL
-    if _EMBED_MODEL is None:
+def _embedding_provider() -> str:
+    """`gemini` (default) or `minilm` — the latter is ONLY the rollback path
+    (docs/embeddings.md §Rollback): it needs
+    backend/requirements-minilm-rollback.txt installed and queries the old
+    384-dim column through the untouched `match_document_chunks` RPC."""
+    return (os.environ.get("ORION_EMBEDDING_PROVIDER") or "gemini").strip().lower()
+
+
+def _legacy_minilm_embed(text: str) -> list[float]:
+    global _LEGACY_MINILM_MODEL
+    if _LEGACY_MINILM_MODEL is None:
         from sentence_transformers import SentenceTransformer
 
-        _EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
-    return _EMBED_MODEL.encode([text], normalize_embeddings=True)[0].tolist()
+        _LEGACY_MINILM_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+    return _LEGACY_MINILM_MODEL.encode([text], normalize_embeddings=True)[0].tolist()
+
+
+def _retrieval_failure_warning(kind: str, exc: Exception) -> str:
+    # Logged server-side with the exception class only; the user-facing
+    # warning never carries API internals (CLAUDE.md §27).
+    logger.warning("%s retrieval failed: %s: %s", kind, exc.__class__.__name__, exc)
+    return f"{kind} retrieval is temporarily unavailable — no documents were searched, so no answer can be grounded"
 
 
 # ------------------------------------------------------------ structured
@@ -572,17 +589,27 @@ def semantic_search(
     """
     from .types import RouteType
 
-    embedding = _embed(query_text)
-    res = client.rpc(
-        "match_document_chunks",
-        {
-            "query_embedding": embedding,
-            "match_count": top_k,
-            "filter_cohort": cohort,
-            "filter_category": category,
-            "filter_document_type": document_type,
-        },
-    ).execute()
+    plan = QueryPlan(raw_query=query_text, route=RouteType.SEMANTIC, topic_text=query_text)
+    if _embedding_provider() == "minilm":
+        embed, rpc_name = _legacy_minilm_embed, "match_document_chunks"
+    else:
+        embed, rpc_name = embeddings.embed_query, "match_document_chunks_gemini"
+    try:
+        embedding = embed(query_text)  # exactly once per request
+        res = client.rpc(
+            rpc_name,
+            {
+                "query_embedding": embedding,
+                "match_count": top_k,
+                "filter_cohort": cohort,
+                "filter_category": category,
+                "filter_document_type": document_type,
+            },
+        ).execute()
+    except Exception as exc:  # noqa: BLE001 - embedding/RPC failure must degrade, not 500
+        if not _is_degradable(exc):
+            raise
+        return RetrievalResult(plan=plan, warnings=[_retrieval_failure_warning("semantic document", exc)])
     rows = res.data or []
     snippets = [
         SemanticSnippet(
@@ -601,59 +628,108 @@ def semantic_search(
         for r in rows
     ]
     warnings = [] if snippets else ["no document chunks matched — say so, never invent an answer"]
-    plan = QueryPlan(raw_query=query_text, route=RouteType.SEMANTIC, topic_text=query_text)
     return RetrievalResult(plan=plan, snippets=snippets, warnings=warnings)
+
+
+def _is_degradable(exc: Exception) -> bool:
+    """Failures of an external dependency (Gemini, PostgREST, network) —
+    reported as a retrieval warning. Anything else is a programming error
+    and must still surface."""
+    if isinstance(exc, embeddings.EmbeddingError):
+        return True
+    try:
+        from postgrest.exceptions import APIError
+
+        if isinstance(exc, APIError):
+            return True
+    except ImportError:  # pragma: no cover
+        pass
+    try:
+        import httpx
+
+        if isinstance(exc, httpx.HTTPError):
+            return True
+    except ImportError:  # pragma: no cover
+        pass
+    return False
 
 
 # ----------------------------------------------------------------- hybrid
 
+# Cosine floor for a faculty research match under gemini-embedding-2
+# (768-dim). Gemini similarities sit much higher than MiniLM's (a probe
+# scored a relevant pair 0.82 and an unrelated pair 0.59), so the old
+# MiniLM value (0.19) would accept everything. PROVISIONAL: set from that
+# probe only — recalibrate with `scripts/eval_retrieval.py --faculty` once
+# faculty vectors are backfilled (docs/embeddings.md §Status).
+FACULTY_MIN_SIMILARITY = 0.60
+# The pre-migration MiniLM value, used only on the rollback path.
+LEGACY_MINILM_FACULTY_MIN_SIMILARITY = 0.19
 
-def faculty_topic_and_schedule(client: Any, topic: str, top_k: int = 5, min_similarity: float = 0.19) -> RetrievalResult:
-    """Hybrid: faculty.research_interests semantic match (small in-memory
-    set — no vector index needed for ~60 rows) + their live teaching
-    schedule as the closest evidenced proxy for "when can I meet them".
+
+def _legacy_minilm_faculty_ranked(client: Any, topic: str, top_k: int) -> list[tuple[dict, float]]:
+    """Rollback path only (ORION_EMBEDDING_PROVIDER=minilm): the
+    pre-migration behaviour, which embeds every faculty research-interest
+    string in-process on each request. Kept so a rollback restores the
+    hybrid search too, not just document search; not used by default."""
+    rows = (
+        client.table("faculty")
+        .select("id,full_name,initials,email,office_location,office_hours,research_interests")
+        .not_.is_("research_interests", "null")
+        .execute()
+        .data
+    ) or []
+    if not rows:
+        return []
+    _legacy_minilm_embed(topic)  # ensures the model is loaded
+    corpus = _LEGACY_MINILM_MODEL.encode([r["research_interests"] for r in rows], normalize_embeddings=True)
+    q = _LEGACY_MINILM_MODEL.encode([topic], normalize_embeddings=True)[0]
+    sims = corpus @ q
+    return sorted(((r, float(sim)) for r, sim in zip(rows, sims)), key=lambda t: -t[1])[:top_k]
+
+
+def faculty_topic_and_schedule(client: Any, topic: str, top_k: int = 5, min_similarity: float = FACULTY_MIN_SIMILARITY) -> RetrievalResult:
+    """Hybrid: faculty.research_interests semantic match + their live
+    teaching schedule as the closest evidenced proxy for "when can I meet
+    them".
+
+    Research-interest vectors are computed once at ingestion
+    (faculty.research_embedding, scripts/reembed_gemini.py --target
+    faculty) and searched through the `match_faculty_research` RPC
+    (security invoker). A request embeds only the topic — one Gemini call —
+    never the faculty corpus.
 
     Never claims office-hours availability that isn't on file — AGENTS.md
     §18: "if the data cannot establish availability, say so." Faculty
     availability here is teaching-schedule-derived, explicitly labeled as
     such, never presented as confirmed office hours.
 
-    `min_similarity=0.19` is tuned against this corpus for short
-    acronym-style topics ("NLP"): a small local model (MiniLM, 384-dim)
-    scores an acronym against a full research-interest phrase lower than a
-    spelled-out query would (verified: "Natural Language Processing" as a
-    literal first-listed interest scores 0.20-0.30 for the query "NLP", not
-    0.5+). The threshold is set below that band, not at a theoretically
-    "clean" cosine cutoff — retuning the corpus or swapping the embedding
-    model should revisit this constant.
+    `min_similarity` is calibrated for gemini-embedding-2 (see
+    FACULTY_MIN_SIMILARITY); swapping the embedding model must revisit it.
     """
     from .types import RouteType
 
-    fac_rows = (
-        client.table("faculty")
-        .select("id,full_name,initials,email,office_location,office_hours,research_interests")
-        .not_.is_("research_interests", "null")
-        .execute()
-        .data
-    )
-    if not fac_rows:
-        return RetrievalResult(
-            plan=QueryPlan(raw_query=topic, route=RouteType.HYBRID, topic_text=topic),
-            warnings=["no faculty rows have research_interests on file"],
-        )
-
-    query_vec = _embed(topic)
-    texts = [f["research_interests"] for f in fac_rows]
-    from sentence_transformers import SentenceTransformer
-
-    global _EMBED_MODEL
-    if _EMBED_MODEL is None:
-        _EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
-    corpus_vecs = _EMBED_MODEL.encode(texts, normalize_embeddings=True)
-    import numpy as np
-
-    sims = corpus_vecs @ np.array(query_vec)
-    ranked = sorted(zip(fac_rows, sims), key=lambda t: -t[1])[:top_k]
+    plan = QueryPlan(raw_query=topic, route=RouteType.HYBRID, topic_text=topic)
+    if _embedding_provider() == "minilm":
+        ranked = _legacy_minilm_faculty_ranked(client, topic, top_k)
+        min_similarity = LEGACY_MINILM_FACULTY_MIN_SIMILARITY
+    else:
+        try:
+            query_vec = embeddings.embed_query(topic, task=embeddings.QUERY_TASK_SEARCH)
+            ranked_rows = (
+                client.rpc(
+                    "match_faculty_research",
+                    {"query_embedding": query_vec, "match_count": top_k, "min_similarity": min_similarity},
+                )
+                .execute()
+                .data
+                or []
+            )
+        except Exception as exc:  # noqa: BLE001 - see _is_degradable
+            if not _is_degradable(exc):
+                raise
+            return RetrievalResult(plan=plan, warnings=[_retrieval_failure_warning("faculty research", exc)])
+        ranked = [(f, float(f["similarity"])) for f in ranked_rows]
 
     facts: list[StructuredFact] = []
     warnings: list[str] = []
@@ -691,7 +767,7 @@ def faculty_topic_and_schedule(client: Any, topic: str, top_k: int = 5, min_simi
                     ],
                     "availability_basis": "office_hours" if has_office_hours else "teaching_schedule_only",
                 },
-                source="faculty.research_interests (local embedding match) + timetable_entries (live schedule)",
+                source="faculty.research_interests (stored Gemini embedding match) + timetable_entries (live schedule)",
             )
         )
         if not has_office_hours:
@@ -702,8 +778,4 @@ def faculty_topic_and_schedule(client: Any, topic: str, top_k: int = 5, min_simi
 
     if not facts:
         warnings.append(f"no faculty research_interests matched {topic!r} above the similarity threshold")
-    return RetrievalResult(
-        plan=QueryPlan(raw_query=topic, route=RouteType.HYBRID, topic_text=topic),
-        facts=facts,
-        warnings=warnings,
-    )
+    return RetrievalResult(plan=plan, facts=facts, warnings=warnings)

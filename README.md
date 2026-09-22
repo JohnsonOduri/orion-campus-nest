@@ -966,7 +966,8 @@ run is audited in `ingestion_runs`:
 
 Other pipelines: `ingest_academic_calendar.py`, `ingest_classroom_details.py`,
 `ingest_mess_menu.py`, `ingest_hostel_wardens.py`, `ingest_documents.py`
-(PDF/OCR → chunks → embeddings), `rebuild_faculty.py`. OCR needs the
+(PDF/OCR → chunks → Gemini embeddings), `rebuild_faculty.py`,
+`reembed_gemini.py` (resumable vector backfill), `eval_retrieval.py`. OCR needs the
 `tesseract` binary installed.
 
 Details: [`docs/timetable.md`](docs/timetable.md),
@@ -1019,8 +1020,10 @@ tests/               142 Python tests
 - Timetable day/next-class behaviour is pinned to **IST** in SQL
   (`20260921000004_timetable_ist_timezone_fix.sql`) — don't reintroduce a
   process-clock dependency.
-- Query embeddings run locally (`all-MiniLM-L6-v2`, 384-dim) inside the API
-  process; the corpus was embedded with the same model, so changing it means
-  re-embedding all 1,269 chunks.
+- Embeddings are Gemini `gemini-embedding-2` (768-dim) via
+  `backend/query/embeddings.py` — one API call per semantic/hybrid question,
+  none for structured ones; no local model in the API. Corpus and faculty
+  vectors are stored in pgvector. Runbook (backfill/resume/verify/rollback):
+  [`docs/embeddings.md`](docs/embeddings.md).
 - To connect more real data, follow the pipeline pattern in
   `docs/timetable.md` rather than extending `src/lib/mock-data.ts`.
