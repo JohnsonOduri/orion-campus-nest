@@ -1,9 +1,17 @@
 # ORION AI — question bank and expected behaviour
 
+Rebuilt 2026-09-23 after the Gemini embedding backfill finished (1,269/1,269
+document chunks, 146/146 faculty rows — `todo.md`, `docs/embeddings.md`).
+Sections 1-14 are the original 134-question functional bank; §15 is new and
+exists specifically to stress-test what the completed backfill unlocks:
+semantic faculty-topic ranking against the recalibrated similarity floor
+(`FACULTY_MIN_SIMILARITY = 0.65`) and cohort isolation across the two
+regulation/curriculum document sets now that both are fully vectorized.
+
 The questions a student (or CR/admin) would realistically ask ORION, grouped by
 what they need. `scripts/run_ai_task.py` runs every one of them through the
 real answer pipeline with a real signed-in test student
-(`orion-test-student-a`, Semester 3, CSE section I, 2021-25 regulations) and
+(`orion-test-student-a`, Semester 3, CSE section I, cohort `2021_2025`) and
 writes the answers to `AI-task-results.md`.
 
 Ground rules every answer must follow (CLAUDE.md §1, §5, §20, §24):
@@ -181,3 +189,38 @@ asked in the same conversation as the line above it.
 - What is the meaning of life? → out of scope, friendly
 - asdkfj qwer nonsense query → didn't understand + examples
 - Who will win the IPL this year? → out of scope
+
+## 15. Semantic search & cohort isolation (post-embedding-backfill, 2026-09-23)
+
+Every faculty/document answer here should be traceable to real data — no
+faculty name or rule invented, no rule from one cohort presented as if it
+applies to the other (CLAUDE.md §20). `>>` follow-ups test that a resolved
+answer survives into the next turn without re-fetching from scratch.
+
+### Faculty research topics — real matches (`scripts/eval_retrieval.py` confirmed real hits)
+- Which faculty work on natural language processing? → Kashyap / Athira B / Sara Renjit or similar
+- Who researches computer vision on campus? → Sivaiah Bellamkonda / Sreelakshmy I J or similar
+- Which faculty specialise in VLSI design? → Lakshmi N S / Kala S or similar
+- Who works on cryptography and network security? → Ragesh G K / A Balu / Amit Kumar Roy or similar
+- Which faculty research wireless communication? → Emy Mariam George / Ananth A or similar
+
+### Faculty research topics — should NOT match (tests the 0.65 similarity floor)
+- Which faculty specialise in cooking recipes? → honest "no matching faculty" — must not surface language-teacher false positives (the pre-recalibration floor of 0.60 did)
+- Recommend someone for quantum computing hardware. → honest no-match if nothing on file, never a fabricated name
+- Is anyone researching medieval history? → honest no-match
+
+### Cross-cohort regulation traps — student's own cohort is 2021-25
+- What is the attendance requirement for students admitted in 2026? → cites the "26-onwards" regulations explicitly, not the student's own 21-25 rule
+- Is the attendance rule different for the 2026 admission batch compared to mine? → states both cohort values explicitly and compares, doesn't blend them
+- What is the maximum duration to complete the B.Tech under the 2026 regulations? → cites 26-onwards cohort, flags if it differs from the student's own answer (§7)
+- How many total credits does the 2026 CSE curriculum require? → cites the ADM 2026 CSE curriculum document, not the 2021-25 CSE curriculum used elsewhere for this student
+
+### Hybrid (research match + live schedule)
+- Which faculty work in machine learning and when could I meet them this week? → research match + teaching-schedule proxy, explicit that it's not confirmed office hours
+- Recommend a faculty member for NLP research who's teaching soon. → ranked match + nearest upcoming class if any
+
+### Follow-ups
+- Which faculty work on computer vision?
+>> Which of them teaches a class this week?
+- What is the attendance requirement for the 2026 admission batch?
+>> How is that different from mine?
