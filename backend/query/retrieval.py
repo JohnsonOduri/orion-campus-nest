@@ -681,12 +681,13 @@ def _is_degradable(exc: Exception) -> bool:
 # ----------------------------------------------------------------- hybrid
 
 # Cosine floor for a faculty research match under gemini-embedding-2
-# (768-dim). Gemini similarities sit much higher than MiniLM's (a probe
-# scored a relevant pair 0.82 and an unrelated pair 0.59), so the old
-# MiniLM value (0.19) would accept everything. PROVISIONAL: set from that
-# probe only — recalibrate with `scripts/eval_retrieval.py --faculty` once
-# faculty vectors are backfilled (docs/embeddings.md §Status).
-FACULTY_MIN_SIMILARITY = 0.60
+# (768-dim). Calibrated 2026-09-23 against the full backfilled corpus
+# (`scripts/eval_retrieval.py --k 3 --faculty`, docs/embeddings.md §Status):
+# real topic matches (NLP, computer vision, VLSI design, cryptography,
+# wireless communication) scored 0.677–0.836, while the junk-topic probe
+# ("cooking recipes") topped out at 0.630 — set the floor between the two,
+# closer to the junk ceiling since some genuine matches were borderline.
+FACULTY_MIN_SIMILARITY = 0.65
 # The pre-migration MiniLM value, used only on the rollback path.
 LEGACY_MINILM_FACULTY_MIN_SIMILARITY = 0.19
 

@@ -1,17 +1,20 @@
 # Gemini embeddings — TODO
 
-Status as of 2026-09-23. Full runbook: docs/embeddings.md.
+Status as of 2026-09-23 (backfill finished this session). Full runbook: docs/embeddings.md.
 
 - Code, schema, tests: done.
-- Backfill: **992 / 1,269 chunks** and **0 / 146 faculty** rows embedded.
-  Unchanged since 2026-09-22 — see the quota check below.
-- **This no longer blocks answer quality.** As of 2026-09-22/23, ORION
+- **Backfill: complete.** 1,269 / 1,269 chunks and 146 / 146 faculty rows
+  embedded (`embedding_gemini`, `faculty.research_embedding`), verified by
+  direct SQL (`missing = 0`, `wrong_dim = 0` on both tables).
+- `scripts/eval_retrieval.py --k 3 --faculty`: keyword hit@3 gemini 12/12 ·
+  minilm 11/12. `FACULTY_MIN_SIMILARITY` recalibrated 0.60 → **0.65**
+  (`backend/query/retrieval.py`) from real scores on the full corpus.
+- Answer quality was never blocked on this — since 2026-09-22/23 ORION
   answers regulation/hostel/faculty-research questions from Postgres
   full-text search (`search_document_chunks`, `backend/query/documents.py`,
-  `backend/query/campus.py`), not from these embeddings. The backfill below
-  is now a **quality improvement for semantic ranking**, not a blocker —
-  see `production-tasks.md` and `docs/query-router.md` for the current
-  architecture.
+  `backend/query/campus.py`), not from these embeddings. The vector path is
+  now a second, ranked signal alongside it — see `production-tasks.md` and
+  `docs/query-router.md` for the current architecture.
 
 ---
 
@@ -64,73 +67,38 @@ Live latency: `/ai/ask` median **2.45s** as of the round-trip-reduction fix
 
 ---
 
-## B. Gemini embedding backfill — still blocked on quota (checked 2026-09-23)
-
-Verified directly against the live API today, not assumed:
+## B. Gemini embedding backfill — done 2026-09-23
 
 ```
-$ .venv/bin/python scripts/reembed_gemini.py --dry-run
-[documents] 1269 rows · already migrated 992 · remaining 277
-[faculty] 146 rows · already migrated 0 · remaining 146
+$ .venv/bin/python scripts/reembed_gemini.py --target all
+[documents] done this run: embedded 277, skipped empty 0, failed 0; remaining 0
+[faculty] done this run: embedded 146, skipped empty 0, failed 0; remaining 0
+Migration complete.
 ```
 
-A direct `embed_query()` probe returned a 429 with:
+A few 429s hit mid-run (the daily embedding quota was still recovering) but
+the script's backoff/retry absorbed all of them — 0 failed rows.
 
-```
-quotaId: "EmbedContentRequestsPerDayPerProjectPerModel-FreeTier"
-quotaMetric: generativelanguage.googleapis.com/embed_content_free_tier_requests
-quotaValue: "1000"
-```
+- [x] `.venv/bin/python scripts/reembed_gemini.py --target all` — complete.
+- [x] Verified in SQL — `missing = 0` and `wrong_dim = 0` on both
+  `document_chunks.embedding_gemini` and `faculty.research_embedding`.
+- [x] `.venv/bin/python scripts/eval_retrieval.py --k 3 --faculty` — Gemini
+  12/12 hit@3 vs. MiniLM 11/12. Recorded in `docs/embeddings.md`.
+- [x] Recalibrated `FACULTY_MIN_SIMILARITY` in `backend/query/retrieval.py`:
+  0.60 → 0.65 (junk-topic ceiling 0.630, real matches 0.677–0.836).
+- [x] Locally, `ORION_EMBEDDING_PROVIDER=minilm` was not set in `.env` —
+  nothing to remove.
+- [x] `docs/embeddings.md` Status section updated to "complete".
+- [ ] **Not done yet — separate decision:** whether/how to combine the now-
+  fully-populated vector ranking (`retrieval.semantic_search`,
+  `faculty_topic_and_schedule`) with the full-text search that already
+  answers these questions correctly on its own. Compare the two before
+  changing `backend/query/documents.py`/`campus.py`'s routing.
+- [ ] Run backend tests + typecheck/build and commit the
+  `FACULTY_MIN_SIMILARITY` change and doc updates (not yet committed as of
+  this writing).
 
-**This is the embedding quota specifically, and it is still exhausted right
-now.** It is a separate metric from the generation quota
-(`generateContent`), which *has* recovered — confirmed by a direct
-`llm_client.generate()` call succeeding today. That's likely why it looked
-like "the Gemini limit reset": one of the two limits genuinely did.
-
-Free-tier daily quotas reset once every 24 hours from when they were first
-exhausted, not at a fixed clock time shared across metrics — retry later
-today or tomorrow and re-run the dry-run above to check.
-
-When it's actually available, the steps are unchanged:
-
-- [ ] `.venv/bin/python scripts/reembed_gemini.py --dry-run` — re-confirm
-  before spending quota.
-- [ ] `.venv/bin/python scripts/reembed_gemini.py --target all`
-  - Takes about 5 min. Resumes on a 429 instead of restarting.
-  - Should end with `Migration complete.`
-- [ ] Verify in SQL — expect `missing = 0` and `wrong_dim = 0`:
-
-  ```sql
-  select count(*) total, count(embedding_gemini) gemini,
-         count(*) filter (where embedding_gemini is null) missing,
-         count(*) filter (where vector_dims(embedding_gemini) <> 768) wrong_dim
-  from document_chunks;
-
-  select count(*) filter (where research_interests is not null and research_interests <> '') with_text,
-         count(research_embedding) embedded,
-         count(*) filter (where vector_dims(research_embedding) <> 768) wrong_dim
-  from faculty;
-  ```
-
-- [ ] `.venv/bin/python scripts/eval_retrieval.py --k 3 --faculty` — Gemini
-  should match or beat MiniLM on keyword hit@3; read the top hits, don't
-  trust the score alone. Record the result in `docs/embeddings.md`.
-- [ ] Recalibrate `FACULTY_MIN_SIMILARITY` in `backend/query/retrieval.py`
-  (currently a provisional 0.60 from one probe) using the `--faculty`
-  output: a value between real matches (NLP, computer vision) and a junk
-  topic ("cooking recipes").
-- [ ] Once embedded, the vector path (`retrieval.semantic_search`,
-  `faculty_topic_and_schedule`) becomes a second, ranked signal alongside
-  the full-text search that already answers these questions — not a
-  prerequisite for them to work at all any more. Compare the two before
-  deciding whether/how to combine them.
-- [ ] Locally, remove `ORION_EMBEDDING_PROVIDER=minilm` from `.env` if set.
-- [ ] Update the Status section of `docs/embeddings.md` and this file to
-  say "complete".
-- [ ] Commit the migration work.
-
-## C. Later (only after B is validated in production)
+## C. Later (only after B's routing decision above is made)
 
 - [ ] Decide on Gemini billing — the free tier's daily quota is shared
   between the backfill and real embedding calls, once anything depends on

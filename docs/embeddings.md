@@ -15,46 +15,44 @@ Migrations: `supabase/migrations/20260922065942_gemini_embeddings.sql`,
 | Local ML model | **removed from the API runtime** (no torch / sentence-transformers) |
 | Single code path | `backend/query/embeddings.py` — nothing else calls the embedding API |
 
-## Status (2026-09-23) — backfill still incomplete, but no longer blocking
+## Status (2026-09-23) — backfill complete
 
 | | embedded | total | missing |
 |---|---|---|---|
-| `document_chunks.embedding_gemini` | **992** | 1,269 | 277 |
-| `faculty.research_embedding` | **0** | 146 | 146 |
+| `document_chunks.embedding_gemini` | **1,269** | 1,269 | 0 |
+| `faculty.research_embedding` | **146** | 146 | 0 |
 
-Unchanged since 2026-09-22. All 992 stored vectors are 768-dim; 0 failed
-rows. The run stopped cleanly on the free tier's **daily** cap (1,000
-embedded texts/day) and, checked again live on 2026-09-23, that quota
-(`EmbedContentRequestsPerDayPerProjectPerModel-FreeTier`) is still
-exhausted — a separate metric from the `generateContent` quota, which has
-recovered. The 277 missing chunks are the high-value regulation/procedure
-documents (both UG Regulations, Hostel Rules, Transcript + Certificate
-Verification, the three anti-ragging documents) plus 3 chunks of the
-2021-25 AI&DS and all of the 2021-25 Cyber Security and ECE curricula.
+Finished 2026-09-23 once the daily embedding quota
+(`EmbedContentRequestsPerDayPerProjectPerModel-FreeTier`) recovered enough
+headroom — `scripts/reembed_gemini.py --target all` absorbed a handful of
+transient 429s via its built-in backoff/retry and completed cleanly
+(`embedded 277 + 146, skipped 0, failed 0`). All vectors are 768-dim,
+verified by direct SQL (`missing = 0`, `wrong_dim = 0` on both tables).
 
-**This used to mean regulation/hostel/faculty-research questions found
-nothing. It no longer does.** As of 2026-09-22/23, `backend/query/
-documents.py` answers those questions from Postgres full-text search
-(`search_document_chunks`, cohort-aware, no embeddings involved at all) —
-see `docs/query-router.md`. Production runs `ORION_EMBEDDING_PROVIDER=gemini`
-(confirmed live) and full-text search covers every document, including the
-277 still missing a Gemini vector. **Do not switch to
-`ORION_EMBEDDING_PROVIDER=minilm`** — `render.yaml` deliberately keeps this
-service torch-free, and it is no longer needed as a stopgap.
+`scripts/eval_retrieval.py --k 3 --faculty` against the full corpus:
+**keyword hit@3: gemini 12/12 · minilm 11/12** — Gemini matches or beats
+MiniLM on every probed question (curriculum, hostel, procedures) with
+meaningfully higher, better-separated similarity scores (0.6–0.84 vs.
+0.24–0.65). `FACULTY_MIN_SIMILARITY` in `backend/query/retrieval.py` was
+recalibrated from the provisional `0.60` to **`0.65`**, set between the
+junk-topic probe's ceiling (0.630, "cooking recipes") and real topic matches
+(0.677–0.836 across NLP, computer vision, VLSI design, cryptography,
+wireless communication).
 
-The vector search path (`retrieval.semantic_search`,
-`faculty_topic_and_schedule`) still exists and is still tested, but is now a
-second, optional ranking signal on top of full-text search rather than the
-only way to answer. Finishing the backfill is a quality task, not a
-blocker:
+Production runs `ORION_EMBEDDING_PROVIDER=gemini` (confirmed live).
+`backend/query/documents.py` still answers regulation/hostel/faculty-
+research questions from Postgres full-text search
+(`search_document_chunks`, cohort-aware) as the primary path — see
+`docs/query-router.md` — so this backfill was a **quality improvement for
+semantic ranking**, not a blocker; it is now a second, ranked signal
+alongside full-text search rather than the only way to answer. **Do not
+switch to `ORION_EMBEDDING_PROVIDER=minilm`** — `render.yaml` deliberately
+keeps this service torch-free, and the rollback path is no longer needed
+even as a stopgap.
 
-1. `.venv/bin/python scripts/reembed_gemini.py --target all` (once the daily
-   embedding quota resets; ~423 texts, ~5 min at the default pacing)
-2. `.venv/bin/python scripts/eval_retrieval.py --k 3 --faculty` — compare with
-   MiniLM and recalibrate `FACULTY_MIN_SIMILARITY` (currently a provisional
-   0.60 from a single probe)
-3. Decide whether/how to combine vector ranking with the full-text results
-   full-text search already returns correctly on its own.
+Not yet decided: whether/how to combine vector ranking with the full-text
+results that already answer these questions correctly on their own
+(`todo.md` §C).
 
 ## Measurements (2026-09-22, dev laptop; clean venvs from old/new requirements)
 
