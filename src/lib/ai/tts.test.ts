@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// tts.ts builds the real providers at import time; keep the network layer out.
-vi.mock("@/lib/api-client", () => ({ apiGet: vi.fn(), apiPostBlob: vi.fn() }));
-
 import { AudioManager, type PlaybackState } from "./tts";
 import type { AudioSource, TTSProvider, TTSProviderId } from "./tts-providers";
 

@@ -69,18 +69,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-/** POST expecting a binary body back (e.g. audio from /tts/speech). */
-export async function apiPostBlob(
-  path: string,
-  body: unknown,
-  opts?: { signal?: AbortSignal },
-): Promise<Blob> {
-  const init: RequestInit = { method: "POST", body: JSON.stringify(body) };
-  if (opts?.signal) init.signal = opts.signal;
-  const res = await send(path, init);
-  return res.blob();
-}
-
 export function apiGet<T>(path: string): Promise<T> {
   return request<T>(path, { method: "GET" });
 }

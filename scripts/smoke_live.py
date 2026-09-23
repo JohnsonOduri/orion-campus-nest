@@ -60,8 +60,6 @@ def main() -> int:
         check(f"GET {path}", r.ok and n >= minimum, f"{r.status_code}, {n} rows")
     r = s.get(f"{api}/me/academic", timeout=30)
     check("GET /me/academic", r.ok and bool(r.json().get("regulations")), r.text[:120])
-    r = s.get(f"{api}/tts/config", timeout=30)
-    check("GET /tts/config", r.ok and r.json().get("provider") in {"browser", "kokoro"}, r.text[:80])
 
     conversation_id = None
     for question, intent, expected in QUESTIONS:

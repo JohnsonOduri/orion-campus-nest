@@ -1,8 +1,8 @@
-"""Per-user rate limiting for the endpoints that do real work per call
-(/ai/ask, /tts/speech). In-process sliding window keyed by a hash of the
-session token — never the raw token. One API instance runs today
-(render.yaml); if it ever scales out, this becomes per-instance, which is
-still a sensible ceiling but not a global one.
+"""Per-user rate limiting for endpoints that do real work per call (/ai/ask).
+In-process sliding window keyed by a hash of the session token — never the
+raw token. One API instance runs today (render.yaml); if it ever scales out,
+this becomes per-instance, which is still a sensible ceiling but not a
+global one.
 """
 
 from __future__ import annotations
@@ -47,7 +47,5 @@ class RateLimiter:
         self.check(hashlib.sha256(token.encode()).hexdigest())
 
 
-# A person asks at most a few questions a minute; a spoken answer is ~3-6
-# synthesis calls, so TTS gets more headroom.
+# A person asks at most a few questions a minute.
 ASK_LIMITER = RateLimiter(limit=20, window_seconds=60)
-TTS_LIMITER = RateLimiter(limit=90, window_seconds=60)

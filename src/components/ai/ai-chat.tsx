@@ -75,8 +75,7 @@ const ROUTE_LABEL: Partial<Record<Route, string>> = {
 
 const VOICE_ERROR_MESSAGES: Record<VoiceInputError, string> = {
   "no-speech": "I didn't catch that. Tap the orb to try again.",
-  "not-allowed":
-    "Microphone access is blocked. Allow it in your browser settings to talk to RION.",
+  "not-allowed": "Microphone access is blocked. Allow it in your browser settings to talk to RION.",
   network: "Voice recognition needs an internet connection.",
   aborted: "",
   unsupported: "Voice input isn't supported in this browser.",
@@ -132,6 +131,7 @@ function useTypewriter(fullText: string, enabled: boolean): string {
 }
 
 let fallbackNotified = false;
+const VOICE_PRIMED_KEY = "orion-voice-primed";
 
 function IconButton({
   label,
@@ -267,7 +267,9 @@ function EmptyState({ onPick }: { onPick: (text: string) => void }) {
   return (
     <div className="flex min-h-full flex-col items-center justify-center px-2 py-10 text-center">
       <ThinkingOrb state="idle" size={64} showLabel={false} />
-      <p className="mt-3 text-xs font-semibold tracking-widest text-muted-foreground uppercase">RION</p>
+      <p className="mt-3 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+        RION
+      </p>
       <h2 className="mt-1 text-xl font-semibold tracking-tight">How can I help?</h2>
       <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
         Ask about your classes, faculty, the mess menu or campus rules — type, or tap the mic and
@@ -468,9 +470,36 @@ export function AiChatPanel({
         description: "RION's neural voice isn't reachable right now.",
       });
     });
+    // First time on this device only: let a person know why the first spoken
+    // reply takes a moment (the voice model downloads once, then is reused
+    // for every future answer). No ONNX/WASM/WebGPU jargon — just what a
+    // non-technical user needs to know.
+    let primed = false;
+    try {
+      primed = localStorage.getItem(VOICE_PRIMED_KEY) === "1";
+    } catch {
+      // Private mode / storage blocked — show the message every time; harmless.
+    }
+    const offVoiceLoad = primed
+      ? () => {}
+      : ttsService.onVoiceLoadStateChange((s) => {
+          if (s === "loading") {
+            toast.loading("Preparing RION's voice…", { id: "voice-priming", duration: 30_000 });
+          } else if (s === "ready") {
+            toast.success("RION is ready.", { id: "voice-priming", duration: 2000 });
+            try {
+              localStorage.setItem(VOICE_PRIMED_KEY, "1");
+            } catch {
+              // Nothing to persist to — not a problem, just repeats next time.
+            }
+          } else if (s === "error") {
+            toast.dismiss("voice-priming");
+          }
+        });
     return () => {
       offState();
       offFallback();
+      offVoiceLoad();
       abortRef.current?.abort();
       ttsService.stop();
       voiceInputService.cancel();

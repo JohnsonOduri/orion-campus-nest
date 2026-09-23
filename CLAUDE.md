@@ -700,7 +700,6 @@ faculty        /faculty
 mess           /mess/today  /mess/week
 announcements  /announcements
 ai             /ai/ask  /ai/conversations [+ /{id}/messages, DELETE /{id}]
-tts            /tts/config  /tts/speech   (Kokoro proxy — docs/tts.md)
 campus         /calendar /exams /courses /courses/mine /documents /me/academic
 health         /health
 ```
@@ -720,10 +719,14 @@ Rules that must not be regressed:
 - The frontend reaches all of this through `src/lib/api-client.ts`, which
   forwards the incoming `Cookie` header during SSR.
 - **Voice output goes through `ttsService` (`src/lib/ai/tts.ts`) only.** UI
-  code never calls `speechSynthesis` or `/tts/*` directly. Provider is chosen
-  server-side by `TTS_PROVIDER` (`browser` deployed; `kokoro` verified
-  locally). Kokoro is only ever reached via the authenticated `/tts/speech`
-  proxy — never expose `KOKORO_BASE_URL` to the browser (docs/tts.md).
+  code never calls `speechSynthesis` directly. As of 2026-09-23 there is no
+  backend TTS at all: `KokoroBrowserProvider` (`src/lib/ai/tts-providers.ts`)
+  runs Kokoro (82M params, ONNX) entirely client-side via `kokoro-js`
+  (WebGPU preferred, WASM fallback), lazily loaded once per tab on first
+  mic/speaker use; `BrowserTTSProvider` (SpeechSynthesis) is the automatic
+  fallback. Voice/speed are hard-coded (`af_heart`, speed 1) — no per-user
+  config, no server involved, no `TTS_PROVIDER`/`KOKORO_*` env vars
+  (docs/tts.md).
 
 `src/lib/query/`, `src/lib/chat-api.ts`, `src/lib/timetable-api.ts` and
 `src/lib/supabase-server.ts` **no longer exist** — `backend/query/` is the one

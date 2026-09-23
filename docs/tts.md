@@ -1,8 +1,8 @@
 # ORION voice output (text-to-speech)
 
-Status 2026-09-22: provider abstraction, Kokoro proxy, browser fallback and
-voice preview are built and tested. **Deployed provider: `browser`** (no new
-infrastructure). Kokoro has been run and verified locally only.
+Status 2026-09-23: RION's voice runs **entirely in the browser**. There is no
+Kokoro server, no TTS proxy endpoint, and no backend TTS configuration —
+zero additional infrastructure, zero additional cost.
 
 ## 1. Architecture
 
@@ -12,107 +12,106 @@ answer (markdown)
    ▼  splitIntoSpeechChunks()  short first chunk, ~280-char chunks after
 ttsService.speak()             src/lib/ai/tts.ts  ← the ONLY API the UI calls
    │  AudioManager: request ids, prefetch next chunk, fallback, interrupt
-   ├─► KokoroTTSProvider ──POST /tts/speech──► FastAPI (auth) ──► Kokoro /v1/audio/speech
-   │        (MP3 blob → shared <audio> element)   backend/app/api/tts.py
-   └─► BrowserTTSProvider  (SpeechSynthesis — fallback, and the current default)
+   ├─► KokoroBrowserProvider ──kokoro-js (Transformers.js/ONNX)──► on-device inference
+   │        (WAV Blob → shared <audio> element)   src/lib/ai/tts-providers.ts
+   └─► BrowserTTSProvider  (SpeechSynthesis — fallback)
 ```
 
-- **Provider selection** is server-side: `GET /tts/config` returns
-  `TTS_PROVIDER`, the voice allowlist and defaults. Switching providers is an
-  env change on the API; no frontend rebuild, no UI change.
-- **Why a proxy:** Kokoro servers have no authentication. `/tts/speech`
-  only synthesises for a signed-in ORION user (session verified against
-  Supabase, cached 60 s per token hash), and `KOKORO_BASE_URL` never reaches
-  the browser, so Kokoro can sit on a private network.
-- **Fallback:** if Kokoro can't synthesise *or* its audio won't play, that
+- **Provider is fixed, not configurable**: `kokoro` (on-device) is primary,
+  `browser` (SpeechSynthesis) is the automatic fallback. There is nothing to
+  switch server-side because there is no server involved — `src/lib/ai/tts.ts`
+  hard-codes voice `af_heart`, language `en-US`, speed `1.0`
+  (`KOKORO_DEFAULT_VOICE` in `tts-providers.ts`). `VoiceSettingsCard`
+  (`src/components/ai/voice-settings-card.tsx`) is a preview button only —
+  there is no voice/speed picker, because there is nothing to pick.
+- **Model**: [`onnx-community/Kokoro-82M-v1.0-ONNX`](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX)
+  loaded via the [`kokoro-js`](https://www.npmjs.com/package/kokoro-js)
+  package, which wraps 🤗 Transformers.js. The browser downloads the model
+  from the Hugging Face Hub directly (cached in the browser's Cache Storage
+  by Transformers.js) and every synthesis after that is local inference —
+  WebGPU if `navigator.gpu` exists, WASM otherwise. Neither path involves
+  ORION's servers.
+- **Lazy, singleton load**: the model is imported (`await import("kokoro-js")`,
+  dynamic — never in the initial chat bundle or the SSR bundle) and
+  instantiated only on the first call to `KokoroBrowserProvider.synthesize()`,
+  i.e. the first time a person taps the mic or the speaker icon. The loading
+  promise is cached module-scope (`tts-providers.ts`), so every later
+  question in the same tab reuses the already-loaded model — `new
+  KokoroTTS(...)` never runs twice.
+- **First-use loading UX**: `getKokoroLoadState()` /
+  `onKokoroLoadStateChange()` expose `"idle" | "loading" | "ready" | "error"`
+  (plus a best-effort 0–100 `getKokoroLoadProgress()` from Transformers.js's
+  `progress_callback`). `AiChatPanel` (`src/components/ai/ai-chat.tsx`)
+  subscribes and shows a toast — "Preparing RION's voice…" then "RION is
+  ready." — the first time only, gated on a `localStorage` flag
+  (`orion-voice-primed`) so it never repeats on that device. No ONNX/WASM/
+  WebGPU jargon reaches the user.
+- **Fallback:** if the model fails to load, or `generate()` throws, that
   chunk and the rest of the answer use the browser voice, and Kokoro is
-  skipped for 60 s. Only if the browser voice also fails does `speak()`
+  skipped for 60 s (same circuit-breaker as before — `AudioManager` in
+  `tts.ts`, unchanged). Only if the browser voice also fails does `speak()`
   return `"failed"`; the text answer is never affected.
-- **Interruptions:** every `speak()`/`stop()` bumps a request id. Anything
-  async (a synthesis in flight, a prefetched chunk, a playing source) checks
-  its id and stops/disposes if it's stale — so two ORION voices can never
-  overlap, and an old answer can't start talking after a new question. The
-  mic, a new question, the voice-mode orb and the Stop buttons all call it.
-- **Orb sync (voice mode):** `processing` (thinking) lasts until audio
-  actually starts (`onStart`), then `responding` while it plays, then idle.
-  Playback failure shows `error` for 4 s, then idle.
-- **Caching:** the Kokoro provider keeps the last 40 synthesised chunks in
-  memory, so replaying an answer doesn't re-synthesise it.
+- **Interruptions:** unchanged — every `speak()`/`stop()` bumps a request id;
+  anything async (a synthesis in flight, a prefetched chunk, a playing
+  source) checks its id and stops/disposes if it's stale, so two ORION voices
+  can never overlap and an old answer can't start talking after a new one.
+- **Orb sync (voice mode):** unchanged — `processing` (thinking) lasts until
+  audio actually starts (`onStart`), then `responding` while it plays, then
+  idle. Playback failure shows `error` for 4 s, then idle.
+- **Caching:** `KokoroBrowserProvider` keeps the last 40 synthesised chunks
+  (as WAV `Blob`s) in memory per tab, so replaying an answer doesn't
+  re-synthesise it. The model itself is cached by the browser across
+  sessions (Cache Storage), so it isn't re-downloaded on every visit either.
 
-## 2. Configuration (API environment)
+## 2. Why this replaced the server-proxied Kokoro design
 
-| Variable | Default | Notes |
-|---|---|---|
-| `TTS_PROVIDER` | `browser` | `browser` or `kokoro` |
-| `KOKORO_BASE_URL` | `http://localhost:8880` | Any Kokoro server implementing OpenAI's `POST /v1/audio/speech` |
-| `KOKORO_VOICE` | `af_heart` | Must be in the allowlist below (checked at startup) |
-| `KOKORO_SPEED` | `1.0` | Clamped to 0.7–1.3 |
+The previous design (`backend/app/api/tts.py`, removed 2026-09-23) proxied
+`POST /tts/speech` to a Kokoro server (`KOKORO_BASE_URL`) so the browser
+never talked to an unauthenticated Kokoro instance directly. That Kokoro
+server was never actually deployed (docs/tts.md previously documented it as
+"nothing provisioned") because it needs ≥2 GB RAM, which is a paid tier on
+every common host — a real recurring cost for a prototype meant to stay near
+zero. Running the model in the browser instead removes the server (and its
+cost and its auth surface) entirely: there's no `KOKORO_API_KEY`, no
+`KOKORO_URL`, no `KOKORO_SERVER` — the backend has no TTS configuration at
+all.
 
-Voice allowlist (`backend/app/api/tts.py`): `af_heart af_bella af_nicole
-af_sarah af_sky am_adam am_michael bm_george bf_emma`. **`af_heart`
-(American English) is RION's chosen default voice** — settled after
-auditioning the set in Settings → RION's voice, which still lets anyone
-override it for their own device via the same Preview button.
+## 3. What runs where
 
-## 3. Running Kokoro locally
-
-Kokoro servers listen on port 8000 by default, which is ORION's API port, so
-map it to 8880.
-
-```bash
-# Apple Silicon / arm64 or x86-64, CPU only (verified on an M4, 2026-09-22):
-docker run -d --name orion-kokoro -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
-
-# x86-64 only (no arm64 image published): the OpenTTSGroup server
-docker run -d --name orion-kokoro -p 8880:8000 -e KOKORO_DEVICE=cpu \
-  -v "$PWD/cache:/root/.cache" ghcr.io/openttsgroup/kokoro-open-tts:latest
+```text
+No new infra. No GPU server. No paid TTS API. No Kokoro server.
+Model inference happens on the visitor's own device, in their browser tab.
 ```
 
-Both expose the same OpenAI-compatible endpoint, which is all ORION uses.
-Then in `.env`: `TTS_PROVIDER=kokoro` and restart `uvicorn`.
+The Render backend performs no TTS work and forwards no answer text to any
+TTS API — see `backend/app/core/ratelimit.py` (no `TTS_LIMITER` — only
+`ASK_LIMITER` for `/ai/ask`) and `backend/app/core/config.py` (no
+`TTS_PROVIDER`/`KOKORO_*`).
 
-Measured locally (M4, Docker VM with 10 CPUs): image 4.55 GB; ~1.4 GiB RAM
-after warm-up; first short chunk ("Your next class is Maths.") ~0.5 s;
-a ~6 s sentence 1.4–2.3 s depending on voice.
-
-## 4. Deploying Kokoro later — requirements and cost
-
-Nothing here is provisioned. The deployed prototype uses `browser`.
-
-- **Memory is the constraint:** ~1.4 GiB resident, so it needs an instance
-  with **≥ 2 GB RAM**. Render free/starter (512 MB) cannot run it.
-- **No GPU needed.** CPU synthesis is already faster than real time for
-  sentence-sized chunks.
-- **Always-on vs. cold start:** the model loads in seconds but a sleeping
-  free-tier style instance would add that to the first spoken reply. The
-  fallback covers it (the browser voice speaks instead), but for a
-  consistent voice it should stay warm.
-- **Cost:** any ≥ 2 GB always-on instance is a paid tier on every common
-  host — expect a recurring monthly cost (roughly single to low double
-  digits USD/month on small VPS or PaaS plans; check current pricing before
-  choosing). This is a new paid service and needs an explicit decision.
-- **Network:** keep Kokoro private (same private network as the API, or
-  firewalled to the API's egress IP). It has no auth of its own.
-- **Region:** put it next to the API — each chunk is a separate round trip.
-
-To switch: deploy Kokoro, set `TTS_PROVIDER=kokoro` and `KOKORO_BASE_URL` on
-the API service. Nothing else changes.
-
-## 5. Mobile behaviour
+## 4. Mobile behaviour
 
 - **Autoplay:** browsers only start audio from a user gesture, and an answer
   arrives seconds after the tap. `ttsService.unlock()` runs synchronously in
   every relevant tap (mic, send, suggestion, speaker, orb, preview) and plays
   50 ms of silence on the single shared `<audio>` element (plus an empty
   utterance for SpeechSynthesis). iOS Safari and Android Chrome then allow
-  that element to play later answers without a new gesture.
-- If a browser still blocks playback, the chunk falls back to the browser
-  voice; if that's blocked too, voice mode shows an error and the answer
-  text stays on screen.
+  that element to play later answers without a new gesture. This is
+  unaffected by the browser-Kokoro change — the model produces a `Blob`
+  that plays through the same unlocked element as before.
+- If a browser can't run Kokoro (WebGPU and WASM both unavailable/blocked,
+  or the model fails to load), the chunk falls back to the browser voice; if
+  that's blocked too, voice mode shows an error and the answer text stays on
+  screen.
 - The mic always stops ORION speaking before listening, so it doesn't
   transcribe its own voice.
+- **First-visit cost:** the model download (tens of MB) happens once per
+  device on first voice use, not on page load, and is browser-cached after
+  that. On a slow connection this can take a while — the "Preparing RION's
+  voice…" toast covers exactly that window, and text chat is fully usable
+  the entire time since the model load is never on the critical path for
+  displaying an answer.
 
-## 6. Known limitations
+## 5. Known limitations
 
 - **Voice input** uses the Web Speech API: Chrome, Edge and Safari only. Not
   Firefox (desktop or Android) — voice mode is unavailable there; typed chat
@@ -123,7 +122,14 @@ the API service. Nothing else changes.
 - **Browser fallback voice** is whatever the device provides; it will not
   match the Kokoro voice.
 - **Not true streaming:** text arrives as one response and is spoken in
-  sentence chunks (with prefetch). Kokoro's streaming endpoint isn't used.
+  sentence chunks (with prefetch). `kokoro-js`'s own streaming API
+  (`TextSplitterStream`/`tts.stream()`) isn't used — chunk-level prefetch
+  already hides the gap between sentences, and per-chunk `generate()` is
+  simpler to reason about with the existing interruption/staleness model.
+- Low-end or older devices without WebGPU fall back to WASM, which is
+  noticeably slower per chunk; very old/low-memory devices may fail to load
+  the model at all, in which case the automatic browser-voice fallback
+  covers it.
 - The orb does not react to live microphone volume (doing so would need a
   second microphone stream alongside speech recognition, which conflicts on
   iOS).

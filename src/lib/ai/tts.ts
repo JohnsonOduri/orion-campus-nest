@@ -2,13 +2,16 @@ import { unlockAudio } from "./audio-output";
 import { sanitizeForSpeech, splitIntoSpeechChunks } from "./speech-text";
 import {
   BrowserTTSProvider,
-  KokoroTTSProvider,
+  KokoroBrowserProvider,
+  KOKORO_DEFAULT_VOICE,
+  getKokoroLoadState,
+  onKokoroLoadStateChange,
   type AudioSource,
+  type KokoroLoadState,
   type TTSOptions,
   type TTSProvider,
   type TTSProviderId,
 } from "./tts-providers";
-import { loadTtsConfig, readVoicePrefs, resolveVoiceOptions } from "./voice-settings";
 
 export type PlaybackState = "idle" | "loading" | "speaking" | "paused";
 export type SpeakResult = "completed" | "interrupted" | "failed";
@@ -193,21 +196,22 @@ export class AudioManager {
 }
 
 const browserProvider = new BrowserTTSProvider();
-const kokoroProvider = new KokoroTTSProvider();
+const kokoroProvider = new KokoroBrowserProvider();
 
-const manager = new AudioManager(browserProvider, kokoroProvider, async (opts) => {
-  const config = await loadTtsConfig();
-  const resolved = resolveVoiceOptions(config, readVoicePrefs());
-  return {
-    provider: config.provider,
-    options: { voice: opts.voice ?? resolved.voice, speed: opts.speed ?? resolved.speed },
-  };
-});
+// RION's voice is fixed, not user-configurable: provider = kokoro (running
+// on-device), voice = af_heart, speed = 1. There is no backend to ask
+// anymore — the model lives and runs entirely in this browser tab.
+const manager = new AudioManager(browserProvider, kokoroProvider, (opts) =>
+  Promise.resolve({
+    provider: "kokoro",
+    options: { voice: opts.voice ?? KOKORO_DEFAULT_VOICE, speed: opts.speed ?? 1 },
+  }),
+);
 
 /**
- * The only speech API the UI uses. Which provider actually speaks is decided
- * here (backend TTS_PROVIDER, with browser fallback) — components never call
- * speechSynthesis or the /tts endpoints themselves.
+ * The only speech API the UI uses. Kokoro runs on-device (primary), with the
+ * browser's own voice as the automatic fallback — components never call
+ * speechSynthesis directly, and there is no backend TTS endpoint.
  */
 export const ttsService = {
   speak: (markdown: string, opts?: SpeakOptions) => manager.speak(markdown, opts),
@@ -219,4 +223,7 @@ export const ttsService = {
   onFallback: (fn: () => void) => manager.onFallback(fn),
   /** Call synchronously inside a tap/click, before any await (see audio-output.ts). */
   unlock: unlockAudio,
+  /** State of RION's on-device voice model — for a first-use "preparing voice" message only. */
+  getVoiceLoadState: getKokoroLoadState,
+  onVoiceLoadStateChange: (fn: (s: KokoroLoadState) => void) => onKokoroLoadStateChange(fn),
 };
