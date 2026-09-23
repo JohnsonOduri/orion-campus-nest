@@ -48,11 +48,28 @@ def _tokens(text: str) -> set[str]:
 
 # ------------------------------------------------------------ student context
 
-def student_context(client: Any) -> Optional[dict]:
+def student_context(client: Any, cache_key: Optional[str] = None) -> Optional[dict]:
+    """The caller's own profile. `cache_key` (a hash of their session token)
+    caches it briefly — the API is far from the database in production, so
+    this is one round trip saved per question. A missing profile is never
+    cached, so finishing registration takes effect immediately."""
+    if cache_key:
+        hit = _profile_cache.get(cache_key)
+        if hit and time.monotonic() - hit[0] < _PROFILE_TTL:
+            return hit[1]
     try:
-        return client.rpc("orion_student_context", {}).execute().data or None
+        profile = client.rpc("orion_student_context", {}).execute().data or None
     except Exception:  # noqa: BLE001 - a missing profile must not break answering
         return None
+    if cache_key and profile:
+        if len(_profile_cache) > 2000:
+            _profile_cache.clear()
+        _profile_cache[cache_key] = (time.monotonic(), profile)
+    return profile
+
+
+_profile_cache: dict[str, tuple[float, dict]] = {}
+_PROFILE_TTL = 60.0
 
 
 def cohort_family(profile: Optional[dict]) -> Optional[str]:

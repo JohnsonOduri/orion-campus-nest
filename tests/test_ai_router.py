@@ -16,6 +16,7 @@ import ssl
 import sys
 import urllib.error
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -44,7 +45,8 @@ class _FakeQuery:
     def insert(self, row):
         if self._log is not None:
             self._log.append((self._table, row))
-        self._data = [{"id": "conv-1", **row}]
+        rows = row if isinstance(row, list) else [row]
+        self._data = [{"id": "conv-1", **r} for r in rows]
         return self
 
     def execute(self):
@@ -77,7 +79,7 @@ def _semantic_context(query: str) -> GroundedContext:
 
 @pytest.fixture
 def patched(monkeypatch):
-    monkeypatch.setattr(ai.campus, "student_context", lambda client: {"semester": 3, "cohort": "2021_2025"})
+    monkeypatch.setattr(ai.campus, "student_context", lambda client, key=None: {"semester": 3, "cohort": "2021_2025"})
     monkeypatch.setattr(ai.query_service, "answer_query", lambda client, query, **kw: _semantic_context(query))
     monkeypatch.setattr(llm_client, "llm_available", lambda: True)
 
@@ -156,7 +158,7 @@ def test_successful_rephrase_keeps_the_quote_and_source(monkeypatch, patched):
 
 
 def test_small_talk_never_calls_the_llm(monkeypatch):
-    monkeypatch.setattr(ai.campus, "student_context", lambda client: None)
+    monkeypatch.setattr(ai.campus, "student_context", lambda client, key=None: None)
 
     def must_not_run(*a, **k):  # pragma: no cover
         raise AssertionError("small talk must not call Gemini")
@@ -167,7 +169,7 @@ def test_small_talk_never_calls_the_llm(monkeypatch):
 
 
 def test_structured_answers_are_composed_without_an_llm(monkeypatch):
-    monkeypatch.setattr(ai.campus, "student_context", lambda client: None)
+    monkeypatch.setattr(ai.campus, "student_context", lambda client, key=None: None)
     ctx = GroundedContext(
         query="What is my next class?", route=RouteType.STRUCTURED,
         facts=[StructuredFact(claim="Next class", source="t", data={
@@ -190,7 +192,8 @@ def test_ask_persists_both_turns_and_returns_the_conversation(monkeypatch, patch
     monkeypatch.setattr(ai, "get_current_client", lambda request: client)
     monkeypatch.setattr(ai.ASK_LIMITER, "check_request", lambda request: None)
     monkeypatch.setattr(llm_client, "llm_available", lambda: False)
-    result = ai.ask(AskRequest(query="What is the attendance requirement?"), request=None)
+    request = SimpleNamespace(cookies={"orion_access_token": "session-token"})
+    result = ai.ask(AskRequest(query="What is the attendance requirement?"), request=request)
     assert result["conversation_id"] == "conv-1"
-    saved = [(t, r["role"]) for t, r in client.inserts if t == "ai_messages"]
-    assert saved == [("ai_messages", "user"), ("ai_messages", "assistant")]
+    rows = [r for t, r in client.inserts if t == "ai_messages"]
+    assert len(rows) == 1 and [m["role"] for m in rows[0]] == ["user", "assistant"]

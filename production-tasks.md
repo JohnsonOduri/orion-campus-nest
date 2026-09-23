@@ -52,12 +52,22 @@ Render dashboard setup) are deliberately not repeated here.
 
 ## 5. Deploy
 
-- ⏳ Commit and push `main` → Render (API) and Vercel (frontend) auto-deploy.
-- ⏳ Live smoke test against `https://orion-campus-nest.onrender.com` as the
-  test student.
+- ✅ Pushed to `main`; Render rebuilt the API (~100 s) and Vercel the frontend.
+- ✅ Live smoke test (`scripts/smoke_live.py`): 19/19 checks pass against
+  `https://orion-campus-nest.onrender.com` as the test student — every
+  endpoint, one question per answer category, and a 401 for anonymous calls.
+  It caught one real regression (attendance quoting R.5.2 instead of R.5.1),
+  now fixed and re-deployed.
 
 ## 6. Needs a person
 
+- ⬜ **Region mismatch is the main latency cost.** `render.yaml` pins the API
+  to **Oregon**; Supabase is in **ap-south-1 (Mumbai)**, so every database
+  round trip costs ~250 ms. Measured today: the same question takes ~175 ms
+  locally and ~3 s live. Round trips per question were cut from 8-10 to 5-7
+  (one insert for both chat turns, cached profile), but the fix is an API in
+  Singapore/Mumbai. Render cannot change a service's region after creation —
+  it needs a new service (the blueprint is ready) and `API_BASE_URL` updated.
 - ⬜ **Render cold starts** (~40 s on the free plan, measured today). Upgrade to
   an always-on instance, or add an external uptime ping, if first-request
   latency matters for real students.

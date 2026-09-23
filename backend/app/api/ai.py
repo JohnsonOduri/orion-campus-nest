@@ -22,6 +22,7 @@ stays a pure function of the current query (backend/query/router.py).
 
 from __future__ import annotations
 
+import hashlib
 import sys
 
 from fastapi import APIRouter, HTTPException, Request
@@ -34,6 +35,7 @@ from query import campus, compose, followup, llm_client
 from query import service as query_service
 from query.types import RouteType
 
+from ..core.cookies import read_access_token
 from ..core.ratelimit import ASK_LIMITER
 from .deps import get_current_client
 from ..schemas import AskRequest
@@ -73,14 +75,18 @@ def _recent_history(client, conversation_id: str) -> list[dict[str, str]]:
     return [{"role": r["role"], "content": r["content"]} for r in rows]
 
 
-def _save_message(client, conversation_id: str, role: str, content: str, route: str | None = None) -> None:
-    client.table("ai_messages").insert(
-        {"conversation_id": conversation_id, "role": role, "content": content, "route": route}
-    ).execute()
+def _save_turn(client, conversation_id: str, question: str, reply: str, route: str | None) -> None:
+    """Both messages in one insert, then one conversation touch — four round
+    trips became two, which matters because the API and the database are in
+    different regions in production."""
+    client.table("ai_messages").insert([
+        {"conversation_id": conversation_id, "role": "user", "content": question, "route": None},
+        {"conversation_id": conversation_id, "role": "assistant", "content": reply, "route": route},
+    ]).execute()
     client.table("ai_conversations").update({"updated_at": "now()"}).eq("id", conversation_id).execute()
 
 
-def answer(client, query: str, history: list[dict[str, str]] | None = None) -> dict:
+def answer(client, query: str, history: list[dict[str, str]] | None = None, profile_key: str | None = None) -> dict:
     """The whole answer pipeline for one question — also what
     scripts/run_ai_task.py calls, so tests exercise exactly this path.
 
@@ -92,7 +98,7 @@ def answer(client, query: str, history: list[dict[str, str]] | None = None) -> d
        reword the quoted rule; any failure keeps the quote.
     """
     resolved = followup.resolve(query, history or [])
-    profile = campus.student_context(client)
+    profile = campus.student_context(client, profile_key)
     context = query_service.answer_query(client, resolved, profile=profile)
     family = campus.cohort_family(profile)
 
@@ -129,10 +135,10 @@ def ask(body: AskRequest, request: Request):
     conversation_id = _get_or_create_conversation(client, body.conversation_id, body.query)
     history = _recent_history(client, conversation_id)
 
-    result = answer(client, body.query, history)
+    token = read_access_token(request)
+    result = answer(client, body.query, history, hashlib.sha256(token.encode()).hexdigest() if token else None)
 
-    _save_message(client, conversation_id, "user", body.query)
-    _save_message(client, conversation_id, "assistant", result["answer"], result["route"])
+    _save_turn(client, conversation_id, body.query, result["answer"], result["route"])
 
     return {**result, "conversation_id": conversation_id}
 
