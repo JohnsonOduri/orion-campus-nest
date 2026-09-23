@@ -32,7 +32,7 @@ QUESTIONS = [
     ("Which faculty work on NLP?", "faculty_research", "Natural Language Processing"),
     ("What's for lunch today?", "mess_today", "Lunch"),
     ("How many credits is ICS 213?", "course_info", "credits"),
-    ("What is my CGPA?", "out_of_scope", "doesn't store"),
+    ("What is my CGPA?", "out_of_scope", "don't store"),
 ]
 
 
