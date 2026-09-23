@@ -19,7 +19,7 @@ import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Iterable, Optional
 
-from . import documents
+from . import documents, router
 from .types import GroundedContext, RouteType, StructuredIntent
 
 _IST = timedelta(hours=5, minutes=30)
@@ -694,12 +694,24 @@ def compose_classroom(ctx: GroundedContext) -> str:
 
 # ---------------------------------------------------------------- documents
 
-def _cohort_label(title: str, family: Optional[str], document_type: Optional[str] = None) -> str:
-    if family and document_type == "regulations":
+def _cohort_label(
+    title: str, passage_cohort: Optional[str], own_family: Optional[str], document_type: Optional[str] = None
+) -> str:
+    """`passage_cohort` is the cohort the RETRIEVED passage actually belongs
+    to; `own_family` is the caller's own. They can differ when the question
+    explicitly named a different cohort (router.detect_cohort_reference) —
+    saying "which apply to you" in that case would be exactly the CLAUDE.md
+    §20 violation this whole path exists to prevent, so the two are compared
+    rather than assuming a passage is always the caller's own."""
+    if document_type != "regulations":
+        return f"From the **{title}**"
+    if own_family and passage_cohort and passage_cohort == own_family:
         return f"Under the **{title}**, which apply to you"
-    if document_type == "regulations":
+    if own_family and passage_cohort and passage_cohort != own_family:
+        return f"Under the **{title}** (not your own regulations — you're on the {own_family} cohort)"
+    if own_family:
         return f"Under the **{title}**"
-    return f"From the **{title}**"
+    return f"Under the **{title}**"
 
 
 def _citation(p: documents.Passage) -> str:
@@ -711,7 +723,42 @@ def _citation(p: documents.Passage) -> str:
     return ", ".join(x for x in (p.document_title, sec, f"p. {p.page}" if p.page else None) if x)
 
 
+def _compose_cohort_comparison(
+    ctx: GroundedContext, own_family: str, other_cohort: str
+) -> tuple[str, float, list[documents.Passage]]:
+    """Both cohorts' rules, shown side by side, for a question that
+    explicitly asks how they differ ("is the 2026 rule different from
+    mine?") — never blends them into one answer or silently substitutes one
+    for the other (CLAUDE.md §20)."""
+    own_snips = [s for s in ctx.snippets if s.cohort == own_family]
+    other_snips = [s for s in ctx.snippets if s.cohort == other_cohort]
+    # The raw comparison phrasing ("...different for the 2026 admission
+    # batch compared to mine?") scores badly against the actual rule text,
+    # which never says "2026"/"batch"/"compared" — strip that scaffolding so
+    # both sides are judged on the real subject (e.g. "attendance").
+    topic_query = router.strip_cohort_noise(ctx.query)
+    own_passages, own_conf = documents.best_passages(topic_query, own_snips) if own_snips else ([], 0.0)
+    other_passages, other_conf = documents.best_passages(topic_query, other_snips) if other_snips else ([], 0.0)
+
+    def block(label: str, passages: list[documents.Passage], confidence: float) -> str:
+        if not passages or confidence < 0.34:
+            return f"**{label}:** I couldn't find a specific rule for this cohort in the documents I have."
+        p = passages[0]
+        quote = "\n>\n".join(f"> {line}" for line in _quote_lines(p.text))
+        return f"**{label}** ({p.document_title}):\n\n{quote}" + source_line(_citation(p))
+
+    text = f"{block(f'Your cohort ({own_family})', own_passages, own_conf)}\n\n{block(other_cohort, other_passages, other_conf)}"
+    passages = own_passages[:1] + other_passages[:1]
+    confidence = max(own_conf, other_conf)
+    return text, confidence, passages
+
+
 def compose_documents(ctx: GroundedContext, cohort_family: Optional[str]) -> tuple[str, float, list[documents.Passage]]:
+    plan_hints = ctx.plan.hints or {}
+    cohort_ref = plan_hints.get("cohort_ref")
+    if cohort_ref and plan_hints.get("cohort_compare") == "yes" and cohort_family and cohort_ref != cohort_family:
+        return _compose_cohort_comparison(ctx, cohort_family, cohort_ref)
+
     passages, confidence = documents.best_passages(ctx.query, ctx.snippets)
     if not passages:
         return (_no_document_answer(ctx), 0.0, [])
@@ -722,7 +769,8 @@ def compose_documents(ctx: GroundedContext, cohort_family: Optional[str]) -> tup
         text = ("I couldn't find a rule that answers that directly. The closest thing in the documents I have is "
                 f"this, from the **{p.document_title}**:\n\n{quote}\n\nIf that's not it, the Academic Office can help.")
         return text + source_line(source), confidence, passages
-    return f"{_cohort_label(p.document_title, cohort_family, p.document_type)}:\n\n{quote}" + source_line(source), confidence, passages
+    label = _cohort_label(p.document_title, p.cohort, cohort_family, p.document_type)
+    return f"{label}:\n\n{quote}" + source_line(source), confidence, passages
 
 
 def compose_overview(ctx: GroundedContext) -> str:

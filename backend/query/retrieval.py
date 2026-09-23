@@ -21,6 +21,7 @@ call per semantic/hybrid request, never one on a STRUCTURED request.
 
 from __future__ import annotations
 
+import difflib
 import logging
 import os
 import re
@@ -445,6 +446,51 @@ def course_info(client: Any, course_code: str) -> RetrievalResult:
     return RetrievalResult(plan=_plan(StructuredIntent.COURSE_INFO), facts=[fact])
 
 
+def _norm_name(text: str) -> str:
+    return re.sub(r"[^a-z0-9 ]+", " ", text.lower()).strip()
+
+
+def fuzzy_faculty_names(client: Any, name_text: str, limit: int = 3, cutoff: float = 0.80) -> list[str]:
+    """Best-effort name match for when the ILIKE substring match in
+    faculty_lookup() finds nothing — a typo, a voice-transcription slip
+    ("Anisth" for "Ansith"), or a name said/typed slightly differently still
+    resolves instead of failing outright. Token-aware: a correct first name
+    with a garbled last name (or the reverse) isn't dragged down by scoring
+    the whole string at once — but single/double-letter tokens (bare
+    initials like the "S" in "Ansith S") are excluded from that per-token
+    average, since with Indian-institute name conventions almost every
+    faculty name contains one and it otherwise inflates every candidate's
+    score to near-identical, useless numbers (confirmed against the live
+    faculty table: without this filter "Anisth S" scored within 0.09 of
+    unrelated names like "Dr. S. Jai Ganesh"). Returns full_name values
+    above the cutoff, best match first — never invents a name not on file;
+    a genuinely ambiguous input still surfaces multiple candidates rather
+    than silently guessing one."""
+    cleaned = _norm_name(name_text)
+    if not cleaned:
+        return []
+    rows = client.table("faculty").select("full_name").eq("status", "active").execute().data or []
+    n_tokens = [t for t in cleaned.split() if len(t) > 2]
+    scored: list[tuple[float, str]] = []
+    for row in rows:
+        full_name = row["full_name"]
+        candidate = _norm_name(full_name)
+        if not candidate:
+            continue
+        ratio = difflib.SequenceMatcher(None, cleaned, candidate).ratio()
+        c_tokens = [t for t in candidate.split() if len(t) > 2]
+        if n_tokens and c_tokens:
+            token_ratio = sum(
+                max((difflib.SequenceMatcher(None, nt, ct).ratio() for ct in c_tokens), default=0.0)
+                for nt in n_tokens
+            ) / len(n_tokens)
+            ratio = max(ratio, token_ratio)
+        if ratio >= cutoff:
+            scored.append((ratio, full_name))
+    scored.sort(key=lambda t: -t[0])
+    return [name for _, name in scored[:limit]]
+
+
 def faculty_lookup(client: Any, name_text: str) -> RetrievalResult:
     """"Tell me about Dr. X", "What is Dr. X's email?" — fuzzy ILIKE match
     on full_name (limit 3, not 1: common names/initials could plausibly
@@ -453,11 +499,17 @@ def faculty_lookup(client: Any, name_text: str) -> RetrievalResult:
     Confirmed live this session: 70 faculty rows, only 28 with real email/
     office_location — a fact still states whatever IS known (full_name,
     initials, status) rather than producing nothing at all when the
-    enrichment fields happen to be null."""
+    enrichment fields happen to be null.
+
+    If the substring match finds nothing, fuzzy_faculty_names() catches a
+    typo or misheard name before giving up — e.g. "Anisth S" still resolves
+    to the real "Anish S" rather than reporting no match for a name that's
+    actually on file under a slightly different spelling."""
     cleaned = name_text.strip()
+    select_cols = "full_name,initials,designation,email,office_location,office_hours,research_interests,status"
     rows = (
         client.table("faculty")
-        .select("full_name,initials,designation,email,office_location,office_hours,research_interests,status")
+        .select(select_cols)
         .ilike("full_name", f"%{cleaned}%")
         .eq("status", "active")
         .limit(3)
@@ -465,6 +517,19 @@ def faculty_lookup(client: Any, name_text: str) -> RetrievalResult:
         .data
         or []
     )
+    if not rows:
+        fuzzy_names = fuzzy_faculty_names(client, cleaned)
+        if fuzzy_names:
+            rows = (
+                client.table("faculty")
+                .select(select_cols)
+                .in_("full_name", fuzzy_names)
+                .eq("status", "active")
+                .limit(3)
+                .execute()
+                .data
+                or []
+            )
     if not rows:
         return RetrievalResult(
             plan=_plan(StructuredIntent.FACULTY_LOOKUP),

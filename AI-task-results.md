@@ -1,63 +1,63 @@
-# ORION AI-task results — 2026-09-23 10:39 UTC
+# ORION AI-task results — 2026-09-23 10:58 UTC
 
 Signed in as `orion-test-student-a@iiitkottayam.ac.in` (Semester 3, CSE section I). Answers come from `backend/app/api/ai.answer()`, the function behind `POST /ai/ask`. LLM rewording: **off**.
 
-**152 questions** · 0 errors · 13 flagged for review · median 154 ms · p95 438 ms
+**152 questions** · 0 errors · 11 flagged for review · median 155 ms · p95 411 ms
 
 ## 1. Greetings, help, small talk
 
 ### Hi
-`small_talk` · `none` · 767 ms · composer
+`small_talk` · `none` · 448 ms · composer
 *Expected:* greeting + what ORION can help with
 
 Good afternoon! I'm RION — ask me about your timetable, mess menu, courses, faculty, or campus regulations.
 
 ### hello there
-`small_talk` · `none` · 127 ms · composer
+`small_talk` · `none` · 146 ms · composer
 *Expected:* greeting
 
 Good afternoon! I'm RION — ask me about your timetable, mess menu, courses, faculty, or campus regulations.
 
 ### Good morning
-`small_talk` · `none` · 166 ms · composer
+`small_talk` · `none` · 66 ms · composer
 *Expected:* greeting
 
 Good afternoon! I'm RION — ask me about your timetable, mess menu, courses, faculty, or campus regulations.
 
 ### What can you do?
-`small_talk` · `none` · 69 ms · composer
+`small_talk` · `none` · 81 ms · composer
 *Expected:* capability list
 
 I'm RION, ORION's AI assistant. I can help with: your timetable (today, a specific day, a specific time, tomorrow/yesterday), the mess menu (today, this week, a specific meal or day), course info (credits, syllabus, prerequisites), faculty details (email, office, office hours), who teaches a course, faculty who work in a research area, and campus regulations/policies. Just ask in your own words!
 
 ### Who are you?
-`small_talk` · `none` · 61 ms · composer
+`small_talk` · `none` · 73 ms · composer
 *Expected:* introduces ORION
 
 I'm RION, ORION's AI assistant. I can help with: your timetable (today, a specific day, a specific time, tomorrow/yesterday), the mess menu (today, this week, a specific meal or day), course info (credits, syllabus, prerequisites), faculty details (email, office, office hours), who teaches a course, faculty who work in a research area, and campus regulations/policies. Just ask in your own words!
 
 ### How are you?
-`small_talk` · `none` · 71 ms · composer
+`small_talk` · `none` · 74 ms · composer
 *Expected:* friendly reply
 
 Doing well, thanks for asking! What can I help you with?
 
 ### Thanks!
-`small_talk` · `none` · 70 ms · composer
+`small_talk` · `none` · 66 ms · composer
 *Expected:* acknowledgement
 
-No problem at all — ask away if you need anything else.
+Anytime! Happy to help.
 
 ### Bye
-`small_talk` · `none` · 61 ms · composer
+`small_talk` · `none` · 82 ms · composer
 *Expected:* farewell
 
-Take care! Come back if you have more questions.
+See you! Come back anytime you need campus info.
 
 ## 2. Timetable — now, today, specific days
 
 ### What is my next class?
-`structured` · `next_class` · 393 ms · composer
+`structured` · `next_class` · 244 ms · composer
 *Expected:* course, day, time, teacher
 
 You're in **Introduction to Bioinformatics (ISC 211)** right now (4:00–4:55 PM) — Dr. Jayakrushna Sahoo. After that, your next class is **Database Management Systems (ICS 213)** tomorrow (Thursday), 9:00–9:55 AM — Dr. Vengadeswaran S.
@@ -65,7 +65,7 @@ You're in **Introduction to Bioinformatics (ISC 211)** right now (4:00–4:55 PM
 *Source: your live timetable*
 
 ### What class is going on right now?
-`structured` · `next_class` · 293 ms · composer
+`structured` · `next_class` · 235 ms · composer
 *Expected:* current or next class
 
 You're in **Introduction to Bioinformatics (ISC 211)** right now (4:00–4:55 PM) — Dr. Jayakrushna Sahoo. After that, your next class is **Database Management Systems (ICS 213)** tomorrow (Thursday), 9:00–9:55 AM — Dr. Vengadeswaran S.
@@ -73,7 +73,7 @@ You're in **Introduction to Bioinformatics (ISC 211)** right now (4:00–4:55 PM
 *Source: your live timetable*
 
 ### What classes do I have today?
-`structured` · `day_timetable` · 155 ms · composer
+`structured` · `day_timetable` · 160 ms · composer
 *Expected:* full list for today with times
 
 Here's your timetable today:
@@ -88,7 +88,7 @@ Here's your timetable today:
 *Source: your live timetable*
 
 ### What's my timetable for tomorrow?
-`structured` · `day_of_week_timetable` · 148 ms · composer
+`structured` · `day_of_week_timetable` · 155 ms · composer
 *Expected:* tomorrow's list
 
 Here's your timetable tomorrow:
@@ -104,7 +104,7 @@ Here's your timetable tomorrow:
 *Source: your live timetable*
 
 ### What classes do I have on Monday?
-`structured` · `day_of_week_timetable` · 140 ms · composer
+`structured` · `day_of_week_timetable` · 153 ms · composer
 *Expected:* Monday list
 
 Here's your timetable on Monday (28 September):
@@ -119,19 +119,19 @@ Here's your timetable on Monday (28 September):
 *Source: your live timetable*
 
 ### Do I have classes on Saturday?
-`structured` · `day_of_week_timetable` · 131 ms · composer
+`structured` · `day_of_week_timetable` · 142 ms · composer
 *Expected:* Saturday list or "no classes"
 
 You have no classes on Saturday (26 September).
 
 ### Do I have any class on Sunday?
-`structured` · `day_of_week_timetable` · 133 ms · composer
+`structured` · `day_of_week_timetable` · 145 ms · composer
 *Expected:* "no classes on Sunday"
 
 You have no classes on Sunday. Enjoy the weekend!
 
 ### What did I have yesterday?
-`structured` · `day_of_week_timetable` · 141 ms · composer
+`structured` · `day_of_week_timetable` · 146 ms · composer
 *Expected:* yesterday's list
 
 Here's your timetable yesterday:
@@ -146,7 +146,7 @@ Here's your timetable yesterday:
 *Source: your live timetable*
 
 ### What is my timetable for this week?
-`structured` · `week_timetable` · 235 ms · composer
+`structured` · `week_timetable` · 153 ms · composer
 *Expected:* grouped by day
 
 Here's your timetable for this week:
@@ -197,7 +197,7 @@ Here's your timetable for this week:
 *Source: your live timetable*
 
 ### What class do I have at 10 AM?
-`structured` · `class_at_time` · 335 ms · composer
+`structured` · `class_at_time` · 223 ms · composer
 *Expected:* class covering 10 AM
 
 At 10:00 AM you have **IT Workshop III (ICS 214)** (10:00–10:55 AM) — Dr. Deepak Jose · lab. After that, your next class is **Probability, Statistics and Random Processes (IMA 211)** today (Wednesday), 11:05 AM – 12:00 PM — Dr. Anandhu Mohan.
@@ -205,7 +205,7 @@ At 10:00 AM you have **IT Workshop III (ICS 214)** (10:00–10:55 AM) — Dr. De
 *Source: your live timetable*
 
 ### What class do I have at 5 PM?
-`structured` · `class_at_time` · 130 ms · composer
+`structured` · `class_at_time` · 153 ms · composer
 *Expected:* class covering 5 PM
 
 You don't have a class at 5:00 PM. The next one after that is **Database Management Systems (ICS 213)** — tomorrow (Thursday), 9:00–9:55 AM — Dr. Vengadeswaran S. You have no more classes today.
@@ -213,7 +213,7 @@ You don't have a class at 5:00 PM. The next one after that is **Database Managem
 *Source: your live timetable*
 
 ### What is my first class tomorrow?
-`structured` · `day_of_week_timetable` · 146 ms · composer
+`structured` · `day_of_week_timetable` · 155 ms · composer
 *Expected:* earliest class tomorrow
 
 Your first class tomorrow is **Database Management Systems (ICS 213)** at 9:00 AM (9:00–9:55 AM) — Dr. Vengadeswaran S.
@@ -221,7 +221,7 @@ Your first class tomorrow is **Database Management Systems (ICS 213)** at 9:00 A
 *Source: your live timetable*
 
 ### When does my last class end today?
-`structured` · `day_timetable` · 264 ms · composer
+`structured` · `day_timetable` · 153 ms · composer
 *Expected:* end time of last class
 
 Your last class today is **Coding Club Activities**, which ends at **7:00 PM** — club activity.
@@ -229,7 +229,7 @@ Your last class today is **Coding Club Activities**, which ends at **7:00 PM** �
 *Source: your live timetable*
 
 ### How many classes do I have today?
-`structured` · `day_timetable` · 409 ms · composer
+`structured` · `day_timetable` · 149 ms · composer
 *Expected:* count + list
 
 You have **6 classes** today:
@@ -244,7 +244,7 @@ You have **6 classes** today:
 *Source: your live timetable*
 
 ### When am I free today?
-`structured` · `free_time` · 148 ms · composer
+`structured` · `free_time` · 155 ms · composer
 *Expected:* gaps between classes
 
 You're free today before 10:00 AM, 1:00–3:00 PM and after 7:00 PM.
@@ -254,7 +254,7 @@ Your classes today: 10:00–10:55 AM IT Workshop III (ICS 214); 11:05 AM – 12:
 *Source: your live timetable*
 
 ### When is my Data Structures class this week?
-`structured` · `week_timetable` · 361 ms · composer
+`structured` · `week_timetable` · 181 ms · composer
 *Expected:* matching slots
 
 Your **Data Structures II (ICS 215)** sessions this week:
@@ -268,7 +268,7 @@ Your **Data Structures II (ICS 215)** sessions this week:
 *Source: your live timetable*
 
 ### Which labs do I have this week?
-`structured` · `week_timetable` · 306 ms · composer
+`structured` · `week_timetable` · 147 ms · composer
 *Expected:* lab entries only
 
 Your labs this week:
@@ -291,7 +291,7 @@ You're in **Introduction to Bioinformatics (ISC 211)** right now (4:00–4:55 PM
 *Source: your live timetable*
 
 ### Where is my next class?
-`structured` · `classroom` · 438 ms · composer · ⚠️ review
+`structured` · `classroom` · 292 ms · composer · ⚠️ review
 *Expected:* classroom, or honest note that rooms aren't printed
 
 Your section's classroom this semester is **BC 302**. Your next class is **Database Management Systems (ICS 213)** — tomorrow (Thursday), 9:00–9:55 AM. (The timetable doesn't list a room for each class, so this is your section's allocated room.)
@@ -301,7 +301,7 @@ Your section's classroom this semester is **BC 302**. Your next class is **Datab
 ## 3. Courses
 
 ### What courses do I have this semester?
-`structured` · `my_courses` · 162 ms · composer
+`structured` · `my_courses` · 141 ms · composer
 *Expected:* distinct courses from own timetable
 
 You have **8 courses** this semester:
@@ -318,7 +318,7 @@ You have **8 courses** this semester:
 *Source: your live timetable*
 
 ### List my subjects
-`structured` · `my_courses` · 145 ms · composer
+`structured` · `my_courses` · 146 ms · composer
 *Expected:* same
 
 You have **8 courses** this semester:
@@ -335,7 +335,7 @@ You have **8 courses** this semester:
 *Source: your live timetable*
 
 ### Tell me about ICS 211
-`structured` · `course_info` · 484 ms · composer
+`structured` · `course_info` · 447 ms · composer
 *Expected:* course name, semester, what's on file
 
 **Design and Analysis of Algorithms** (ICS 211) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 3-1-0).
@@ -347,7 +347,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 2*
 
 ### What is ICS 212 about?
-`structured` · `course_info` · 375 ms · composer
+`structured` · `course_info` · 381 ms · composer
 *Expected:* course info
 
 **Theory of Computation** (ICS 212) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 3-1-0).
@@ -359,7 +359,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 15*
 
 ### Who teaches ICS 213?
-`structured` · `faculty_for_course` · 283 ms · composer
+`structured` · `faculty_for_course` · 280 ms · composer
 *Expected:* faculty list
 
 **Database Management Systems** (ICS 213) is taught by Dr. Vengadeswaran S, Dr. Syamala S, Dr. Amit Kumar Roy and Dr. E. Silambarasan. Different sections may have different teachers.
@@ -372,7 +372,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: your live timetable; faculty directory*
 
 ### Who teaches Database Management Systems?
-`structured` · `faculty_for_course` · 276 ms · composer
+`structured` · `faculty_for_course` · 284 ms · composer
 *Expected:* resolves course by name
 
 **Database Management Systems** (ICS 213) is taught by Dr. Vengadeswaran S, Dr. Syamala S, Dr. Amit Kumar Roy and Dr. E. Silambarasan. Different sections may have different teachers.
@@ -385,7 +385,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: your live timetable; faculty directory*
 
 ### Who teaches Theory of Computation?
-`structured` · `faculty_for_course` · 369 ms · composer
+`structured` · `faculty_for_course` · 279 ms · composer
 *Expected:* resolves course by name
 
 **Theory of Computation** (ICS 212) is taught by Dr Divya Sindhu Lekha, Dr. Krishnendhu S P, Dr. Rosebell Paul and Dr. Jaisooraj J. Different sections may have different teachers.
@@ -398,7 +398,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: your live timetable; faculty directory*
 
 ### How many credits is ICS 213?
-`structured` · `course_info` · 413 ms · composer
+`structured` · `course_info` · 377 ms · composer
 *Expected:* credits if on file, else honest + curriculum pointer
 
 **Database Management Systems** (ICS 213) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 2-1-2).
@@ -410,7 +410,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: course catalog; B.Tech AI & DS Curriculum (2021-25 batch), p. 2*
 
 ### Which semester is Data Structures II taught in?
-`structured` · `course_info` · 522 ms · composer
+`structured` · `course_info` · 418 ms · composer
 *Expected:* semester 3
 
 **Data Structures II** (ICS 215) is a semester 3 B.Tech course. It carries **2 credits** (lecture-tutorial-practical: 1-0-2).
@@ -422,7 +422,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 18*
 
 ### What is IT Workshop III?
-`structured` · `course_info` · 349 ms · composer
+`structured` · `course_info` · 350 ms · composer
 *Expected:* course info
 
 **IT Workshop III** (ICS 214) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 2-1-2).
@@ -436,7 +436,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 ## 4. Faculty — contact, roles, research
 
 ### What is Dr. Manu Madhavan's email?
-`structured` · `faculty_lookup` · 124 ms · composer
+`structured` · `faculty_lookup` · 139 ms · composer
 *Expected:* email
 
 Dr. Manu Madhavan's email is **manum@iiitkottayam.ac.in**.
@@ -444,7 +444,7 @@ Dr. Manu Madhavan's email is **manum@iiitkottayam.ac.in**.
 *Source: faculty directory*
 
 ### Where is Dr. Manu Madhavan's office?
-`structured` · `faculty_lookup` · 139 ms · composer
+`structured` · `faculty_lookup` · 141 ms · composer
 *Expected:* office location
 
 Dr. Manu Madhavan's office is **BC 307**. Email: manum@iiitkottayam.ac.in.
@@ -452,7 +452,7 @@ Dr. Manu Madhavan's office is **BC 307**. Email: manum@iiitkottayam.ac.in.
 *Source: faculty directory*
 
 ### Tell me about Dr. Manu Madhavan
-`structured` · `faculty_lookup` · 126 ms · composer
+`structured` · `faculty_lookup` · 141 ms · composer
 *Expected:* profile incl. research interests
 
 **Dr. Manu Madhavan** (MM)
@@ -464,7 +464,7 @@ Dr. Manu Madhavan's office is **BC 307**. Email: manum@iiitkottayam.ac.in.
 *Source: faculty directory*
 
 ### What is the email of Dr. Vengadeswaran S?
-`structured` · `faculty_lookup` · 125 ms · composer
+`structured` · `faculty_lookup` · 139 ms · composer
 *Expected:* email or "not on file"
 
 Dr. Vengadeswaran S's email is **vengadesh@iiitkottayam.ac.in**.
@@ -472,7 +472,7 @@ Dr. Vengadeswaran S's email is **vengadesh@iiitkottayam.ac.in**.
 *Source: faculty directory*
 
 ### Who is the HOD of Computer Science?
-`structured` · `faculty_role` · 141 ms · composer
+`structured` · `faculty_role` · 148 ms · composer
 *Expected:* HOD(s) with contacts
 
 Here's who holds that role:
@@ -483,7 +483,7 @@ Here's who holds that role:
 *Source: faculty directory*
 
 ### Who is the HOD of ECE?
-`structured` · `faculty_role` · 132 ms · composer
+`structured` · `faculty_role` · 153 ms · composer
 *Expected:* HOD ECE
 
 **Dr. Ananth A** is the HOD (Electronics & Communication Engineering). Contact: ananth@iiitkottayam.ac.in · 0482-2202176 · office AB 208 / AC 313.
@@ -491,7 +491,7 @@ Here's who holds that role:
 *Source: faculty directory*
 
 ### Who is the Registrar?
-`structured` · `faculty_role` · 139 ms · composer
+`structured` · `faculty_role` · 147 ms · composer
 *Expected:* registrar
 
 **Dr. M Radhakrishnan** is the Registrar, IIIT Kottayam. Contact: registrar@iiitkottayam.ac.in · +91 0482-2202100.
@@ -499,7 +499,7 @@ Here's who holds that role:
 *Source: faculty directory*
 
 ### Who is the Associate Dean of Academic Affairs?
-`structured` · `faculty_role` · 149 ms · composer
+`structured` · `faculty_role` · 167 ms · composer
 *Expected:* dean
 
 Here's who holds that role:
@@ -510,7 +510,7 @@ Here's who holds that role:
 *Source: faculty directory*
 
 ### Is there a medical officer on campus?
-`structured` · `faculty_role` · 134 ms · composer
+`structured` · `faculty_role` · 138 ms · composer
 *Expected:* medical officer contact
 
 Here are the campus medical contacts:
@@ -521,7 +521,7 @@ Here are the campus medical contacts:
 *Source: faculty directory*
 
 ### Is there a counsellor or psychologist I can talk to?
-`structured` · `faculty_role` · 143 ms · composer
+`structured` · `faculty_role` · 163 ms · composer
 *Expected:* psychologist
 
 Yes — the institute has a psychologist you can reach out to:
@@ -532,7 +532,7 @@ Yes — the institute has a psychologist you can reach out to:
 *Source: faculty directory*
 
 ### Which faculty work on Natural Language Processing?
-`hybrid` · `faculty_research` · 138 ms · composer
+`hybrid` · `faculty_research` · 147 ms · composer
 *Expected:* matching faculty
 
 9 faculty list **Natural Language Processing** among their research interests — here are the 5 for whom it's most central:
@@ -555,7 +555,7 @@ Yes — the institute has a psychologist you can reach out to:
 *Source: faculty directory*
 
 ### Which faculty work on NLP and when can I meet them?
-`hybrid` · `faculty_research` · 726 ms · composer
+`hybrid` · `faculty_research` · 529 ms · composer
 *Expected:* faculty + teaching schedule, no invented office hours
 
 9 faculty list **NLP** among their research interests — here are the 5 for whom it's most central:
@@ -584,7 +584,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory; your live timetable*
 
 ### Recommend a faculty member for machine learning research.
-`hybrid` · `faculty_research` · 147 ms · composer
+`hybrid` · `faculty_research` · 155 ms · composer
 *Expected:* ranked faculty
 
 39 faculty list **machine learning** among their research interests — here are the 5 for whom it's most central:
@@ -607,7 +607,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### Who researches computer vision?
-`hybrid` · `faculty_research` · 142 ms · composer
+`hybrid` · `faculty_research` · 149 ms · composer
 *Expected:* matching faculty
 
 13 faculty list **computer vision** among their research interests — here are the 5 for whom it's most central:
@@ -630,7 +630,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### Who works on cyber security?
-`hybrid` · `faculty_research` · 154 ms · composer
+`hybrid` · `faculty_research` · 152 ms · composer
 *Expected:* matching faculty
 
 18 faculty list **cyber security** among their research interests — here are the 5 for whom it's most central:
@@ -653,7 +653,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### Who researches underwater sensor networks?
-`hybrid` · `faculty_research` · 140 ms · composer
+`hybrid` · `faculty_research` · 157 ms · composer
 *Expected:* Dr. Jalaja M J (or honest no match)
 
 1 faculty list **underwater sensor networks** among their research interests:
@@ -664,7 +664,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### Is anyone working on blockchain?
-`hybrid` · `faculty_research` · 135 ms · composer
+`hybrid` · `faculty_research` · 158 ms · composer
 *Expected:* matches or honest no match
 
 1 faculty list **blockchain** among their research interests:
@@ -675,7 +675,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### When can I meet Dr. Manu Madhavan?
-`structured` · `faculty_lookup` · 270 ms · composer · ⚠️ review
+`structured` · `faculty_lookup` · 301 ms · composer · ⚠️ review
 *Expected:* teaching schedule, explicit that office hours aren't on file
 
 I don't have office hours on file for **Dr. Manu Madhavan**, so I can't confirm when they're free. They teach at these times, so they'll be busy then:
@@ -697,7 +697,7 @@ The reliable way is to email them to set a time: **manum@iiitkottayam.ac.in** (o
 ## 5. Mess
 
 ### What is on the mess menu today?
-`structured` · `mess_today` · 151 ms · composer
+`structured` · `mess_today` · 135 ms · composer
 *Expected:* all meals, with staleness caveat if repeated cycle
 
 **Wednesday, 23 September** (today)
@@ -711,7 +711,7 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### What's for lunch today?
-`structured` · `mess_today` · 128 ms · composer
+`structured` · `mess_today` · 148 ms · composer
 *Expected:* lunch only
 
 Lunch on **Wednesday, 23 September** (today): Rice, Roti, Mudda Pappu, Pachi Pulusu, cabbage fry, Curd, Koottu curry, Salad Drink: Sweet Lassi.
@@ -721,7 +721,7 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### What's for dinner tomorrow?
-`structured` · `mess_on_day` · 136 ms · composer
+`structured` · `mess_on_day` · 146 ms · composer
 *Expected:* dinner tomorrow
 
 Dinner on **Thursday, 24 September** (tomorrow): Roti, Rice, Sambar, Potato fry, Kanji, Chammanthi, curd, Brinjal Curry, Salad Sweet: Rava Kesari.
@@ -731,7 +731,7 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### What is for breakfast on Monday?
-`structured` · `mess_on_day` · 143 ms · composer
+`structured` · `mess_on_day` · 147 ms · composer
 *Expected:* Monday breakfast
 
 Breakfast on **Monday, 28 September**: Onion Uttapam, Medu vada, Sambar, Coconut Chutney, Bread (Normal/Brown) Jam, Butter, Tea, Milk, Corn Flakes.
@@ -741,7 +741,7 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### What is being served for dinner this week?
-`structured` · `mess_week` · 132 ms · composer
+`structured` · `mess_week` · 143 ms · composer
 *Expected:* dinner by day
 
 **Monday, 21 September**
@@ -770,7 +770,7 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### What are the snacks today?
-`structured` · `mess_today` · 139 ms · composer
+`structured` · `mess_today` · 142 ms · composer
 *Expected:* snacks
 
 Snacks on **Wednesday, 23 September** (today): Sweetcorn(boiled) Bread, Jam, Butter, Tea, Milk.
@@ -780,7 +780,7 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### What did we have for dinner yesterday?
-`structured` · `mess_on_day` · 132 ms · composer
+`structured` · `mess_on_day` · 141 ms · composer
 *Expected:* yesterday dinner
 
 Dinner on **Tuesday, 22 September** (yesterday): Rice, Roti, Chole curry, Onion Dal Tadka, Carrot Beans Thoran, Rasam, Chips Salad, Curd.
@@ -792,7 +792,7 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 ## 6. Academic calendar and exams
 
 ### When do the end semester exams start?
-`structured` · `academic_calendar` · 150 ms · composer
+`structured` · `academic_calendar` · 141 ms · composer
 *Expected:* 2026-10-28
 
 The **End Semester Examination** runs from **Wednesday, 28 October** to **Friday, 13 November** — it starts in 35 days.
@@ -800,7 +800,7 @@ The **End Semester Examination** runs from **Wednesday, 28 October** to **Friday
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When do mid semester exams start?
-`structured` · `academic_calendar` · 129 ms · composer
+`structured` · `academic_calendar` · 159 ms · composer
 *Expected:* 2026-09-02 (already past — say so)
 
 **Mid Semester Examination Starts** was on **Wednesday, 2 September** — that was 21 days ago, so it has already passed.
@@ -808,7 +808,7 @@ The **End Semester Examination** runs from **Wednesday, 28 October** to **Friday
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When does the semester end?
-`structured` · `academic_calendar` · 154 ms · composer
+`structured` · `academic_calendar` · 136 ms · composer
 *Expected:* 2026-11-13
 
 **End semester exams end and the semester ends** is on **Friday, 13 November** (in 51 days). The End Semester Examination starts on Wednesday, 28 October.
@@ -816,7 +816,7 @@ The **End Semester Examination** runs from **Wednesday, 28 October** to **Friday
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is the last instructional day?
-`structured` · `academic_calendar` · 241 ms · composer
+`structured` · `academic_calendar` · 150 ms · composer
 *Expected:* Class Ends 2026-10-26
 
 **Last instructional day (classes end)** is on **Monday, 26 October** (in 33 days).
@@ -824,7 +824,7 @@ The **End Semester Examination** runs from **Wednesday, 28 October** to **Friday
 *Source: academic calendar, Odd semester 2026-27*
 
 ### What is the last date for course drop?
-`structured` · `academic_calendar` · 244 ms · composer
+`structured` · `academic_calendar` · 158 ms · composer
 *Expected:* 2026-07-30 (past)
 
 **Last day for course drop** was on **Thursday, 30 July** — that was 55 days ago, so it has already passed.
@@ -832,7 +832,7 @@ The **End Semester Examination** runs from **Wednesday, 28 October** to **Friday
 *Source: academic calendar, Odd semester 2026-27*
 
 ### What are the upcoming deadlines?
-`structured` · `academic_calendar` · 149 ms · composer
+`structured` · `academic_calendar` · 148 ms · composer
 *Expected:* next deadlines from today
 
 Here are the upcoming deadlines:
@@ -844,7 +844,7 @@ Here are the upcoming deadlines:
 *Source: academic calendar, Odd semester 2026-27*
 
 ### What's coming up on the academic calendar?
-`structured` · `academic_calendar` · 134 ms · composer
+`structured` · `academic_calendar` · 148 ms · composer
 *Expected:* next events
 
 Coming up on the academic calendar:
@@ -859,7 +859,7 @@ Coming up on the academic calendar:
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is the sports meet?
-`structured` · `academic_calendar` · 176 ms · composer
+`structured` · `academic_calendar` · 149 ms · composer
 *Expected:* 2026-09-25 to 2026-09-27
 
 The **Sports Meet** runs from **Friday, 25 September** to **Sunday, 27 September** — it starts in 2 days.
@@ -867,7 +867,7 @@ The **Sports Meet** runs from **Friday, 25 September** to **Sunday, 27 September
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When will results be published?
-`structured` · `academic_calendar` · 146 ms · composer
+`structured` · `academic_calendar` · 161 ms · composer
 *Expected:* 2026-12-03
 
 **Result Publication** is on **Thursday, 3 December** (in 71 days).
@@ -875,7 +875,7 @@ The **Sports Meet** runs from **Friday, 25 September** to **Sunday, 27 September
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When does the even semester start?
-`structured` · `academic_calendar` · 273 ms · composer
+`structured` · `academic_calendar` · 140 ms · composer
 *Expected:* 2026-12-21
 
 **Even Semester 2026–27 Classes Begin** is on **Monday, 21 December** (in 89 days).
@@ -883,7 +883,7 @@ The **Sports Meet** runs from **Friday, 25 September** to **Sunday, 27 September
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is the next class committee meeting?
-`structured` · `academic_calendar` · 152 ms · composer
+`structured` · `academic_calendar` · 161 ms · composer
 *Expected:* next meeting date
 
 **Second Class Committee Meeting (S3, S5 & S7)** is on Wednesday, 23 September and Thursday, 24 September (today).
@@ -891,7 +891,7 @@ The **Sports Meet** runs from **Friday, 25 September** to **Sunday, 27 September
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is registration for the even semester?
-`structured` · `academic_calendar` · 126 ms · composer
+`structured` · `academic_calendar` · 141 ms · composer
 *Expected:* 2026-12-14
 
 **Registration starts online for Even Sem 2026-27** is on **Monday, 14 December** (in 82 days).
@@ -899,7 +899,7 @@ The **Sports Meet** runs from **Friday, 25 September** to **Sunday, 27 September
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is my ICS 213 exam?
-`structured` · `exam_schedule` · 217 ms · composer
+`structured` · `exam_schedule` · 231 ms · composer
 *Expected:* per-course schedule not published; end-sem window
 
 The exam timetable for **Database Management Systems** (ICS 213) hasn't been published yet. From the academic calendar, the end semester exams run from **Wednesday, 28 October** to **Friday, 13 November**, so it will fall in that window.
@@ -912,7 +912,7 @@ Other exam dates:
 *Source: academic calendar, Odd semester 2026-27*
 
 ### Are there any holidays this month?
-`structured` · `academic_calendar` · 134 ms · composer · ⚠️ review
+`structured` · `academic_calendar` · 145 ms · composer · ⚠️ review
 *Expected:* honest: calendar has no holiday entries
 
 The academic calendar doesn't list any holidays for this semester. Coming up next:
@@ -926,7 +926,7 @@ The academic calendar doesn't list any holidays for this semester. Coming up nex
 ## 7. Regulations (answered for the student's cohort)
 
 ### What is the attendance requirement?
-`semantic` · `none` · 352 ms · composer
+`semantic` · `none` · 311 ms · composer
 *Expected:* 80%, cited to the 2021-25 regulations
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -938,7 +938,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.1, p. 7*
 
 ### What happens if my attendance is below 80%?
-`semantic` · `none` · 227 ms · composer
+`semantic` · `none` · 241 ms · composer
 *Expected:* consequence per regulations
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -948,7 +948,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.3, p. 7*
 
 ### Is there attendance condonation?
-`semantic` · `none` · 217 ms · composer
+`semantic` · `none` · 232 ms · composer
 *Expected:* condonation rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -958,7 +958,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), p. 7*
 
 ### How is CGPA calculated?
-`semantic` · `none` · 221 ms · composer
+`semantic` · `none` · 235 ms · composer
 *Expected:* grading/CGPA rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -970,7 +970,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.6.10 Grade Card, p. 11*
 
 ### What is the grading system?
-`semantic` · `none` · 235 ms · composer
+`semantic` · `none` · 244 ms · composer
 *Expected:* grade points
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -982,7 +982,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), p. 10*
 
 ### How many credits do I need to graduate?
-`semantic` · `none` · 245 ms · composer
+`semantic` · `none` · 247 ms · composer
 *Expected:* degree credit requirement
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -992,7 +992,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.10.0, p. 14*
 
 ### What is the maximum duration to complete the B.Tech?
-`semantic` · `none` · 585 ms · composer
+`semantic` · `none` · 263 ms · composer
 *Expected:* 12 semesters
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1002,7 +1002,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.7.4, p. 12*
 
 ### Can I take a summer term?
-`semantic` · `none` · 342 ms · composer
+`semantic` · `none` · 246 ms · composer
 *Expected:* summer term rule or honest
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1014,7 +1014,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.9.1, p. 13*
 
 ### How do I drop a course?
-`semantic` · `none` · 267 ms · composer
+`semantic` · `none` · 266 ms · composer
 *Expected:* drop/withdrawal rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1024,7 +1024,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), p. 6*
 
 ### What happens if I fail a course?
-`semantic` · `none` · 254 ms · composer
+`semantic` · `none` · 282 ms · composer
 *Expected:* backlog/repeat rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1034,7 +1034,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.0 Attendance and Course Feedback, p. 7*
 
 ### What is an incomplete grade?
-`semantic` · `none` · 227 ms · composer
+`semantic` · `none` · 225 ms · composer
 *Expected:* I grade rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1044,7 +1044,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.2, p. 7*
 
 ### Can I write a make-up exam if I miss the end semester exam?
-`semantic` · `none` · 246 ms · composer
+`semantic` · `none` · 262 ms · composer
 *Expected:* make-up rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1054,7 +1054,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.2, p. 7*
 
 ### What is required for the B.Tech-MS dual degree?
-`semantic` · `none` · 256 ms · composer
+`semantic` · `none` · 250 ms · composer
 *Expected:* eligibility
 
 From the **B.Tech CSE Curriculum (2021-25 batch)**:
@@ -1064,7 +1064,7 @@ From the **B.Tech CSE Curriculum (2021-25 batch)**:
 *Source: B.Tech CSE Curriculum (2021-25 batch), p. 6*
 
 ### What is the minimum CGPA to get the degree?
-`semantic` · `none` · 246 ms · composer
+`semantic` · `none` · 281 ms · composer
 *Expected:* minimum CGPA
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1076,7 +1076,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 ## 8. Hostel
 
 ### What are the hostel curfew rules?
-`semantic` · `none` · 261 ms · composer
+`semantic` · `none` · 295 ms · composer
 *Expected:* in-time / gate timings from hostel rules
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1094,7 +1094,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), rule 30, p. 5*
 
 ### What time should I be back in the hostel?
-`semantic` · `none` · 279 ms · composer
+`semantic` · `none` · 256 ms · composer
 *Expected:* in-time
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1112,7 +1112,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), rule 30, p. 5*
 
 ### How does the outpass process work?
-`semantic` · `none` · 274 ms · composer
+`semantic` · `none` · 287 ms · composer
 *Expected:* leave/outpass rule
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1122,7 +1122,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), rule 3.1, p. 1*
 
 ### Can visitors come to the hostel?
-`semantic` · `none` · 215 ms · composer
+`semantic` · `none` · 240 ms · composer
 *Expected:* visitor rule
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1132,7 +1132,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), p. 4*
 
 ### Can I cook in my hostel room?
-`semantic` · `none` · 218 ms · composer
+`semantic` · `none` · 231 ms · composer
 *Expected:* electrical appliance / cooking rule
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1142,7 +1142,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), p. 3*
 
 ### Who is the warden of Sahyadri hostel?
-`structured` · `hostel_wardens` · 139 ms · composer
+`structured` · `hostel_wardens` · 158 ms · composer
 *Expected:* warden(s) with phone/email
 
 **Sahyadri Hostel (Girls)**
@@ -1157,7 +1157,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Wardens Team, July 2026*
 
 ### Who are the wardens for Anamudi hostel?
-`structured` · `hostel_wardens` · 150 ms · composer
+`structured` · `hostel_wardens` · 142 ms · composer
 *Expected:* wardens
 
 **Anamudi Hostel (Girls)**
@@ -1172,7 +1172,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Wardens Team, July 2026*
 
 ### How do I contact my hostel warden?
-`structured` · `hostel_wardens` · 137 ms · composer
+`structured` · `hostel_wardens` · 152 ms · composer
 *Expected:* warden contacts (asks which hostel if unknown)
 
 Which hostel are you in? Here are the wardens for each hall:
@@ -1208,7 +1208,7 @@ Ask me about a specific hostel (e.g. "wardens of Sahyadri hostel") for its assis
 ## 9. Anti-ragging
 
 ### What are the anti-ragging rules?
-`semantic` · `none` · 823 ms · composer
+`semantic` · `none` · 916 ms · composer
 *Expected:* summary from UGC regulations / memo
 
 Here are the key anti-ragging rules:
@@ -1224,7 +1224,7 @@ Ask me about any one of these for the full rule.
 *Source: UGC Anti-Ragging Regulations (2009), p. 32; UGC Anti-Ragging Regulations (2009), p. 49; UGC Anti-Ragging Circular Letter, p. 1*
 
 ### What counts as ragging?
-`semantic` · `none` · 373 ms · composer
+`semantic` · `none` · 390 ms · composer
 *Expected:* definition
 
 From the **UGC Anti-Ragging Regulations (2009)**:
@@ -1234,7 +1234,7 @@ From the **UGC Anti-Ragging Regulations (2009)**:
 *Source: UGC Anti-Ragging Regulations (2009), p. 32*
 
 ### What is the punishment for ragging?
-`semantic` · `none` · 397 ms · composer
+`semantic` · `none` · 326 ms · composer
 *Expected:* punishments
 
 From the **UGC Anti-Ragging Regulations (2009)**:
@@ -1244,7 +1244,7 @@ From the **UGC Anti-Ragging Regulations (2009)**:
 *Source: UGC Anti-Ragging Regulations (2009), p. 49*
 
 ### How do I report ragging?
-`semantic` · `none` · 246 ms · composer
+`semantic` · `none` · 241 ms · composer
 *Expected:* reporting / helpline
 
 From the **UGC Anti-Ragging Circular Letter**:
@@ -1254,7 +1254,7 @@ From the **UGC Anti-Ragging Circular Letter**:
 *Source: UGC Anti-Ragging Circular Letter, p. 1*
 
 ### Who is on the anti-ragging squad?
-`semantic` · `none` · 312 ms · composer
+`semantic` · `none` · 323 ms · composer
 *Expected:* members from the office memorandum
 
 From the **Office Memorandum: Anti-Ragging Committee & Squad (Jan 2024)**:
@@ -1266,7 +1266,7 @@ From the **Office Memorandum: Anti-Ragging Committee & Squad (Jan 2024)**:
 ## 10. Procedures
 
 ### How do I request transcript verification?
-`semantic` · `none` · 236 ms · composer
+`semantic` · `none` · 238 ms · composer
 *Expected:* steps
 
 From the **Transcript Verification Procedure**:
@@ -1276,7 +1276,7 @@ From the **Transcript Verification Procedure**:
 *Source: Transcript Verification Procedure, p. 1*
 
 ### What is the transcript verification fee?
-`semantic` · `none` · 230 ms · composer
+`semantic` · `none` · 225 ms · composer
 *Expected:* fee from the procedure
 
 From the **Transcript Verification Procedure**:
@@ -1286,7 +1286,7 @@ From the **Transcript Verification Procedure**:
 *Source: Transcript Verification Procedure, p. 1*
 
 ### How does educational certificate verification work?
-`semantic` · `none` · 250 ms · composer
+`semantic` · `none` · 246 ms · composer
 *Expected:* steps
 
 From the **Educational Certificate Verification Procedure**:
@@ -1300,19 +1300,19 @@ From the **Educational Certificate Verification Procedure**:
 ## 11. Announcements
 
 ### Are there any current announcements?
-`structured` · `announcements` · 156 ms · composer
+`structured` · `announcements` · 143 ms · composer
 *Expected:* current approved announcements or "none right now"
 
 There are no current announcements right now. New ones show up here once an admin approves them.
 
 ### Any new notices?
-`structured` · `announcements` · 126 ms · composer
+`structured` · `announcements` · 145 ms · composer
 *Expected:* same
 
 There are no current announcements right now. New ones show up here once an admin approves them.
 
 ### What's the latest news on campus?
-`structured` · `announcements` · 152 ms · composer
+`structured` · `announcements` · 142 ms · composer
 *Expected:* same
 
 There are no current announcements right now. New ones show up here once an admin approves them.
@@ -1320,7 +1320,7 @@ There are no current announcements right now. New ones show up here once an admi
 ## 12. About me
 
 ### What semester am I in?
-`structured` · `my_profile` · 59 ms · composer
+`structured` · `my_profile` · 68 ms · composer
 *Expected:* 3
 
 You're in **semester 3**.
@@ -1328,7 +1328,7 @@ You're in **semester 3**.
 *Source: your profile*
 
 ### Which section am I in?
-`structured` · `my_profile` · 209 ms · composer
+`structured` · `my_profile` · 67 ms · composer
 *Expected:* I
 
 You're in section **I**.
@@ -1336,7 +1336,7 @@ You're in section **I**.
 *Source: your profile*
 
 ### What is my department?
-`structured` · `my_profile` · 72 ms · composer
+`structured` · `my_profile` · 79 ms · composer
 *Expected:* CSE
 
 Your department is **Computer Science and Engineering**.
@@ -1344,7 +1344,7 @@ Your department is **Computer Science and Engineering**.
 *Source: your profile*
 
 ### Which regulations apply to me?
-`structured` · `my_profile` · 167 ms · composer
+`structured` · `my_profile` · 67 ms · composer
 *Expected:* UG Regulations 2021-25 batch
 
 The **UG Regulations (2021-25 batch)** apply to you.
@@ -1354,7 +1354,7 @@ The **UG Regulations (2021-25 batch)** apply to you.
 ## 13. Follow-up conversations
 
 ### Tell me about ICS 211
-`structured` · `course_info` · 544 ms · composer
+`structured` · `course_info` · 373 ms · composer
 
 **Design and Analysis of Algorithms** (ICS 211) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 3-1-0).
 
@@ -1365,7 +1365,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 2*
 
 ### ↳ Who teaches it?
-`structured` · `faculty_for_course` · 285 ms · composer · resolved as “Who teaches ICS 211?”
+`structured` · `faculty_for_course` · 282 ms · composer · resolved as “Who teaches ICS 211?”
 
 **Design and Analysis of Algorithms** (ICS 211) is taught by Dr. Priyadharshini S, Dr. Jisha Mariyam John, Dr. Manu Madhavan and Dr. Nandini J. Warrier. Different sections may have different teachers.
 
@@ -1377,7 +1377,7 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: your live timetable; faculty directory*
 
 ### ↳ What credits does it have?
-`structured` · `course_info` · 336 ms · composer · resolved as “What credits does ICS 211 have?”
+`structured` · `course_info` · 411 ms · composer · resolved as “What credits does ICS 211 have?”
 
 **Design and Analysis of Algorithms** (ICS 211) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 3-1-0).
 
@@ -1388,14 +1388,14 @@ A syllabus summary isn't available yet — the full syllabus is in your programm
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 2*
 
 ### What is my next class?
-`structured` · `next_class` · 211 ms · composer
+`structured` · `next_class` · 231 ms · composer
 
 You're in **Introduction to Bioinformatics (ISC 211)** right now (4:00–4:55 PM) — Dr. Jayakrushna Sahoo. After that, your next class is **Database Management Systems (ICS 213)** tomorrow (Thursday), 9:00–9:55 AM — Dr. Vengadeswaran S.
 
 *Source: your live timetable*
 
 ### ↳ Who teaches it?
-`structured` · `faculty_for_course` · 260 ms · composer · resolved as “Who teaches ISC 211?”
+`structured` · `faculty_for_course` · 289 ms · composer · resolved as “Who teaches ISC 211?”
 
 **Introduction to Bioinformatics** (ISC 211) is taught by Dr. Jayakrushna Sahoo and Dr. Suchithra M S. Different sections may have different teachers.
 
@@ -1405,21 +1405,21 @@ You're in **Introduction to Bioinformatics (ISC 211)** right now (4:00–4:55 PM
 *Source: your live timetable; faculty directory*
 
 ### What is Dr. Manu Madhavan's email?
-`structured` · `faculty_lookup` · 151 ms · composer
+`structured` · `faculty_lookup` · 138 ms · composer
 
 Dr. Manu Madhavan's email is **manum@iiitkottayam.ac.in**.
 
 *Source: faculty directory*
 
 ### ↳ What does he research?
-`structured` · `faculty_lookup` · 131 ms · composer · resolved as “What does Dr. Manu Madhavan research?”
+`structured` · `faculty_lookup` · 147 ms · composer · resolved as “What does Dr. Manu Madhavan research?”
 
 Dr. Manu Madhavan's research interests: Natural Language Processing; Bioinformatics; Machine Learning; Computational Linguistics; Deep Learning, Graph Neural Networks.
 
 *Source: faculty directory*
 
 ### What's for lunch today?
-`structured` · `mess_today` · 153 ms · composer
+`structured` · `mess_today` · 148 ms · composer
 
 Lunch on **Wednesday, 23 September** (today): Rice, Roti, Mudda Pappu, Pachi Pulusu, cabbage fry, Curd, Koottu curry, Salad Drink: Sweet Lassi.
 
@@ -1428,7 +1428,7 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### ↳ And dinner?
-`structured` · `mess_today` · 147 ms · composer · resolved as “What's for dinner today?”
+`structured` · `mess_today` · 153 ms · composer · resolved as “What's for dinner today?”
 
 Dinner on **Wednesday, 23 September** (today): Vegetable Fried rice, Roti, Paneer Butter masala, Chilli chicken, Onionchilli Raita Drink: Passion Fruit drink.
 
@@ -1437,7 +1437,7 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### What is the attendance requirement?
-`semantic` · `none` · 228 ms · composer
+`semantic` · `none` · 231 ms · composer
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
 
@@ -1448,7 +1448,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.1, p. 7*
 
 ### ↳ What if I don't meet it?
-`semantic` · `none` · 241 ms · composer · resolved as “What if I don't meet it? (What is the attendance requirement)”
+`semantic` · `none` · 268 ms · composer · resolved as “What if I don't meet it? (What is the attendance requirement)”
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
 
@@ -1461,55 +1461,55 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 ## 14. Out of scope — must not invent anything
 
 ### What are my exam grades this semester?
-`unsupported` · `out_of_scope` · 72 ms · composer
+`unsupported` · `out_of_scope` · 68 ms · composer
 *Expected:* ORION doesn't hold grades; where to check
 
 I can't see grades, marks or CGPA — I don't store personal academic records. Your results are on the institute's academic portal, or ask your faculty advisor. I can explain how CGPA is calculated or tell you when results are published.
 
 ### What is my CGPA?
-`unsupported` · `out_of_scope` · 70 ms · composer
+`unsupported` · `out_of_scope` · 76 ms · composer
 *Expected:* same
 
 I can't see grades, marks or CGPA — I don't store personal academic records. Your results are on the institute's academic portal, or ask your faculty advisor. I can explain how CGPA is calculated or tell you when results are published.
 
 ### What is my attendance percentage?
-`unsupported` · `out_of_scope` · 66 ms · composer
+`unsupported` · `out_of_scope` · 65 ms · composer
 *Expected:* not held; ask faculty / portal
 
 I don't track your attendance — your course faculty maintain it, and you can check it with them. I can tell you the attendance rules if that helps ("What is the attendance requirement?").
 
 ### How do I pay my fees?
-`unsupported` · `out_of_scope` · 72 ms · composer
+`unsupported` · `out_of_scope` · 66 ms · composer
 *Expected:* fee payment not in ORION; fee deadlines from calendar if relevant
 
 I don't handle fee payments or balances — use the institute's official payment channels or the Accounts section. I can tell you fee payment deadlines from the academic calendar.
 
 ### What is the weather today?
-`unsupported` · `out_of_scope` · 68 ms · composer
+`unsupported` · `out_of_scope` · 76 ms · composer
 *Expected:* out of scope
 
 I'm RION, ORION's campus assistant for IIIT Kottayam, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
 
 ### What is the capital of France?
-`unsupported` · `out_of_scope` · 166 ms · composer
+`unsupported` · `out_of_scope` · 69 ms · composer
 *Expected:* out of scope, campus assistant
 
 I'm RION, ORION's campus assistant for IIIT Kottayam, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
 
 ### Write a Python program to sort a list
-`unsupported` · `out_of_scope` · 66 ms · composer
+`unsupported` · `out_of_scope` · 82 ms · composer
 *Expected:* out of scope
 
 I'm RION, ORION's campus assistant for IIIT Kottayam, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
 
 ### What is the meaning of life?
-`unsupported` · `out_of_scope` · 66 ms · composer
+`unsupported` · `out_of_scope` · 67 ms · composer
 *Expected:* out of scope, friendly
 
 I'm RION, ORION's campus assistant for IIIT Kottayam, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
 
 ### asdkfj qwer nonsense query
-`unsupported` · `none` · 71 ms · composer · ⚠️ review
+`unsupported` · `none` · 77 ms · composer · ⚠️ review
 *Expected:* didn't understand + examples
 
 I'm not sure what you mean. You can ask me things like:
@@ -1521,7 +1521,7 @@ I'm not sure what you mean. You can ask me things like:
 - Who is the warden of Sahyadri hostel?
 
 ### Who will win the IPL this year?
-`unsupported` · `out_of_scope` · 71 ms · composer
+`unsupported` · `out_of_scope` · 64 ms · composer
 *Expected:* out of scope
 
 I'm RION, ORION's campus assistant for IIIT Kottayam, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
@@ -1529,7 +1529,7 @@ I'm RION, ORION's campus assistant for IIIT Kottayam, so I stick to campus infor
 ## 15. Semantic search & cohort isolation (post-embedding-backfill, 2026-09-23)
 
 ### Which faculty work on natural language processing?
-`hybrid` · `faculty_research` · 144 ms · composer
+`hybrid` · `faculty_research` · 153 ms · composer
 *Expected:* Kashyap / Athira B / Sara Renjit or similar
 
 9 faculty list **natural language processing** among their research interests — here are the 5 for whom it's most central:
@@ -1552,13 +1552,13 @@ I'm RION, ORION's campus assistant for IIIT Kottayam, so I stick to campus infor
 *Source: faculty directory*
 
 ### Who researches computer vision on campus?
-`hybrid` · `faculty_research` · 138 ms · composer · ⚠️ review
+`hybrid` · `faculty_research` · 149 ms · composer · ⚠️ review
 *Expected:* Sivaiah Bellamkonda / Sreelakshmy I J or similar
 
 I couldn't find any faculty who list **computer vision on campus** in their research interests. Research profiles aren't on file for every faculty member, so the department pages may still help.
 
 ### Which faculty specialise in VLSI design?
-`hybrid` · `faculty_research` · 145 ms · composer
+`hybrid` · `faculty_research` · 157 ms · composer
 *Expected:* Lakshmi N S / Kala S or similar
 
 1 faculty list **VLSI design** among their research interests:
@@ -1569,13 +1569,13 @@ I couldn't find any faculty who list **computer vision on campus** in their rese
 *Source: faculty directory*
 
 ### Who works on cryptography and network security?
-`hybrid` · `faculty_research` · 134 ms · composer · ⚠️ review
+`hybrid` · `faculty_research` · 156 ms · composer · ⚠️ review
 *Expected:* Ragesh G K / A Balu / Amit Kumar Roy or similar
 
 I couldn't find any faculty who list **cryptography and network security** in their research interests. Research profiles aren't on file for every faculty member, so the department pages may still help.
 
 ### Which faculty research wireless communication?
-`hybrid` · `faculty_research` · 147 ms · composer
+`hybrid` · `faculty_research` · 145 ms · composer
 *Expected:* Emy Mariam George / Ananth A or similar
 
 4 faculty list **wireless communication** among their research interests:
@@ -1595,13 +1595,13 @@ I couldn't find any faculty who list **cryptography and network security** in th
 *Source: faculty directory*
 
 ### Which faculty specialise in cooking recipes?
-`hybrid` · `faculty_research` · 136 ms · composer · ⚠️ review
+`hybrid` · `faculty_research` · 149 ms · composer · ⚠️ review
 *Expected:* honest "no matching faculty" — must not surface language-teacher false positives (the pre-recalibration floor of 0.60 did)
 
 I couldn't find any faculty who list **cooking recipes** in their research interests. Research profiles aren't on file for every faculty member, so the department pages may still help.
 
 ### Recommend someone for quantum computing hardware.
-`unsupported` · `none` · 68 ms · composer · ⚠️ review
+`unsupported` · `none` · 99 ms · composer · ⚠️ review
 *Expected:* honest no-match if nothing on file, never a fabricated name
 
 I'm not sure what you mean. You can ask me things like:
@@ -1613,61 +1613,65 @@ I'm not sure what you mean. You can ask me things like:
 - Who is the warden of Sahyadri hostel?
 
 ### Is anyone researching medieval history?
-`hybrid` · `faculty_research` · 137 ms · composer · ⚠️ review
+`hybrid` · `faculty_research` · 179 ms · composer · ⚠️ review
 *Expected:* honest no-match
 
 I couldn't find any faculty who list **medieval history** in their research interests. Research profiles aren't on file for every faculty member, so the department pages may still help.
 
 ### What is the attendance requirement for students admitted in 2026?
-`semantic` · `none` · 239 ms · composer
+`semantic` · `none` · 297 ms · composer
 *Expected:* cites the "26-onwards" regulations explicitly, not the student's own 21-25 rule
 
-Under the **UG Regulations (2021-25 batch)**, which apply to you:
+Under the **UG Regulations (2026 admission onwards)** (not your own regulations — you're on the 21-25 cohort):
 
-> R.5.1 Students are expected to attend all the classes. Every teaching staff member handling a class will take attendance till 3 calendar days before the last instructional day in the Semester. Students should have minimum 80% attendance.
->
-> R.5.3 Students having an attendance percentage between 65% to 80%, with valid/genuine reasons may be permitted to continue the course by paying a nominal penalty amount as decided by the competent authority. Students having an attendance percentage less than 65 will be awarded L grade.
+> R.6.1 Students are expected to attend all the classes. Students should have a minimum of 80% attendance in a course to become eligible for writing the end-semester examination of the course. Students shall check their attendance details with the faculty after the mid-semester examination. The faculty handling a course must finalise the attendance 3 calendar days before the last instructional day of the course in the semester. The particulars of all students who have attendance less than 80% in that course will be announced in the class by the corresponding faculty.
 
-*Source: UG Regulations (2021-25 batch), R.5.1, p. 7*
+*Source: UG Regulations (2026 admission onwards), R.6.1, p. 8*
 
 ### Is the attendance rule different for the 2026 admission batch compared to mine?
-`semantic` · `none` · 235 ms · composer · ⚠️ review
+`semantic` · `none` · 475 ms · composer
 *Expected:* states both cohort values explicitly and compares, doesn't blend them
 
-I couldn't find a rule that answers that directly. The closest thing in the documents I have is this, from the **B.Tech AI & DS Curriculum (2021-25 batch)**:
+**Your cohort (21-25)** (UG Regulations (2021-25 batch)):
 
-> CSS322 Machine Learning [3-0-0-3]
+> R.5.3 Students having an attendance percentage between 65% to 80%, with valid/genuine reasons may be permitted to continue the course by paying a nominal penalty amount as decided by the competent authority. Students having an attendance percentage less than 65 will be awarded L grade. The students who have L grade in at leastonecoursewillhavetorepeat the courses in which he/she has insufficient attendanceintheupcoming year. For every course, the attendance in the end semester examination is mandatory.
+
+*Source: UG Regulations (2021-25 batch), R.5.3, p. 7*
+
+**26-onwards** (UG Regulations (2026 admission onwards)):
+
+> Those students with attendance less than 80%, for any course registered in a semester, will be eligible to get their shortage of attendance condoned and hence to appear for the endsemester examination for that course only if the student applies for condonation subject to the following conditions:
 >
-> Discover and measure interesting patterns from different Course Prerequisites kinds of databases.
+> the attendance in that semester for the course concerned, without applying any condonation, is not less than 65% of the total classes handled for that course;
+>
+> the attendance after considering all the leaves approved (as per R.6.2) is 80% or above, of the total classes handled for that course. Provisionalpermissionmaybegiventoappearfortheend-semesterexaminationifthestudent has submitted all the relevant documents for the appropriate leave and paid the condonation fee.
 
-If that's not it, the Academic Office can help.
-
-*Source: B.Tech AI & DS Curriculum (2021-25 batch), p. 34*
+*Source: UG Regulations (2026 admission onwards), R.6.0 Attendance, Condonation and Course Feedback, p. 8*
 
 ### What is the maximum duration to complete the B.Tech under the 2026 regulations?
-`semantic` · `none` · 259 ms · composer
+`semantic` · `none` · 307 ms · composer
 *Expected:* cites 26-onwards cohort, flags if it differs from the student's own answer (§7)
 
-Under the **UG Regulations (2021-25 batch)**, which apply to you:
+Under the **UG Regulations (2026 admission onwards)** (not your own regulations — you're on the 21-25 cohort):
 
-> R.7.4 Maximum Duration of the Programme A student is ordinarily expected to complete the B.Tech programme in eight semesters, and the dual degree programme in 10 semesters. However, a student may complete the B.Tech programme at a slower pace by taking more time, but in any case not more than 12 semesters excluding semesters withdrawn or medical grounds etc. as per R.7.5. However, the students have to satisfy
+> R.9.0 Maximum Duration of the Programme A student is ordinarily expected to complete the B.Tech. or B.Tech.(Hon) programme in eight semesters, and the dual degree programme (B.Tech.-MS) in ten semesters.
 
-*Source: UG Regulations (2021-25 batch), R.7.4, p. 12*
+*Source: UG Regulations (2026 admission onwards), R.9.0, p. 10*
 
 ### How many total credits does the 2026 CSE curriculum require?
-`semantic` · `none` · 227 ms · composer · ⚠️ review
+`semantic` · `none` · 349 ms · composer · ⚠️ review
 *Expected:* cites the ADM 2026 CSE curriculum document, not the 2021-25 CSE curriculum used elsewhere for this student
 
-I couldn't find a rule that answers that directly. The closest thing in the documents I have is this, from the **UG Regulations (2021-25 batch)**:
+I couldn't find a rule that answers that directly. The closest thing in the documents I have is this, from the **UG Regulations (2026 admission onwards)**:
 
-> Course Description Period B.Tech B.Tech(Hon) B.Tech-MS 1 Institute Core/Foundation Courses 94 94 94 Semester I to IV 2 Bouquet Core Courses 24 24 24 Semester V to VIII 3 Stream Electives 18 18 18 Semester V to VIII 4 Institute Open Electives 9 9 9 Semester V to VIII 5 Humanities Electives 3 3 3 Semester V to VIII 6 Science Electives 3 3 3 Semester V to VIII 7 Maths Elective 3 3 3 Semester V to VIII 8 Engineering Elective 4 4 4 Semester V to VIII 9 Any other Electives/Industrial Training 4 4 4 Semester V to VIII 10 B.Tech Projects 12 12 12 Semester VII to VIII 11 Honours Project - 12 12 Semester VI to VIII 12 Research Courses - - 8 Semester VI to VIII 13 Research Project - - 24 Semester IX to X Total Credits 174 186 218 CGPA 5.5 8.0 8.0 14.12(5)/July2025 - 14/22
+> Out of the total credits assigned to the project, 30% of the weightage comes from the Project guide and the remaining 70% is awarded by the other members of the Project Evaluation Committee (PEC).
 
 If that's not it, the Academic Office can help.
 
-*Source: UG Regulations (2021-25 batch), p. 14*
+*Source: UG Regulations (2026 admission onwards), p. 13*
 
 ### Which faculty work in machine learning and when could I meet them this week?
-`hybrid` · `faculty_research` · 463 ms · composer
+`hybrid` · `faculty_research` · 605 ms · composer
 *Expected:* research match + teaching-schedule proxy, explicit that it's not confirmed office hours
 
 39 faculty list **machine learning** among their research interests — here are the 5 for whom it's most central:
@@ -1693,13 +1697,13 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory; your live timetable*
 
 ### Recommend a faculty member for NLP research who's teaching soon.
-`hybrid` · `faculty_research` · 137 ms · composer · ⚠️ review
+`hybrid` · `faculty_research` · 166 ms · composer · ⚠️ review
 *Expected:* ranked match + nearest upcoming class if any
 
 I couldn't find any faculty who list **NLP research who** in their research interests. Research profiles aren't on file for every faculty member, so the department pages may still help.
 
 ### Which faculty work on computer vision?
-`hybrid` · `faculty_research` · 141 ms · composer
+`hybrid` · `faculty_research` · 147 ms · composer
 
 13 faculty list **computer vision** among their research interests — here are the 5 for whom it's most central:
 
@@ -1721,7 +1725,7 @@ I couldn't find any faculty who list **NLP research who** in their research inte
 *Source: faculty directory*
 
 ### ↳ Which of them teaches a class this week?
-`structured` · `week_timetable` · 143 ms · composer · resolved as “Which of Dr. Dhakshayani J teaches a class this week?”
+`structured` · `week_timetable` · 156 ms · composer · resolved as “Which of Dr. Dhakshayani J teaches a class this week?”
 
 Here's your timetable for this week:
 
@@ -1771,26 +1775,26 @@ Here's your timetable for this week:
 *Source: your live timetable*
 
 ### What is the attendance requirement for the 2026 admission batch?
-`semantic` · `none` · 247 ms · composer
+`semantic` · `none` · 283 ms · composer
 
-Under the **UG Regulations (2021-25 batch)**, which apply to you:
+Under the **UG Regulations (2026 admission onwards)** (not your own regulations — you're on the 21-25 cohort):
 
-> R.5.1 Students are expected to attend all the classes. Every teaching staff member handling a class will take attendance till 3 calendar days before the last instructional day in the Semester. Students should have minimum 80% attendance.
->
-> R.5.3 Students having an attendance percentage between 65% to 80%, with valid/genuine reasons may be permitted to continue the course by paying a nominal penalty amount as decided by the competent authority. Students having an attendance percentage less than 65 will be awarded L grade.
+> R.6.1 Students are expected to attend all the classes. Students should have a minimum of 80% attendance in a course to become eligible for writing the end-semester examination of the course. Students shall check their attendance details with the faculty after the mid-semester examination. The faculty handling a course must finalise the attendance 3 calendar days before the last instructional day of the course in the semester. The particulars of all students who have attendance less than 80% in that course will be announced in the class by the corresponding faculty.
 
-*Source: UG Regulations (2021-25 batch), R.5.1, p. 7*
+*Source: UG Regulations (2026 admission onwards), R.6.1, p. 8*
 
 ### ↳ How is that different from mine?
-`semantic` · `none` · 241 ms · composer · resolved as “How is that different from mine? (What is the attendance requirement for the 2026 admission batch)” · ⚠️ review
+`semantic` · `none` · 500 ms · composer · resolved as “How is that different from mine? (What is the attendance requirement for the 2026 admission batch)”
 
-I couldn't find a rule that answers that directly. The closest thing in the documents I have is this, from the **UG Regulations (2021-25 batch)**:
+**Your cohort (21-25)** (UG Regulations (2021-25 batch)):
 
-> R.5.1 Students are expected to attend all the classes. Every teaching staff member handling a class will take attendance till 3 calendar days before the last instructional day in the Semester. Students should have minimum 80% attendance.
->
-> R.5.3 Students having an attendance percentage between 65% to 80%, with valid/genuine reasons may be permitted to continue the course by paying a nominal penalty amount as decided by the competent authority. Students having an attendance percentage less than 65 will be awarded L grade.
+> R.5.6 The teacher handling a course must finalise the attendance 3 calendar days before the last instructional day of the course in the semester. The particulars of all students who have attendance less than 80% in that course will be announced in the class by the corresponding teacher.
 
-If that's not it, the Academic Office can help.
+*Source: UG Regulations (2021-25 batch), R.5.6, p. 7*
 
-*Source: UG Regulations (2021-25 batch), R.5.1, p. 7*
+**26-onwards** (UG Regulations (2026 admission onwards)):
+
+> R.6.1 Students are expected to attend all the classes. Students should have a minimum of 80% attendance in a course to become eligible for writing the end-semester examination of the course. Students shall check their attendance details with the faculty after the mid-semester examination. The faculty handling a course must finalise the attendance 3 calendar days before the last instructional day of the course in the semester. The particulars of all students who have attendance less than 80% in that course will be announced in the class by the corresponding faculty.
+
+*Source: UG Regulations (2026 admission onwards), R.6.1, p. 8*
 

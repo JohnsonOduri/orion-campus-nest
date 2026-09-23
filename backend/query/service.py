@@ -87,8 +87,26 @@ def _dispatch(client: Any, plan: QueryPlan, profile: Optional[dict]) -> Retrieva
         return RetrievalResult(plan=plan, facts=facts, warnings=[] if facts else ["no overview passages found"])
 
     if plan.route == RouteType.SEMANTIC:
-        snippets = documents.search(client, plan.topic_text or plan.raw_query, family,
-                                    category=plan.hints.get("category"), document_type=plan.hints.get("document_type"))
+        # A question that names a cohort other than the caller's own
+        # (router.detect_cohort_reference — CLAUDE.md §20) must not be
+        # silently answered with the caller's own-cohort rule. Plain
+        # cross-cohort question -> search only the named cohort. Comparison
+        # question ("...different from mine?") -> search BOTH cohorts, so
+        # compose.py can show them side by side instead of picking just one.
+        cohort_ref = plan.hints.get("cohort_ref")
+        cohort_compare = plan.hints.get("cohort_compare") == "yes"
+        query_text = plan.topic_text or plan.raw_query
+        search_kwargs = {"category": plan.hints.get("category"), "document_type": plan.hints.get("document_type")}
+
+        def search(fam: Optional[str]) -> list:
+            return documents.search(client, query_text, fam, **search_kwargs)
+
+        if cohort_ref and cohort_compare and family and cohort_ref != family:
+            snippets = search(family) + search(cohort_ref)
+        elif cohort_ref and not cohort_compare:
+            snippets = search(cohort_ref)
+        else:
+            snippets = search(family)
         return RetrievalResult(plan=plan, snippets=snippets,
                                warnings=[] if snippets else ["no document passages matched"])
 

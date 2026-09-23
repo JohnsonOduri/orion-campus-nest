@@ -67,6 +67,16 @@ def resolve(query: str, history: Optional[list[dict]]) -> str:
         if new_meal := _MEAL_RE.search(rest):
             return f"What's for {new_meal.group(0)} today?"
 
+    # A bare day/meal word with no leading cue at all ("tomorrow?",
+    # "dinner?", "Monday") — still a follow-up, just terser than "and
+    # tomorrow?"; same slot-swap as the ellipsis case above.
+    bare = q.rstrip("?").strip()
+    if bare and len(q.split()) <= 3 and last_user:
+        for slot in (_MEAL_RE, _DAY_RE):
+            new = slot.fullmatch(bare)
+            if new and slot.search(last_user):
+                return slot.sub(new.group(0), last_user, count=1)
+
     if not _ANY_PRONOUN_RE.search(q) or _course_code(q) or _faculty(q):
         return q
 

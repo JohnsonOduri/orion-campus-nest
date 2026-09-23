@@ -14,9 +14,73 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from backend.query import campus, compose, documents, followup  # noqa: E402
+from backend.query import campus, compose, documents, followup, retrieval  # noqa: E402
 from backend.query.router import classify  # noqa: E402
 from backend.query.types import GroundedContext, QueryPlan, RouteType, SemanticSnippet, StructuredFact, StructuredIntent as I  # noqa: E402
+
+
+# ------------------------------------------------------------ fake Supabase
+
+class _FakeResult:
+    def __init__(self, data):
+        self.data = data
+
+
+class _FakeQuery:
+    """Just enough of the postgrest chain for retrieval.faculty_lookup() /
+    fuzzy_faculty_names(): select/eq/limit are no-ops (this fake table has
+    only active rows and the tests don't need pagination); ilike and in_
+    actually filter, since those are what the functions under test rely on."""
+
+    def __init__(self, rows):
+        self._rows = rows
+
+    def select(self, *_a, **_kw):
+        return self
+
+    def eq(self, *_a, **_kw):
+        return self
+
+    def limit(self, *_a, **_kw):
+        return self
+
+    def ilike(self, column, pattern):
+        needle = pattern.strip("%").lower()
+        self._rows = [r for r in self._rows if needle in r[column].lower()]
+        return self
+
+    def in_(self, column, values):
+        wanted = set(values)
+        self._rows = [r for r in self._rows if r[column] in wanted]
+        return self
+
+    def execute(self):
+        return _FakeResult(self._rows)
+
+
+class _FakeClient:
+    def __init__(self, faculty_rows):
+        self._faculty_rows = faculty_rows
+
+    def table(self, name):
+        assert name == "faculty"
+        return _FakeQuery(list(self._faculty_rows))
+
+
+_FACULTY_ROWS = [
+    {"full_name": "Dr. Ansith S", "initials": "AS", "designation": "Assistant Professor",
+     "email": "ansiths@iiitkottayam.ac.in", "office_location": "AB 210", "office_hours": None,
+     "research_interests": None, "status": "active"},
+    {"full_name": "Ms. Anitha Ambat", "initials": "AA", "designation": "Assistant Professor",
+     "email": "anithaambat@iiitkottayam.ac.in", "office_location": "AB 105", "office_hours": None,
+     "research_interests": None, "status": "active"},
+    {"full_name": "Dr.S.Jai Ganesh", "initials": "SJG", "designation": "Assistant Professor",
+     "email": "jaiganesh@iiitkottayam.ac.in", "office_location": "AC 304 A", "office_hours": None,
+     "research_interests": None, "status": "active"},
+    {"full_name": "Dr. Manu Madhavan", "initials": "MM", "designation": "Assistant Professor",
+     "email": "manum@iiitkottayam.ac.in", "office_location": "BC 307", "office_hours": None,
+     "research_interests": None, "status": "active"},
+]
 
 
 # ----------------------------------------------------------------- router
@@ -97,6 +161,68 @@ def test_followup_person():
 def test_followup_ellipsis_swaps_the_meal():
     h = _hist(("user", "What's for lunch today?"), ("assistant", "Lunch: ..."))
     assert followup.resolve("And dinner?", h) == "What's for dinner today?"
+
+
+def test_followup_bare_day_word_with_no_leading_cue():
+    """"tomorrow?" alone — no "and"/"what about" — still swaps the day slot
+    in the previous question; found live: it was falling through to
+    UNSUPPORTED because it triggered no pronoun and matched no ellipsis cue."""
+    h = _hist(("user", "What's for lunch today?"), ("assistant", "Lunch: ..."))
+    assert followup.resolve("tomorrow?", h) == "What's for lunch tomorrow?"
+    assert followup.resolve("tomorrow", h) == "What's for lunch tomorrow?"
+
+
+def test_followup_bare_meal_word_with_no_leading_cue():
+    h = _hist(("user", "What's for lunch today?"), ("assistant", "Lunch: ..."))
+    assert followup.resolve("dinner?", h) == "What's for dinner today?"
+
+
+def test_followup_bare_weekday_swaps_a_day_reference_too():
+    h = _hist(("user", "What classes do I have on Monday?"), ("assistant", "..."))
+    assert followup.resolve("Tuesday?", h) == "What classes do I have on Tuesday?"
+
+
+def test_followup_his_office_resolves_the_previous_faculty():
+    h = _hist(("user", "Tell me about Dr. Manu Madhavan"), ("assistant", "Dr. Manu Madhavan (MM) ..."))
+    assert followup.resolve("Where is his office?", h) == "Where is Dr. Manu Madhavan's office?"
+
+
+# ------------------------------------------------------------- fuzzy faculty
+
+def test_fuzzy_faculty_names_resolves_a_typo():
+    """Found live: "Anisth S" (a plausible typo/mishearing of "Ansith S")
+    returned zero matches under plain ILIKE substring matching."""
+    client = _FakeClient(_FACULTY_ROWS)
+    names = retrieval.fuzzy_faculty_names(client, "Anisth S")
+    assert "Dr. Ansith S" in names
+
+
+def test_fuzzy_faculty_names_excludes_clearly_unrelated_names():
+    """Short bare-initial tokens ("S") must not inflate every candidate's
+    score to near-identical numbers — without filtering them out of the
+    per-token average, "Dr.S.Jai Ganesh" scored within 0.09 of the correct
+    match for the query below."""
+    client = _FakeClient(_FACULTY_ROWS)
+    names = retrieval.fuzzy_faculty_names(client, "Anisth S")
+    assert "Dr.S.Jai Ganesh" not in names
+
+
+def test_fuzzy_faculty_names_finds_nothing_below_cutoff():
+    client = _FakeClient(_FACULTY_ROWS)
+    assert retrieval.fuzzy_faculty_names(client, "Totally Unrelated Name") == []
+
+
+def test_faculty_lookup_falls_back_to_fuzzy_match_when_ilike_finds_nothing():
+    client = _FakeClient(_FACULTY_ROWS)
+    result = retrieval.faculty_lookup(client, "Anisth S")
+    assert any("Ansith S" in f.claim for f in result.facts)
+
+
+def test_faculty_lookup_prefers_exact_ilike_match_when_it_exists():
+    client = _FakeClient(_FACULTY_ROWS)
+    result = retrieval.faculty_lookup(client, "Manu Madhavan")
+    assert len(result.facts) == 1
+    assert "Manu Madhavan" in result.facts[0].claim
 
 
 def test_followup_leaves_complete_questions_alone():
@@ -221,8 +347,18 @@ def test_out_of_scope_never_invents_a_record():
 
 
 def test_only_the_students_own_regulations_say_they_apply():
-    assert "apply to you" in compose._cohort_label("UG Regulations (2021-25 batch)", "21-25", "regulations")
-    assert "apply to you" not in compose._cohort_label("Hostel Rules and Regulations (July 2026)", "21-25", "policy")
+    assert "apply to you" in compose._cohort_label("UG Regulations (2021-25 batch)", "21-25", "21-25", "regulations")
+    assert "apply to you" not in compose._cohort_label(
+        "Hostel Rules and Regulations (July 2026)", None, "21-25", "policy"
+    )
+
+
+def test_a_different_named_cohorts_regulations_say_so_honestly():
+    """The passage retrieved is the 2026 cohort's rule but the caller is on
+    21-25 — must never claim it applies to them (CLAUDE.md §20)."""
+    label = compose._cohort_label("UG Regulations (2026 admission onwards)", "26-onwards", "21-25", "regulations")
+    assert "apply to you" not in label
+    assert "not your own" in label
 
 
 def test_requirement_question_prefers_the_clause_with_the_number():

@@ -342,6 +342,68 @@ _REGULATION_TOPIC_RE = re.compile(
     re.IGNORECASE,
 )
 
+# An explicit admission-year/cohort mention in the question text itself —
+# e.g. "the 2026 admission batch", "students admitted in 2021", "26-onwards
+# regulations". Deliberately narrow (a trigger word near the year, not just
+# the bare year) so an unrelated "2026-27" academic-calendar mention doesn't
+# misfire: only regulation/curriculum-shaped questions call this at all
+# (see classify()), and even then only an explicit admission/batch/cohort/
+# regulations word next to the year counts. CLAUDE.md §20: cohort isolation
+# must not be defeated by a spelling difference or silently ignored when the
+# question names a cohort other than the caller's own.
+_COHORT_TRIGGER = r"admissions?|admitted|batch|onwards?|cohort|regulations?|joined|joining|curriculum|curricula|syllabus|syllabi"
+_COHORT_26_RE = re.compile(
+    rf"\b(?:{_COHORT_TRIGGER})\b[^.?!]{{0,25}}\b(?:20)?26\b"
+    rf"|\b(?:20)?26\b[^.?!]{{0,25}}\b(?:{_COHORT_TRIGGER})\b"
+    r"|\b26[\s-]?onwards?\b",
+    re.IGNORECASE,
+)
+_COHORT_21_RE = re.compile(
+    rf"\b(?:{_COHORT_TRIGGER})\b[^.?!]{{0,25}}\b(?:20)?21\b"
+    rf"|\b(?:20)?21\b[^.?!]{{0,25}}\b(?:{_COHORT_TRIGGER})\b"
+    r"|\b(?:20)?21[\s\-–]*(?:to\s+)?(?:20)?25\b",
+    re.IGNORECASE,
+)
+
+
+def detect_cohort_reference(query: str) -> str | None:
+    """"21-25" / "26-onwards" if the question explicitly names that cohort,
+    else None — never inferred from anything but the text itself. The
+    caller's OWN cohort (campus.cohort_family) is a completely separate,
+    profile-derived value; this only catches a question asking about a
+    *different* one."""
+    q = query or ""
+    if _COHORT_21_RE.search(q):
+        return "21-25"
+    if _COHORT_26_RE.search(q):
+        return "26-onwards"
+    return None
+
+
+# "is it different for 2026 students", "how does that compare to mine",
+# "...vs the 2021 batch" — the question wants BOTH cohorts' rules shown side
+# by side, not just the named one substituted for the caller's own.
+_COHORT_COMPARE_RE = re.compile(
+    r"\b(different|differs?|compare[sd]?|vs\.?|versus|compared\s+to|than\s+mine|than\s+my|same\s+as\s+mine)\b",
+    re.IGNORECASE,
+)
+
+
+def strip_cohort_noise(query: str) -> str:
+    """The actual topic underneath a cohort-comparison question ("is the
+    attendance rule different for the 2026 admission batch compared to
+    mine?") — with the comparison/cohort scaffolding removed, so a passage
+    scorer like documents.best_passages() judges the query on its real
+    subject ("attendance") instead of on words like "2026"/"batch"/
+    "compared"/"mine" that never appear verbatim in the regulation text and
+    would otherwise tank its confidence score for a perfectly good match."""
+    q = _COHORT_COMPARE_RE.sub(" ", query)
+    q = _COHORT_21_RE.sub(" ", q)
+    q = _COHORT_26_RE.sub(" ", q)
+    q = re.sub(r"\bmine\b|\bmy\b", " ", q, flags=re.IGNORECASE)
+    q = re.sub(r"\s+", " ", q).strip()
+    return q or query
+
 _OVERVIEW_RE = re.compile(
     r"^\s*(what\s+are|what'?s|tell\s+me(\s+about)?|list|explain|summari[sz]e|give\s+me|show\s+me)\s+(the\s+|all\s+the\s+)?"
     r"(main\s+|key\s+|important\s+|basic\s+|general\s+)?(?P<topic>anti[\s-]?ragging|ragging|hostel)\s+"
@@ -604,11 +666,26 @@ def classify(query: str) -> QueryPlan:
     if _PROCEDURE_TOPIC_RE.search(q):
         return plan(RouteType.SEMANTIC, topic_text=q, hints={"category": "academics"},
                     reasoning="transcript/certificate topic -> procedures first")
+
+    # A regulation/curriculum question may explicitly name a cohort other
+    # than the caller's own ("the 2026 admission batch", "under the 26
+    # onwards regulations") — CLAUDE.md §20 forbids silently answering that
+    # with the caller's own-cohort rule instead. detect_cohort_reference()
+    # only fires on an explicit mention, never inferred from context, so an
+    # ordinary "what is the attendance requirement?" still defaults to the
+    # caller's own cohort (service.py's cohort_family(profile)) untouched.
+    cohort_ref = detect_cohort_reference(q)
+    cohort_hint: dict[str, str] = {}
+    if cohort_ref:
+        cohort_hint["cohort_ref"] = cohort_ref
+        if _COHORT_COMPARE_RE.search(q):
+            cohort_hint["cohort_compare"] = "yes"
     if _REGULATION_TOPIC_RE.search(q):
-        return plan(RouteType.SEMANTIC, topic_text=q, hints={"document_type": "regulations"},
-                    reasoning="academic rule topic -> the student's UG regulations first")
+        return plan(RouteType.SEMANTIC, topic_text=q, hints={"document_type": "regulations", **cohort_hint},
+                    reasoning="academic rule topic -> the student's UG regulations first"
+                               + (f" (question names the {cohort_ref} cohort)" if cohort_ref else ""))
     if _SEMANTIC_TOPIC_RE.search(q):
-        return plan(RouteType.SEMANTIC, topic_text=q,
+        return plan(RouteType.SEMANTIC, topic_text=q, hints=cohort_hint,
                     reasoning="matched a regulations/policy/procedure topic -> document_chunks")
 
     # --- nothing specific matched --------------------------------------------------
@@ -616,7 +693,7 @@ def classify(query: str) -> QueryPlan:
     # recognise a course or faculty name in it, then searches the documents.
     # Statements and gibberish stay UNSUPPORTED (nothing to search for).
     if _looks_like_question(q) and len(_WORD_RE.findall(q)) >= 2:
-        return plan(RouteType.SEMANTIC, topic_text=q, hints={"fallback": "yes"},
+        return plan(RouteType.SEMANTIC, topic_text=q, hints={"fallback": "yes", **cohort_hint},
                     reasoning="no specific pattern; question-shaped -> entity linking, then document search")
 
     return plan(RouteType.UNSUPPORTED,

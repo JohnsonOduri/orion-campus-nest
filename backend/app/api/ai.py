@@ -103,13 +103,17 @@ def answer(client, query: str, history: list[dict[str, str]] | None = None, prof
     family = campus.cohort_family(profile)
 
     answer_source = "composer"
+    is_cohort_comparison = (context.plan.hints or {}).get("cohort_compare") == "yes"
     if context.route == RouteType.SEMANTIC and context.snippets:
         text, confidence, passages = compose.compose_documents(context, family)
-        if passages and confidence >= 0.34 and llm_client.llm_available():
+        # A comparison answer quotes two different cohorts' rules side by
+        # side (compose._compose_cohort_comparison) — rewording just
+        # passages[0] would reword one and silently drop the other.
+        if passages and confidence >= 0.34 and llm_client.llm_available() and not is_cohort_comparison:
             try:
                 reworded = llm_client.rephrase_passage(resolved, passages[0].text, passages[0].document_title)
                 source = text[text.rfind("\n\n*Source:"):] if "*Source:" in text else ""
-                lead = compose._cohort_label(passages[0].document_title, family, passages[0].document_type)
+                lead = compose._cohort_label(passages[0].document_title, passages[0].cohort, family, passages[0].document_type)
                 text = f"{reworded}\n\n{lead}:\n\n" + "\n>\n".join(f"> {line}" for line in compose._quote_lines(passages[0].text)) + source
                 answer_source = "llm"
             except llm_client.LLMUnavailable as exc:

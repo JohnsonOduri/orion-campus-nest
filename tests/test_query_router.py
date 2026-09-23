@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from backend.query.router import classify  # noqa: E402
+from backend.query.router import classify, detect_cohort_reference, strip_cohort_noise  # noqa: E402
 from backend.query.types import RouteType, StructuredIntent  # noqa: E402
 
 
@@ -40,6 +40,46 @@ def test_attendance_routes_semantic():
     plan = classify("What are the attendance requirements?")
     assert plan.route == RouteType.SEMANTIC
     assert plan.topic_text
+
+
+def test_detect_cohort_reference_explicit_mentions_only():
+    """CLAUDE.md §20: only an explicit cohort/admission-year mention counts
+    — never inferred from a bare year that could mean something else (an
+    academic-calendar "2026-27" reference, a course code, etc.)."""
+    assert detect_cohort_reference("What is the attendance requirement for students admitted in 2026?") == "26-onwards"
+    assert detect_cohort_reference("Under the 26-onwards regulations, what is required?") == "26-onwards"
+    assert detect_cohort_reference("What about the 2021-25 batch?") == "21-25"
+    assert detect_cohort_reference("Students admitted in 2021 need what CGPA?") == "21-25"
+    assert detect_cohort_reference("What is the attendance requirement?") is None
+    assert detect_cohort_reference("When does the 2026-27 semester start?") is None
+
+
+def test_cross_cohort_regulation_question_carries_the_cohort_hint():
+    plan = classify("What is the attendance requirement for students admitted in 2026?")
+    assert plan.route == RouteType.SEMANTIC
+    assert plan.hints.get("cohort_ref") == "26-onwards"
+    assert "cohort_compare" not in plan.hints
+
+
+def test_cross_cohort_comparison_question_carries_the_compare_hint():
+    plan = classify("Is the attendance rule different for the 2026 admission batch compared to mine?")
+    assert plan.route == RouteType.SEMANTIC
+    assert plan.hints.get("cohort_ref") == "26-onwards"
+    assert plan.hints.get("cohort_compare") == "yes"
+
+
+def test_own_cohort_question_carries_no_cohort_hint():
+    plan = classify("What is the attendance requirement?")
+    assert "cohort_ref" not in plan.hints
+
+
+def test_strip_cohort_noise_keeps_the_real_subject():
+    stripped = strip_cohort_noise(
+        "Is the attendance rule different for the 2026 admission batch compared to mine?"
+    )
+    assert "attendance" in stripped
+    assert "2026" not in stripped
+    assert "mine" not in stripped.lower()
 
 
 def test_semantic_topic_keywords():
