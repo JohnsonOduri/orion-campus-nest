@@ -15,31 +15,46 @@ Migrations: `supabase/migrations/20260922065942_gemini_embeddings.sql`,
 | Local ML model | **removed from the API runtime** (no torch / sentence-transformers) |
 | Single code path | `backend/query/embeddings.py` — nothing else calls the embedding API |
 
-## Status (2026-09-22) — backfill incomplete, do not serve on Gemini yet
+## Status (2026-09-23) — backfill still incomplete, but no longer blocking
 
 | | embedded | total | missing |
 |---|---|---|---|
 | `document_chunks.embedding_gemini` | **992** | 1,269 | 277 |
 | `faculty.research_embedding` | **0** | 146 | 146 |
 
-All 992 stored vectors are 768-dim; 0 failed rows. The run stopped cleanly on
-the free tier's **daily** cap (1,000 embedded texts/day). The 277 missing
-chunks are the high-value regulation/procedure documents (both UG
-Regulations, Hostel Rules, Transcript + Certificate Verification, the three
-anti-ragging documents) plus 3 chunks of the 2021-25 AI&DS and all of the
-2021-25 Cyber Security and ECE curricula.
+Unchanged since 2026-09-22. All 992 stored vectors are 768-dim; 0 failed
+rows. The run stopped cleanly on the free tier's **daily** cap (1,000
+embedded texts/day) and, checked again live on 2026-09-23, that quota
+(`EmbedContentRequestsPerDayPerProjectPerModel-FreeTier`) is still
+exhausted — a separate metric from the `generateContent` quota, which has
+recovered. The 277 missing chunks are the high-value regulation/procedure
+documents (both UG Regulations, Hostel Rules, Transcript + Certificate
+Verification, the three anti-ragging documents) plus 3 chunks of the
+2021-25 AI&DS and all of the 2021-25 Cyber Security and ECE curricula.
 
-`match_document_chunks_gemini` only searches rows that have a Gemini vector,
-so **until the backfill finishes, run the API with
-`ORION_EMBEDDING_PROVIDER=minilm`** (the full pre-migration behaviour, see
-Rollback) or regulation/hostel questions will find nothing. Then:
+**This used to mean regulation/hostel/faculty-research questions found
+nothing. It no longer does.** As of 2026-09-22/23, `backend/query/
+documents.py` answers those questions from Postgres full-text search
+(`search_document_chunks`, cohort-aware, no embeddings involved at all) —
+see `docs/query-router.md`. Production runs `ORION_EMBEDDING_PROVIDER=gemini`
+(confirmed live) and full-text search covers every document, including the
+277 still missing a Gemini vector. **Do not switch to
+`ORION_EMBEDDING_PROVIDER=minilm`** — `render.yaml` deliberately keeps this
+service torch-free, and it is no longer needed as a stopgap.
 
-1. `.venv/bin/python scripts/reembed_gemini.py --target all` (after the daily
-   quota resets; ~423 texts, ~5 min at the default pacing)
+The vector search path (`retrieval.semantic_search`,
+`faculty_topic_and_schedule`) still exists and is still tested, but is now a
+second, optional ranking signal on top of full-text search rather than the
+only way to answer. Finishing the backfill is a quality task, not a
+blocker:
+
+1. `.venv/bin/python scripts/reembed_gemini.py --target all` (once the daily
+   embedding quota resets; ~423 texts, ~5 min at the default pacing)
 2. `.venv/bin/python scripts/eval_retrieval.py --k 3 --faculty` — compare with
    MiniLM and recalibrate `FACULTY_MIN_SIMILARITY` (currently a provisional
    0.60 from a single probe)
-3. only then remove `ORION_EMBEDDING_PROVIDER=minilm`.
+3. Decide whether/how to combine vector ranking with the full-text results
+   full-text search already returns correctly on its own.
 
 ## Measurements (2026-09-22, dev laptop; clean venvs from old/new requirements)
 
