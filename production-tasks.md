@@ -1,6 +1,6 @@
 # ORION — final production checklist
 
-Status 2026-09-22. ✅ done · ⏳ in progress · ⬜ needs a person (credentials,
+Status 2026-09-23. ✅ done · ⏳ in progress · ⬜ needs a person (credentials,
 money or a decision). Tasks in `todo.md` (Gemini re-embedding backfill,
 Render dashboard setup) are deliberately not repeated here.
 
@@ -19,7 +19,7 @@ Render dashboard setup) are deliberately not repeated here.
 - ✅ Follow-ups ("Who teaches it?", "And dinner?", "What does he research?").
 - ✅ `AI-task.md`: 134-question bank; `scripts/run_ai_task.py` runs it through
   the real pipeline as a signed-in student. Last run: **0 errors, 3 intentional
-  flags, median 125 ms** (`AI-task-results.md`).
+  flags, median ~175 ms** (`AI-task-results.md`).
 
 ## 2. Portal pages — no mock data left
 
@@ -46,7 +46,7 @@ Render dashboard setup) are deliberately not repeated here.
 
 ## 4. Verification
 
-- ✅ `pytest` 262 passed · `npm test` (Vitest) 23 passed · `tsc` clean ·
+- ✅ `pytest` 264 passed · `npm test` (Vitest) 23 passed · `tsc` clean ·
   ESLint clean on changed files · `npm run build` passes · every page
   server-renders with 200.
 
@@ -58,6 +58,10 @@ Render dashboard setup) are deliberately not repeated here.
   endpoint, one question per answer category, and a 401 for anonymous calls.
   It caught one real regression (attendance quoting R.5.2 instead of R.5.1),
   now fixed and re-deployed.
+- ✅ `/health` reports the deployed commit (`RENDER_GIT_COMMIT`), so a deploy
+  is verified by hash instead of guessed from behaviour. Live = `12d66a8`.
+- ✅ Live `/ai/ask` median **2.45 s** (was ~3.9 s before the round-trip fix);
+  ~0.5 s of that is this machine's round trip to Oregon. Locally: ~175 ms.
 
 ## 6. Needs a person
 
