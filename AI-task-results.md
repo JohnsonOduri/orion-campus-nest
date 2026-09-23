@@ -1,99 +1,84 @@
-# ORION AI-task results — 2026-09-22 17:00 UTC
+# ORION AI-task results — 2026-09-23 05:11 UTC
 
 Signed in as `orion-test-student-a@iiitkottayam.ac.in` (Semester 3, CSE section I). Answers come from `backend/app/api/ai.answer()`, the function behind `POST /ai/ask`. LLM rewording: **off**.
 
-**134 questions** · 0 errors · 3 flagged for review · median 172 ms · p95 396 ms
+**134 questions** · 0 errors · 3 flagged for review · median 175 ms · p95 438 ms
 
 ## 1. Greetings, help, small talk
 
 ### Hi
-`small_talk` · `none` · 197 ms · composer
+`small_talk` · `none` · 601 ms · composer
 *Expected:* greeting + what ORION can help with
 
-Good evening! I'm ORION — ask me about your timetable, mess menu, courses, faculty, or campus regulations.
+Good morning! I'm ORION — ask me about your timetable, mess menu, courses, faculty, or campus regulations.
 
 ### hello there
-`small_talk` · `none` · 97 ms · composer
+`small_talk` · `none` · 117 ms · composer
 *Expected:* greeting
 
-Good evening! I'm ORION — ask me about your timetable, mess menu, courses, faculty, or campus regulations.
+Good morning! I'm ORION — ask me about your timetable, mess menu, courses, faculty, or campus regulations.
 
 ### Good morning
-`small_talk` · `none` · 75 ms · composer
+`small_talk` · `none` · 153 ms · composer
 *Expected:* greeting
 
-Good evening! I'm ORION — ask me about your timetable, mess menu, courses, faculty, or campus regulations.
+Good morning! I'm ORION — ask me about your timetable, mess menu, courses, faculty, or campus regulations.
 
 ### What can you do?
-`small_talk` · `none` · 73 ms · composer
+`small_talk` · `none` · 88 ms · composer
 *Expected:* capability list
 
 I'm ORION, your campus assistant. I can help with: your timetable (today, a specific day, a specific time, tomorrow/yesterday), the mess menu (today, this week, a specific meal or day), course info (credits, syllabus, prerequisites), faculty details (email, office, office hours), who teaches a course, faculty who work in a research area, and campus regulations/policies. Just ask in your own words!
 
 ### Who are you?
-`small_talk` · `none` · 80 ms · composer
+`small_talk` · `none` · 79 ms · composer
 *Expected:* introduces ORION
 
 I'm ORION, your campus assistant. I can help with: your timetable (today, a specific day, a specific time, tomorrow/yesterday), the mess menu (today, this week, a specific meal or day), course info (credits, syllabus, prerequisites), faculty details (email, office, office hours), who teaches a course, faculty who work in a research area, and campus regulations/policies. Just ask in your own words!
 
 ### How are you?
-`small_talk` · `none` · 84 ms · composer
+`small_talk` · `none` · 73 ms · composer
 *Expected:* friendly reply
 
 All good here! What do you need help with today?
 
 ### Thanks!
-`small_talk` · `none` · 78 ms · composer
+`small_talk` · `none` · 82 ms · composer
 *Expected:* acknowledgement
 
-You're welcome! Let me know if you need anything else.
+Anytime! Happy to help.
 
 ### Bye
-`small_talk` · `none` · 73 ms · composer
+`small_talk` · `none` · 98 ms · composer
 *Expected:* farewell
 
-Take care! Come back if you have more questions.
+See you! Come back anytime you need campus info.
 
 ## 2. Timetable — now, today, specific days
 
 ### What is my next class?
-`structured` · `next_class` · 177 ms · composer
+`structured` · `next_class` · 358 ms · composer
 *Expected:* course, day, time, teacher
 
-Your next class is **IT Workshop III (ICS 214)** — tomorrow (Wednesday), 10:00–10:55 AM — Dr. Deepak Jose · lab. You have no more classes today.
+You're in **IT Workshop III (ICS 214)** right now (10:00–10:55 AM) — Dr. Deepak Jose · lab. After that, your next class is **Probability, Statistics and Random Processes (IMA 211)** today (Wednesday), 11:05 AM – 12:00 PM — Dr. Anandhu Mohan.
 
 *Source: your live timetable*
 
 ### What class is going on right now?
-`structured` · `next_class` · 144 ms · composer
+`structured` · `next_class` · 252 ms · composer
 *Expected:* current or next class
 
-You don't have a class right now. Your next class is **IT Workshop III (ICS 214)** — tomorrow (Wednesday), 10:00–10:55 AM — Dr. Deepak Jose · lab. You have no more classes today.
+You're in **IT Workshop III (ICS 214)** right now (10:00–10:55 AM) — Dr. Deepak Jose · lab. After that, your next class is **Probability, Statistics and Random Processes (IMA 211)** today (Wednesday), 11:05 AM – 12:00 PM — Dr. Anandhu Mohan.
 
 *Source: your live timetable*
 
 ### What classes do I have today?
-`structured` · `day_timetable` · 168 ms · composer
+`structured` · `day_timetable` · 194 ms · composer
 *Expected:* full list for today with times
 
 Here's your timetable today:
 
-- **9:00–9:55 AM** · Theory of Computation (ICS 212) — Dr Divya Sindhu Lekha and Dr. Sushitha Susan Joseph *(done)*
-- **10:00–10:55 AM** · IT Workshop III (ICS 214) — Dr. Deepak Jose *(done)*
-- **11:05 AM – 12:00 PM** · Design and Analysis of Algorithms (ICS 211) — Dr. Priyadharshini S *(done)*
-- **12:05–1:00 PM** · Theory of Computation (ICS 212) — Dr Divya Sindhu Lekha and Dr. Sushitha Susan Joseph *(done)*
-- **2:00–2:55 PM** · Design and Analysis of Algorithms (ICS 211) — Dr. Priyadharshini S · tutorial *(done)*
-- **5:00–7:00 PM** · Physical Training (IPT 211) — Ms. Priya Mol K *(done)*
-
-*Source: your live timetable*
-
-### What's my timetable for tomorrow?
-`structured` · `day_of_week_timetable` · 203 ms · composer
-*Expected:* tomorrow's list
-
-Here's your timetable tomorrow:
-
-- **10:00–10:55 AM** · IT Workshop III (ICS 214) — Dr. Deepak Jose · lab
+- **10:00–10:55 AM** · IT Workshop III (ICS 214) — Dr. Deepak Jose · lab *(now)*
 - **11:05 AM – 12:00 PM** · Probability, Statistics and Random Processes (IMA 211) — Dr. Anandhu Mohan
 - **12:05–1:00 PM** · ICS
 - **3:00–3:55 PM** · Data Structures II (ICS 215) — Dr. Sara Renjit · lab
@@ -102,8 +87,24 @@ Here's your timetable tomorrow:
 
 *Source: your live timetable*
 
+### What's my timetable for tomorrow?
+`structured` · `day_of_week_timetable` · 137 ms · composer
+*Expected:* tomorrow's list
+
+Here's your timetable tomorrow:
+
+- **9:00–9:55 AM** · Database Management Systems (ICS 213) — Dr. Vengadeswaran S
+- **10:00–10:55 AM** · Probability, Statistics and Random Processes (IMA 211) — Dr. Anandhu Mohan
+- **11:05 AM – 12:00 PM** · Database Management Systems (ICS 213) — Dr. Vengadeswaran S · lab
+- **2:00–2:55 PM** · Probability, Statistics and Random Processes (IMA 211) — Dr. Anandhu Mohan · tutorial
+- **3:00–3:55 PM** · IT Workshop III (ICS 214) — Dr. Deepak Jose · tutorial
+- **4:00–4:55 PM** · Introduction to Bioinformatics (ISC 211) — Dr. Jayakrushna Sahoo
+- **5:00–7:00 PM** · Coding Club Activities — club activity
+
+*Source: your live timetable*
+
 ### What classes do I have on Monday?
-`structured` · `day_of_week_timetable` · 146 ms · composer
+`structured` · `day_of_week_timetable` · 162 ms · composer
 *Expected:* Monday list
 
 Here's your timetable on Monday (28 September):
@@ -118,34 +119,34 @@ Here's your timetable on Monday (28 September):
 *Source: your live timetable*
 
 ### Do I have classes on Saturday?
-`structured` · `day_of_week_timetable` · 140 ms · composer
+`structured` · `day_of_week_timetable` · 141 ms · composer
 *Expected:* Saturday list or "no classes"
 
 You have no classes on Saturday (26 September).
 
 ### Do I have any class on Sunday?
-`structured` · `day_of_week_timetable` · 136 ms · composer
+`structured` · `day_of_week_timetable` · 138 ms · composer
 *Expected:* "no classes on Sunday"
 
 You have no classes on Sunday. Enjoy the weekend!
 
 ### What did I have yesterday?
-`structured` · `day_of_week_timetable` · 153 ms · composer
+`structured` · `day_of_week_timetable` · 134 ms · composer
 *Expected:* yesterday's list
 
 Here's your timetable yesterday:
 
-- **9:00–9:55 AM** · Design and Analysis of Algorithms (ICS 211) — Dr. Priyadharshini S
-- **11:05 AM – 12:00 PM** · Theory of Computation (ICS 212) — Dr Divya Sindhu Lekha and Dr. Sushitha Susan Joseph
-- **12:05–1:00 PM** · Design and Analysis of Algorithms (ICS 211) — Dr. Priyadharshini S
-- **2:00–2:55 PM** · Theory of Computation (ICS 212) — Dr Divya Sindhu Lekha and Dr. Sushitha Susan Joseph · tutorial
-- **3:00–3:55 PM** · FA Interaction
-- **5:00–7:00 PM** · Coding Club Activities — club activity
+- **9:00–9:55 AM** · Theory of Computation (ICS 212) — Dr Divya Sindhu Lekha and Dr. Sushitha Susan Joseph
+- **10:00–10:55 AM** · IT Workshop III (ICS 214) — Dr. Deepak Jose
+- **11:05 AM – 12:00 PM** · Design and Analysis of Algorithms (ICS 211) — Dr. Priyadharshini S
+- **12:05–1:00 PM** · Theory of Computation (ICS 212) — Dr Divya Sindhu Lekha and Dr. Sushitha Susan Joseph
+- **2:00–2:55 PM** · Design and Analysis of Algorithms (ICS 211) — Dr. Priyadharshini S · tutorial
+- **5:00–7:00 PM** · Physical Training (IPT 211) — Ms. Priya Mol K
 
 *Source: your live timetable*
 
 ### What is my timetable for this week?
-`structured` · `week_timetable` · 157 ms · composer
+`structured` · `week_timetable` · 151 ms · composer
 *Expected:* grouped by day
 
 Here's your timetable for this week:
@@ -196,64 +197,64 @@ Here's your timetable for this week:
 *Source: your live timetable*
 
 ### What class do I have at 10 AM?
-`structured` · `class_at_time` · 231 ms · composer
+`structured` · `class_at_time` · 220 ms · composer
 *Expected:* class covering 10 AM
 
-At 10:00 AM you have **IT Workshop III (ICS 214)** (10:00–10:55 AM) — Dr. Deepak Jose. After that, your next class is **Design and Analysis of Algorithms (ICS 211)** today (Tuesday), 11:05 AM – 12:00 PM — Dr. Priyadharshini S.
+At 10:00 AM you have **IT Workshop III (ICS 214)** (10:00–10:55 AM) — Dr. Deepak Jose · lab. After that, your next class is **Probability, Statistics and Random Processes (IMA 211)** today (Wednesday), 11:05 AM – 12:00 PM — Dr. Anandhu Mohan.
 
 *Source: your live timetable*
 
 ### What class do I have at 5 PM?
-`structured` · `class_at_time` · 221 ms · composer
+`structured` · `class_at_time` · 142 ms · composer
 *Expected:* class covering 5 PM
 
-At 5:00 PM you have **Physical Training (IPT 211)** (5:00–7:00 PM) — Ms. Priya Mol K. After that, your next class is **IT Workshop III (ICS 214)** tomorrow (Wednesday), 10:00–10:55 AM — Dr. Deepak Jose · lab.
+You don't have a class at 5:00 PM. The next one after that is **Database Management Systems (ICS 213)** — tomorrow (Thursday), 9:00–9:55 AM — Dr. Vengadeswaran S. You have no more classes today.
 
 *Source: your live timetable*
 
 ### What is my first class tomorrow?
-`structured` · `day_of_week_timetable` · 148 ms · composer
+`structured` · `day_of_week_timetable` · 174 ms · composer
 *Expected:* earliest class tomorrow
 
-Your first class tomorrow is **IT Workshop III (ICS 214)** at 10:00 AM (10:00–10:55 AM) — Dr. Deepak Jose · lab.
+Your first class tomorrow is **Database Management Systems (ICS 213)** at 9:00 AM (9:00–9:55 AM) — Dr. Vengadeswaran S.
 
 *Source: your live timetable*
 
 ### When does my last class end today?
-`structured` · `day_timetable` · 153 ms · composer
+`structured` · `day_timetable` · 139 ms · composer
 *Expected:* end time of last class
 
-Your last class today is **Physical Training (IPT 211)**, which ends at **7:00 PM** — Ms. Priya Mol K.
+Your last class today is **Coding Club Activities**, which ends at **7:00 PM** — club activity.
 
 *Source: your live timetable*
 
 ### How many classes do I have today?
-`structured` · `day_timetable` · 144 ms · composer
+`structured` · `day_timetable` · 132 ms · composer
 *Expected:* count + list
 
 You have **6 classes** today:
 
-- **9:00–9:55 AM** · Theory of Computation (ICS 212) — Dr Divya Sindhu Lekha and Dr. Sushitha Susan Joseph *(done)*
-- **10:00–10:55 AM** · IT Workshop III (ICS 214) — Dr. Deepak Jose *(done)*
-- **11:05 AM – 12:00 PM** · Design and Analysis of Algorithms (ICS 211) — Dr. Priyadharshini S *(done)*
-- **12:05–1:00 PM** · Theory of Computation (ICS 212) — Dr Divya Sindhu Lekha and Dr. Sushitha Susan Joseph *(done)*
-- **2:00–2:55 PM** · Design and Analysis of Algorithms (ICS 211) — Dr. Priyadharshini S · tutorial *(done)*
-- **5:00–7:00 PM** · Physical Training (IPT 211) — Ms. Priya Mol K *(done)*
+- **10:00–10:55 AM** · IT Workshop III (ICS 214) — Dr. Deepak Jose · lab *(now)*
+- **11:05 AM – 12:00 PM** · Probability, Statistics and Random Processes (IMA 211) — Dr. Anandhu Mohan
+- **12:05–1:00 PM** · ICS
+- **3:00–3:55 PM** · Data Structures II (ICS 215) — Dr. Sara Renjit · lab
+- **4:00–4:55 PM** · Introduction to Bioinformatics (ISC 211) — Dr. Jayakrushna Sahoo
+- **5:00–7:00 PM** · Coding Club Activities — club activity
 
 *Source: your live timetable*
 
 ### When am I free today?
-`structured` · `free_time` · 220 ms · composer
+`structured` · `free_time` · 166 ms · composer
 *Expected:* gaps between classes
 
-You're free today 1:00–2:00 PM, 2:55–5:00 PM and after 7:00 PM.
+You're free today before 10:00 AM, 1:00–3:00 PM and after 7:00 PM.
 
-Your classes today: 9:00–9:55 AM Theory of Computation (ICS 212); 10:00–10:55 AM IT Workshop III (ICS 214); 11:05 AM – 12:00 PM Design and Analysis of Algorithms (ICS 211); 12:05–1:00 PM Theory of Computation (ICS 212); 2:00–2:55 PM Design and Analysis of Algorithms (ICS 211); 5:00–7:00 PM Physical Training (IPT 211).
+Your classes today: 10:00–10:55 AM IT Workshop III (ICS 214); 11:05 AM – 12:00 PM Probability, Statistics and Random Processes (IMA 211); 12:05–1:00 PM ICS; 3:00–3:55 PM Data Structures II (ICS 215); 4:00–4:55 PM Introduction to Bioinformatics (ISC 211); 5:00–7:00 PM Coding Club Activities.
 
 *Source: your live timetable*
 
 ### When is my Data Structures class this week?
-`structured` · `week_timetable` · 142 ms · composer
+`structured` · `week_timetable` · 212 ms · composer
 *Expected:* matching slots
 
 Your **Data Structures II (ICS 215)** sessions this week:
@@ -267,7 +268,7 @@ Your **Data Structures II (ICS 215)** sessions this week:
 *Source: your live timetable*
 
 ### Which labs do I have this week?
-`structured` · `week_timetable` · 152 ms · composer
+`structured` · `week_timetable` · 136 ms · composer
 *Expected:* lab entries only
 
 Your labs this week:
@@ -282,25 +283,25 @@ Your labs this week:
 *Source: your live timetable*
 
 ### Who teaches my next class?
-`structured` · `next_class` · 154 ms · composer
+`structured` · `next_class` · 222 ms · composer
 *Expected:* faculty of next class
 
-Dr. Deepak Jose teaches your next class, **IT Workshop III (ICS 214)** — tomorrow (Wednesday), 10:00–10:55 AM.
+You're in **IT Workshop III (ICS 214)** right now (10:00–10:55 AM) — Dr. Deepak Jose · lab. After that, your next class is **Probability, Statistics and Random Processes (IMA 211)** today (Wednesday), 11:05 AM – 12:00 PM — Dr. Anandhu Mohan.
 
 *Source: your live timetable*
 
 ### Where is my next class?
-`structured` · `classroom` · 235 ms · composer · ⚠️ review
+`structured` · `classroom` · 326 ms · composer · ⚠️ review
 *Expected:* classroom, or honest note that rooms aren't printed
 
-Your section's classroom this semester is **BC 302**. Your next class is **IT Workshop III (ICS 214)** — tomorrow (Wednesday), 10:00–10:55 AM. It's a lab, so it will be in the lab rather than the classroom. (The timetable doesn't list a room for each class, so this is your section's allocated room.)
+Your section's classroom this semester is **BC 302**. Your next class is **Probability, Statistics and Random Processes (IMA 211)** — today (Wednesday), 11:05 AM – 12:00 PM. (The timetable doesn't list a room for each class, so this is your section's allocated room.)
 
 *Source: classroom allocation, Odd semester 2026; your live timetable*
 
 ## 3. Courses
 
 ### What courses do I have this semester?
-`structured` · `my_courses` · 190 ms · composer
+`structured` · `my_courses` · 138 ms · composer
 *Expected:* distinct courses from own timetable
 
 You have **8 courses** this semester:
@@ -317,7 +318,7 @@ You have **8 courses** this semester:
 *Source: your live timetable*
 
 ### List my subjects
-`structured` · `my_courses` · 245 ms · composer
+`structured` · `my_courses` · 136 ms · composer
 *Expected:* same
 
 You have **8 courses** this semester:
@@ -334,7 +335,7 @@ You have **8 courses** this semester:
 *Source: your live timetable*
 
 ### Tell me about ICS 211
-`structured` · `course_info` · 500 ms · composer
+`structured` · `course_info` · 997 ms · composer
 *Expected:* course name, semester, what's on file
 
 **Design and Analysis of Algorithms** (ICS 211) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 3-1-0).
@@ -346,7 +347,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 2*
 
 ### What is ICS 212 about?
-`structured` · `course_info` · 381 ms · composer
+`structured` · `course_info` · 523 ms · composer
 *Expected:* course info
 
 **Theory of Computation** (ICS 212) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 3-1-0).
@@ -358,7 +359,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 15*
 
 ### Who teaches ICS 213?
-`structured` · `faculty_for_course` · 269 ms · composer
+`structured` · `faculty_for_course` · 403 ms · composer
 *Expected:* faculty list
 
 **Database Management Systems** (ICS 213) is taught by Dr. Vengadeswaran S, Dr. Syamala S, Dr. Amit Kumar Roy and Dr. E. Silambarasan. Different sections may have different teachers.
@@ -371,7 +372,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: your live timetable; faculty directory*
 
 ### Who teaches Database Management Systems?
-`structured` · `faculty_for_course` · 274 ms · composer
+`structured` · `faculty_for_course` · 412 ms · composer
 *Expected:* resolves course by name
 
 **Database Management Systems** (ICS 213) is taught by Dr. Vengadeswaran S, Dr. Syamala S, Dr. Amit Kumar Roy and Dr. E. Silambarasan. Different sections may have different teachers.
@@ -384,7 +385,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: your live timetable; faculty directory*
 
 ### Who teaches Theory of Computation?
-`structured` · `faculty_for_course` · 310 ms · composer
+`structured` · `faculty_for_course` · 320 ms · composer
 *Expected:* resolves course by name
 
 **Theory of Computation** (ICS 212) is taught by Dr Divya Sindhu Lekha, Dr. Krishnendhu S P, Dr. Rosebell Paul and Dr. Jaisooraj J. Different sections may have different teachers.
@@ -397,7 +398,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: your live timetable; faculty directory*
 
 ### How many credits is ICS 213?
-`structured` · `course_info` · 372 ms · composer
+`structured` · `course_info` · 438 ms · composer
 *Expected:* credits if on file, else honest + curriculum pointer
 
 **Database Management Systems** (ICS 213) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 2-1-2).
@@ -409,7 +410,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: course catalog; B.Tech AI & DS Curriculum (2021-25 batch), p. 2*
 
 ### Which semester is Data Structures II taught in?
-`structured` · `course_info` · 458 ms · composer
+`structured` · `course_info` · 471 ms · composer
 *Expected:* semester 3
 
 **Data Structures II** (ICS 215) is a semester 3 B.Tech course. It carries **2 credits** (lecture-tutorial-practical: 1-0-2).
@@ -421,7 +422,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 18*
 
 ### What is IT Workshop III?
-`structured` · `course_info` · 396 ms · composer
+`structured` · `course_info` · 402 ms · composer
 *Expected:* course info
 
 **IT Workshop III** (ICS 214) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 2-1-2).
@@ -435,7 +436,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 ## 4. Faculty — contact, roles, research
 
 ### What is Dr. Manu Madhavan's email?
-`structured` · `faculty_lookup` · 191 ms · composer
+`structured` · `faculty_lookup` · 196 ms · composer
 *Expected:* email
 
 Dr. Manu Madhavan's email is **manum@iiitkottayam.ac.in**.
@@ -443,7 +444,7 @@ Dr. Manu Madhavan's email is **manum@iiitkottayam.ac.in**.
 *Source: faculty directory*
 
 ### Where is Dr. Manu Madhavan's office?
-`structured` · `faculty_lookup` · 141 ms · composer
+`structured` · `faculty_lookup` · 137 ms · composer
 *Expected:* office location
 
 Dr. Manu Madhavan's office is **BC 307**. Email: manum@iiitkottayam.ac.in.
@@ -451,7 +452,7 @@ Dr. Manu Madhavan's office is **BC 307**. Email: manum@iiitkottayam.ac.in.
 *Source: faculty directory*
 
 ### Tell me about Dr. Manu Madhavan
-`structured` · `faculty_lookup` · 153 ms · composer
+`structured` · `faculty_lookup` · 137 ms · composer
 *Expected:* profile incl. research interests
 
 **Dr. Manu Madhavan** (MM)
@@ -463,7 +464,7 @@ Dr. Manu Madhavan's office is **BC 307**. Email: manum@iiitkottayam.ac.in.
 *Source: faculty directory*
 
 ### What is the email of Dr. Vengadeswaran S?
-`structured` · `faculty_lookup` · 142 ms · composer
+`structured` · `faculty_lookup` · 141 ms · composer
 *Expected:* email or "not on file"
 
 Dr. Vengadeswaran S's email is **vengadesh@iiitkottayam.ac.in**.
@@ -471,7 +472,7 @@ Dr. Vengadeswaran S's email is **vengadesh@iiitkottayam.ac.in**.
 *Source: faculty directory*
 
 ### Who is the HOD of Computer Science?
-`structured` · `faculty_role` · 162 ms · composer
+`structured` · `faculty_role` · 188 ms · composer
 *Expected:* HOD(s) with contacts
 
 Here's who holds that role:
@@ -482,7 +483,7 @@ Here's who holds that role:
 *Source: faculty directory*
 
 ### Who is the HOD of ECE?
-`structured` · `faculty_role` · 157 ms · composer
+`structured` · `faculty_role` · 141 ms · composer
 *Expected:* HOD ECE
 
 **Dr. Ananth A** is the HOD (Electronics & Communication Engineering). Contact: ananth@iiitkottayam.ac.in · 0482-2202176 · office AB 208 / AC 313.
@@ -490,7 +491,7 @@ Here's who holds that role:
 *Source: faculty directory*
 
 ### Who is the Registrar?
-`structured` · `faculty_role` · 195 ms · composer
+`structured` · `faculty_role` · 151 ms · composer
 *Expected:* registrar
 
 **Dr. M Radhakrishnan** is the Registrar, IIIT Kottayam. Contact: registrar@iiitkottayam.ac.in · +91 0482-2202100.
@@ -498,7 +499,7 @@ Here's who holds that role:
 *Source: faculty directory*
 
 ### Who is the Associate Dean of Academic Affairs?
-`structured` · `faculty_role` · 162 ms · composer
+`structured` · `faculty_role` · 161 ms · composer
 *Expected:* dean
 
 Here's who holds that role:
@@ -509,7 +510,7 @@ Here's who holds that role:
 *Source: faculty directory*
 
 ### Is there a medical officer on campus?
-`structured` · `faculty_role` · 172 ms · composer
+`structured` · `faculty_role` · 171 ms · composer
 *Expected:* medical officer contact
 
 Here are the campus medical contacts:
@@ -520,7 +521,7 @@ Here are the campus medical contacts:
 *Source: faculty directory*
 
 ### Is there a counsellor or psychologist I can talk to?
-`structured` · `faculty_role` · 161 ms · composer
+`structured` · `faculty_role` · 164 ms · composer
 *Expected:* psychologist
 
 Yes — the institute has a psychologist you can reach out to:
@@ -531,7 +532,7 @@ Yes — the institute has a psychologist you can reach out to:
 *Source: faculty directory*
 
 ### Which faculty work on Natural Language Processing?
-`hybrid` · `faculty_research` · 152 ms · composer
+`hybrid` · `faculty_research` · 144 ms · composer
 *Expected:* matching faculty
 
 9 faculty list **Natural Language Processing** among their research interests — here are the 5 for whom it's most central:
@@ -554,7 +555,7 @@ Yes — the institute has a psychologist you can reach out to:
 *Source: faculty directory*
 
 ### Which faculty work on NLP and when can I meet them?
-`hybrid` · `faculty_research` · 620 ms · composer
+`hybrid` · `faculty_research` · 612 ms · composer
 *Expected:* faculty + teaching schedule, no invented office hours
 
 9 faculty list **NLP** among their research interests — here are the 5 for whom it's most central:
@@ -583,7 +584,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory; your live timetable*
 
 ### Recommend a faculty member for machine learning research.
-`hybrid` · `faculty_research` · 156 ms · composer
+`hybrid` · `faculty_research` · 177 ms · composer
 *Expected:* ranked faculty
 
 39 faculty list **machine learning** among their research interests — here are the 5 for whom it's most central:
@@ -606,7 +607,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### Who researches computer vision?
-`hybrid` · `faculty_research` · 161 ms · composer
+`hybrid` · `faculty_research` · 145 ms · composer
 *Expected:* matching faculty
 
 13 faculty list **computer vision** among their research interests — here are the 5 for whom it's most central:
@@ -629,7 +630,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### Who works on cyber security?
-`hybrid` · `faculty_research` · 177 ms · composer
+`hybrid` · `faculty_research` · 160 ms · composer
 *Expected:* matching faculty
 
 18 faculty list **cyber security** among their research interests — here are the 5 for whom it's most central:
@@ -652,7 +653,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### Who researches underwater sensor networks?
-`hybrid` · `faculty_research` · 182 ms · composer
+`hybrid` · `faculty_research` · 274 ms · composer
 *Expected:* Dr. Jalaja M J (or honest no match)
 
 1 faculty list **underwater sensor networks** among their research interests:
@@ -663,7 +664,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### Is anyone working on blockchain?
-`hybrid` · `faculty_research` · 157 ms · composer
+`hybrid` · `faculty_research` · 171 ms · composer
 *Expected:* matches or honest no match
 
 1 faculty list **blockchain** among their research interests:
@@ -674,7 +675,7 @@ None of them have office hours on file, so I can't confirm when they're free. Th
 *Source: faculty directory*
 
 ### When can I meet Dr. Manu Madhavan?
-`structured` · `faculty_lookup` · 362 ms · composer
+`structured` · `faculty_lookup` · 366 ms · composer
 *Expected:* teaching schedule, explicit that office hours aren't on file
 
 ORION doesn't have office hours on file for **Dr. Manu Madhavan**, so I can't confirm when they're free. They teach at these times, so they'll be busy then:
@@ -696,41 +697,41 @@ The reliable way is to email them to set a time: **manum@iiitkottayam.ac.in** (o
 ## 5. Mess
 
 ### What is on the mess menu today?
-`structured` · `mess_today` · 229 ms · composer
+`structured` · `mess_today` · 166 ms · composer
 *Expected:* all meals, with staleness caveat if repeated cycle
 
-**Tuesday, 22 September** (today)
-- **Breakfast:** Vada Pav, Puttu, Channa Curry, Fried Chillies, Onions Green Chutney, Red Powdered Chutney, Bread (Normal/Brown) Jam, Butter, coffee, Milk, Banana
-- **Lunch:** Tawa Pulao, Roti, ChettinadChicken, Chilli Paneer, Vegetable Raita, Salad Drink:Lemon juice/Litchi
-- **Snacks:** Creambun, Bread, Jam, Butter, Tea, Milk
-- **Dinner:** Rice, Roti, Chole curry, Onion Dal Tadka, Carrot Beans Thoran, Rasam, Chips Salad, Curd
-
-Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (25 August). It may change.
-
-*Source: mess menu*
-
-### What's for lunch today?
-`structured` · `mess_today` · 190 ms · composer
-*Expected:* lunch only
-
-Lunch on **Tuesday, 22 September** (today): Tawa Pulao, Roti, ChettinadChicken, Chilli Paneer, Vegetable Raita, Salad Drink:Lemon juice/Litchi.
-
-Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (25 August). It may change.
-
-*Source: mess menu*
-
-### What's for dinner tomorrow?
-`structured` · `mess_on_day` · 187 ms · composer
-*Expected:* dinner tomorrow
-
-Dinner on **Wednesday, 23 September** (tomorrow): Vegetable Fried rice, Roti, Paneer Butter masala, Chilli chicken, Onionchilli Raita Drink: Passion Fruit drink.
+**Wednesday, 23 September** (today)
+- **Breakfast:** Idli, Masala Idli Punugulu, Sambar Groundnut Chutney, Tomato chutney Puliyinchi, Bread (Normal/Brown) Jam, Butter, Tea, Milk
+- **Lunch:** Rice, Roti, Mudda Pappu, Pachi Pulusu, cabbage fry, Curd, Koottu curry, Salad Drink: Sweet Lassi
+- **Snacks:** Sweetcorn(boiled) Bread, Jam, Butter, Tea, Milk
+- **Dinner:** Vegetable Fried rice, Roti, Paneer Butter masala, Chilli chicken, Onionchilli Raita Drink: Passion Fruit drink
 
 Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (26 August). It may change.
 
 *Source: mess menu*
 
+### What's for lunch today?
+`structured` · `mess_today` · 137 ms · composer
+*Expected:* lunch only
+
+Lunch on **Wednesday, 23 September** (today): Rice, Roti, Mudda Pappu, Pachi Pulusu, cabbage fry, Curd, Koottu curry, Salad Drink: Sweet Lassi.
+
+Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (26 August). It may change.
+
+*Source: mess menu*
+
+### What's for dinner tomorrow?
+`structured` · `mess_on_day` · 145 ms · composer
+*Expected:* dinner tomorrow
+
+Dinner on **Thursday, 24 September** (tomorrow): Roti, Rice, Sambar, Potato fry, Kanji, Chammanthi, curd, Brinjal Curry, Salad Sweet: Rava Kesari.
+
+Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (27 August). It may change.
+
+*Source: mess menu*
+
 ### What is for breakfast on Monday?
-`structured` · `mess_on_day` · 210 ms · composer
+`structured` · `mess_on_day` · 131 ms · composer
 *Expected:* Monday breakfast
 
 Breakfast on **Monday, 28 September**: Onion Uttapam, Medu vada, Sambar, Coconut Chutney, Bread (Normal/Brown) Jam, Butter, Tea, Milk, Corn Flakes.
@@ -740,19 +741,19 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### What is being served for dinner this week?
-`structured` · `mess_week` · 199 ms · composer
+`structured` · `mess_week` · 143 ms · composer
 *Expected:* dinner by day
 
-**Monday, 21 September** (yesterday)
+**Monday, 21 September**
 - **Dinner:** Rice, Roti, Egg roast, Beetroot thoran, Vegetable Kurma, Papad, curd, Salad
 
-**Tuesday, 22 September** (today)
+**Tuesday, 22 September** (yesterday)
 - **Dinner:** Rice, Roti, Chole curry, Onion Dal Tadka, Carrot Beans Thoran, Rasam, Chips Salad, Curd
 
-**Wednesday, 23 September** (tomorrow)
+**Wednesday, 23 September** (today)
 - **Dinner:** Vegetable Fried rice, Roti, Paneer Butter masala, Chilli chicken, Onionchilli Raita Drink: Passion Fruit drink
 
-**Thursday, 24 September**
+**Thursday, 24 September** (tomorrow)
 - **Dinner:** Roti, Rice, Sambar, Potato fry, Kanji, Chammanthi, curd, Brinjal Curry, Salad Sweet: Rava Kesari
 
 **Friday, 25 September**
@@ -769,163 +770,163 @@ Note: a menu hasn't been published for these dates yet, so this is the regular w
 *Source: mess menu*
 
 ### What are the snacks today?
-`structured` · `mess_today` · 205 ms · composer
+`structured` · `mess_today` · 166 ms · composer
 *Expected:* snacks
 
-Snacks on **Tuesday, 22 September** (today): Creambun, Bread, Jam, Butter, Tea, Milk.
+Snacks on **Wednesday, 23 September** (today): Sweetcorn(boiled) Bread, Jam, Butter, Tea, Milk.
 
-Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (25 August). It may change.
+Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (26 August). It may change.
 
 *Source: mess menu*
 
 ### What did we have for dinner yesterday?
-`structured` · `mess_on_day` · 170 ms · composer
+`structured` · `mess_on_day` · 192 ms · composer
 *Expected:* yesterday dinner
 
-Dinner on **Monday, 21 September** (yesterday): Rice, Roti, Egg roast, Beetroot thoran, Vegetable Kurma, Papad, curd, Salad.
+Dinner on **Tuesday, 22 September** (yesterday): Rice, Roti, Chole curry, Onion Dal Tadka, Carrot Beans Thoran, Rasam, Chips Salad, Curd.
 
-Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (31 August). It may change.
+Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (25 August). It may change.
 
 *Source: mess menu*
 
 ## 6. Academic calendar and exams
 
 ### When do the end semester exams start?
-`structured` · `academic_calendar` · 278 ms · composer
+`structured` · `academic_calendar` · 158 ms · composer
 *Expected:* 2026-10-28
 
-The **End Semester Examination** runs from **Wednesday, 28 October** to **Friday, 13 November** — it starts in 36 days.
+The **End Semester Examination** runs from **Wednesday, 28 October** to **Friday, 13 November** — it starts in 35 days.
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When do mid semester exams start?
-`structured` · `academic_calendar` · 171 ms · composer
+`structured` · `academic_calendar` · 138 ms · composer
 *Expected:* 2026-09-02 (already past — say so)
 
-**Mid Semester Examination Starts** was on **Wednesday, 2 September** — that was 20 days ago, so it has already passed.
+**Mid Semester Examination Starts** was on **Wednesday, 2 September** — that was 21 days ago, so it has already passed.
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When does the semester end?
-`structured` · `academic_calendar` · 169 ms · composer
+`structured` · `academic_calendar` · 203 ms · composer
 *Expected:* 2026-11-13
 
-**End semester exams end and the semester ends** is on **Friday, 13 November** (in 52 days). The End Semester Examination starts on Wednesday, 28 October.
+**End semester exams end and the semester ends** is on **Friday, 13 November** (in 51 days). The End Semester Examination starts on Wednesday, 28 October.
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is the last instructional day?
-`structured` · `academic_calendar` · 150 ms · composer
+`structured` · `academic_calendar` · 132 ms · composer
 *Expected:* Class Ends 2026-10-26
 
-**Last instructional day (classes end)** is on **Monday, 26 October** (in 34 days).
+**Last instructional day (classes end)** is on **Monday, 26 October** (in 33 days).
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### What is the last date for course drop?
-`structured` · `academic_calendar` · 158 ms · composer
+`structured` · `academic_calendar` · 169 ms · composer
 *Expected:* 2026-07-30 (past)
 
-**Last day for course drop** was on **Thursday, 30 July** — that was 54 days ago, so it has already passed.
+**Last day for course drop** was on **Thursday, 30 July** — that was 55 days ago, so it has already passed.
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### What are the upcoming deadlines?
-`structured` · `academic_calendar` · 144 ms · composer
+`structured` · `academic_calendar` · 137 ms · composer
 *Expected:* next deadlines from today
 
 Here are the upcoming deadlines:
 
-- **Wednesday, 21 October** — Submission of final attendance list to HoD · in 29 days
-- **Wednesday, 25 November** — Last day for submission of grades · in 64 days
-- **Sunday, 20 December** — Last date of fee payment without fine for Even Sem · in 89 days
+- **Wednesday, 21 October** — Submission of final attendance list to HoD · in 28 days
+- **Wednesday, 25 November** — Last day for submission of grades · in 63 days
+- **Sunday, 20 December** — Last date of fee payment without fine for Even Sem · in 88 days
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### What's coming up on the academic calendar?
-`structured` · `academic_calendar` · 150 ms · composer
+`structured` · `academic_calendar` · 167 ms · composer
 *Expected:* next events
 
 Coming up on the academic calendar:
 
-- **Wednesday, 23 September** — Second Class Committee Meeting (S3, S5 & S7) · tomorrow
-- **Thursday, 24 September** — Second Class Committee Meeting (S3, S5 & S7) · in 2 days
-- **Friday, 25 September** — Sports Meet Starts · in 3 days
-- **Sunday, 27 September** — Sports Meet Ends · in 5 days
-- **Monday, 19 October** — B.Tech BTP / Honours / MS project final review · in 27 days
-- **Wednesday, 21 October** — Submission of final attendance list to HoD · in 29 days
+- **Wednesday, 23 September** — Second Class Committee Meeting (S3, S5 & S7) · today
+- **Thursday, 24 September** — Second Class Committee Meeting (S3, S5 & S7) · tomorrow
+- **Friday, 25 September** — Sports Meet Starts · in 2 days
+- **Sunday, 27 September** — Sports Meet Ends · in 4 days
+- **Monday, 19 October** — B.Tech BTP / Honours / MS project final review · in 26 days
+- **Wednesday, 21 October** — Submission of final attendance list to HoD · in 28 days
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is the sports meet?
-`structured` · `academic_calendar` · 177 ms · composer
+`structured` · `academic_calendar` · 145 ms · composer
 *Expected:* 2026-09-25 to 2026-09-27
 
-The **Sports Meet** runs from **Friday, 25 September** to **Sunday, 27 September** — it starts in 3 days.
+The **Sports Meet** runs from **Friday, 25 September** to **Sunday, 27 September** — it starts in 2 days.
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When will results be published?
-`structured` · `academic_calendar` · 144 ms · composer
+`structured` · `academic_calendar` · 175 ms · composer
 *Expected:* 2026-12-03
 
-**Result Publication** is on **Thursday, 3 December** (in 72 days).
+**Result Publication** is on **Thursday, 3 December** (in 71 days).
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When does the even semester start?
-`structured` · `academic_calendar` · 158 ms · composer
+`structured` · `academic_calendar` · 219 ms · composer
 *Expected:* 2026-12-21
 
-**Even Semester 2026–27 Classes Begin** is on **Monday, 21 December** (in 90 days).
+**Even Semester 2026–27 Classes Begin** is on **Monday, 21 December** (in 89 days).
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is the next class committee meeting?
-`structured` · `academic_calendar` · 143 ms · composer
+`structured` · `academic_calendar` · 190 ms · composer
 *Expected:* next meeting date
 
-**Second Class Committee Meeting (S3, S5 & S7)** is on Wednesday, 23 September and Thursday, 24 September (tomorrow).
+**Second Class Committee Meeting (S3, S5 & S7)** is on Wednesday, 23 September and Thursday, 24 September (today).
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is registration for the even semester?
-`structured` · `academic_calendar` · 149 ms · composer
+`structured` · `academic_calendar` · 148 ms · composer
 *Expected:* 2026-12-14
 
-**Registration starts online for Even Sem 2026-27** is on **Monday, 14 December** (in 83 days).
+**Registration starts online for Even Sem 2026-27** is on **Monday, 14 December** (in 82 days).
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### When is my ICS 213 exam?
-`structured` · `exam_schedule` · 239 ms · composer
+`structured` · `exam_schedule` · 243 ms · composer
 *Expected:* per-course schedule not published; end-sem window
 
 The exam timetable for **Database Management Systems** (ICS 213) hasn't been published in ORION yet. From the academic calendar, the end semester exams run from **Wednesday, 28 October** to **Friday, 13 November**, so it will fall in that window.
 
 Other exam dates:
 
-- **Thursday, 17 December** — Repeat Examination Starts · in 86 days
-- **Monday, 28 December** — Last day for submission of grades for repeat exam. · in 97 days
+- **Thursday, 17 December** — Repeat Examination Starts · in 85 days
+- **Monday, 28 December** — Last day for submission of grades for repeat exam. · in 96 days
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ### Are there any holidays this month?
-`structured` · `academic_calendar` · 156 ms · composer · ⚠️ review
+`structured` · `academic_calendar` · 132 ms · composer · ⚠️ review
 *Expected:* honest: calendar has no holiday entries
 
 The academic calendar in ORION doesn't list any holidays for this semester. Coming up next:
 
-- **Wednesday, 23 September** — Second Class Committee Meeting (S3, S5 & S7) · tomorrow
-- **Thursday, 24 September** — Second Class Committee Meeting (S3, S5 & S7) · in 2 days
-- **Friday, 25 September** — Sports Meet Starts · in 3 days
+- **Wednesday, 23 September** — Second Class Committee Meeting (S3, S5 & S7) · today
+- **Thursday, 24 September** — Second Class Committee Meeting (S3, S5 & S7) · tomorrow
+- **Friday, 25 September** — Sports Meet Starts · in 2 days
 
 *Source: academic calendar, Odd semester 2026-27*
 
 ## 7. Regulations (answered for the student's cohort)
 
 ### What is the attendance requirement?
-`semantic` · `none` · 349 ms · composer
+`semantic` · `none` · 332 ms · composer
 *Expected:* 80%, cited to the 2021-25 regulations
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -937,7 +938,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.1, p. 7*
 
 ### What happens if my attendance is below 80%?
-`semantic` · `none` · 304 ms · composer
+`semantic` · `none` · 260 ms · composer
 *Expected:* consequence per regulations
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -947,7 +948,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.3, p. 7*
 
 ### Is there attendance condonation?
-`semantic` · `none` · 283 ms · composer
+`semantic` · `none` · 212 ms · composer
 *Expected:* condonation rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -957,7 +958,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), p. 7*
 
 ### How is CGPA calculated?
-`semantic` · `none` · 318 ms · composer
+`semantic` · `none` · 224 ms · composer
 *Expected:* grading/CGPA rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -969,7 +970,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.6.10 Grade Card, p. 11*
 
 ### What is the grading system?
-`semantic` · `none` · 429 ms · composer
+`semantic` · `none` · 227 ms · composer
 *Expected:* grade points
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -981,7 +982,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), p. 10*
 
 ### How many credits do I need to graduate?
-`semantic` · `none` · 380 ms · composer
+`semantic` · `none` · 295 ms · composer
 *Expected:* degree credit requirement
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -991,7 +992,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.10.0, p. 14*
 
 ### What is the maximum duration to complete the B.Tech?
-`semantic` · `none` · 389 ms · composer
+`semantic` · `none` · 301 ms · composer
 *Expected:* 12 semesters
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1001,7 +1002,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.7.4, p. 12*
 
 ### Can I take a summer term?
-`semantic` · `none` · 346 ms · composer
+`semantic` · `none` · 230 ms · composer
 *Expected:* summer term rule or honest
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1013,7 +1014,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.9.1, p. 13*
 
 ### How do I drop a course?
-`semantic` · `none` · 361 ms · composer
+`semantic` · `none` · 287 ms · composer
 *Expected:* drop/withdrawal rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1023,7 +1024,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), p. 6*
 
 ### What happens if I fail a course?
-`semantic` · `none` · 340 ms · composer
+`semantic` · `none` · 310 ms · composer
 *Expected:* backlog/repeat rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1033,7 +1034,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.0 Attendance and Course Feedback, p. 7*
 
 ### What is an incomplete grade?
-`semantic` · `none` · 281 ms · composer
+`semantic` · `none` · 274 ms · composer
 *Expected:* I grade rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1043,7 +1044,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.2, p. 7*
 
 ### Can I write a make-up exam if I miss the end semester exam?
-`semantic` · `none` · 352 ms · composer
+`semantic` · `none` · 247 ms · composer
 *Expected:* make-up rule
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1053,7 +1054,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.2, p. 7*
 
 ### What is required for the B.Tech-MS dual degree?
-`semantic` · `none` · 331 ms · composer
+`semantic` · `none` · 302 ms · composer
 *Expected:* eligibility
 
 From the **B.Tech CSE Curriculum (2021-25 batch)**:
@@ -1063,7 +1064,7 @@ From the **B.Tech CSE Curriculum (2021-25 batch)**:
 *Source: B.Tech CSE Curriculum (2021-25 batch), p. 6*
 
 ### What is the minimum CGPA to get the degree?
-`semantic` · `none` · 275 ms · composer
+`semantic` · `none` · 274 ms · composer
 *Expected:* minimum CGPA
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
@@ -1075,7 +1076,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 ## 8. Hostel
 
 ### What are the hostel curfew rules?
-`semantic` · `none` · 274 ms · composer
+`semantic` · `none` · 267 ms · composer
 *Expected:* in-time / gate timings from hostel rules
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1093,7 +1094,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), rule 30, p. 5*
 
 ### What time should I be back in the hostel?
-`semantic` · `none` · 270 ms · composer
+`semantic` · `none` · 245 ms · composer
 *Expected:* in-time
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1111,7 +1112,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), rule 30, p. 5*
 
 ### How does the outpass process work?
-`semantic` · `none` · 270 ms · composer
+`semantic` · `none` · 300 ms · composer
 *Expected:* leave/outpass rule
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1121,7 +1122,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), rule 3.1, p. 1*
 
 ### Can visitors come to the hostel?
-`semantic` · `none` · 241 ms · composer
+`semantic` · `none` · 210 ms · composer
 *Expected:* visitor rule
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1131,7 +1132,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), p. 4*
 
 ### Can I cook in my hostel room?
-`semantic` · `none` · 342 ms · composer
+`semantic` · `none` · 212 ms · composer
 *Expected:* electrical appliance / cooking rule
 
 From the **Hostel Rules and Regulations (July 2026)**:
@@ -1141,7 +1142,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Hostel Rules and Regulations (July 2026), p. 3*
 
 ### Who is the warden of Sahyadri hostel?
-`structured` · `hostel_wardens` · 143 ms · composer
+`structured` · `hostel_wardens` · 184 ms · composer
 *Expected:* warden(s) with phone/email
 
 **Sahyadri Hostel (Girls)**
@@ -1156,7 +1157,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Wardens Team, July 2026*
 
 ### Who are the wardens for Anamudi hostel?
-`structured` · `hostel_wardens` · 153 ms · composer
+`structured` · `hostel_wardens` · 137 ms · composer
 *Expected:* wardens
 
 **Anamudi Hostel (Girls)**
@@ -1171,7 +1172,7 @@ From the **Hostel Rules and Regulations (July 2026)**:
 *Source: Wardens Team, July 2026*
 
 ### How do I contact my hostel warden?
-`structured` · `hostel_wardens` · 150 ms · composer
+`structured` · `hostel_wardens` · 127 ms · composer
 *Expected:* warden contacts (asks which hostel if unknown)
 
 Which hostel are you in? Here are the wardens for each hall:
@@ -1207,7 +1208,7 @@ Ask me about a specific hostel (e.g. "wardens of Sahyadri hostel") for its assis
 ## 9. Anti-ragging
 
 ### What are the anti-ragging rules?
-`semantic` · `none` · 873 ms · composer
+`semantic` · `none` · 947 ms · composer
 *Expected:* summary from UGC regulations / memo
 
 Here are the key anti-ragging rules:
@@ -1223,7 +1224,7 @@ Ask me about any one of these for the full rule.
 *Source: UGC Anti-Ragging Regulations (2009), p. 32; UGC Anti-Ragging Regulations (2009), p. 49; UGC Anti-Ragging Circular Letter, p. 1*
 
 ### What counts as ragging?
-`semantic` · `none` · 396 ms · composer
+`semantic` · `none` · 420 ms · composer
 *Expected:* definition
 
 From the **UGC Anti-Ragging Regulations (2009)**:
@@ -1233,7 +1234,7 @@ From the **UGC Anti-Ragging Regulations (2009)**:
 *Source: UGC Anti-Ragging Regulations (2009), p. 32*
 
 ### What is the punishment for ragging?
-`semantic` · `none` · 341 ms · composer
+`semantic` · `none` · 355 ms · composer
 *Expected:* punishments
 
 From the **UGC Anti-Ragging Regulations (2009)**:
@@ -1243,7 +1244,7 @@ From the **UGC Anti-Ragging Regulations (2009)**:
 *Source: UGC Anti-Ragging Regulations (2009), p. 49*
 
 ### How do I report ragging?
-`semantic` · `none` · 252 ms · composer
+`semantic` · `none` · 279 ms · composer
 *Expected:* reporting / helpline
 
 From the **UGC Anti-Ragging Circular Letter**:
@@ -1253,7 +1254,7 @@ From the **UGC Anti-Ragging Circular Letter**:
 *Source: UGC Anti-Ragging Circular Letter, p. 1*
 
 ### Who is on the anti-ragging squad?
-`semantic` · `none` · 295 ms · composer
+`semantic` · `none` · 413 ms · composer
 *Expected:* members from the office memorandum
 
 From the **Office Memorandum: Anti-Ragging Committee & Squad (Jan 2024)**:
@@ -1265,7 +1266,7 @@ From the **Office Memorandum: Anti-Ragging Committee & Squad (Jan 2024)**:
 ## 10. Procedures
 
 ### How do I request transcript verification?
-`semantic` · `none` · 245 ms · composer
+`semantic` · `none` · 330 ms · composer
 *Expected:* steps
 
 From the **Transcript Verification Procedure**:
@@ -1275,7 +1276,7 @@ From the **Transcript Verification Procedure**:
 *Source: Transcript Verification Procedure, p. 1*
 
 ### What is the transcript verification fee?
-`semantic` · `none` · 308 ms · composer
+`semantic` · `none` · 289 ms · composer
 *Expected:* fee from the procedure
 
 From the **Transcript Verification Procedure**:
@@ -1285,7 +1286,7 @@ From the **Transcript Verification Procedure**:
 *Source: Transcript Verification Procedure, p. 1*
 
 ### How does educational certificate verification work?
-`semantic` · `none` · 408 ms · composer
+`semantic` · `none` · 254 ms · composer
 *Expected:* steps
 
 From the **Educational Certificate Verification Procedure**:
@@ -1299,19 +1300,19 @@ From the **Educational Certificate Verification Procedure**:
 ## 11. Announcements
 
 ### Are there any current announcements?
-`structured` · `announcements` · 160 ms · composer
+`structured` · `announcements` · 163 ms · composer
 *Expected:* current approved announcements or "none right now"
 
 There are no current announcements right now. New ones show up here once an admin approves them.
 
 ### Any new notices?
-`structured` · `announcements` · 154 ms · composer
+`structured` · `announcements` · 207 ms · composer
 *Expected:* same
 
 There are no current announcements right now. New ones show up here once an admin approves them.
 
 ### What's the latest news on campus?
-`structured` · `announcements` · 153 ms · composer
+`structured` · `announcements` · 203 ms · composer
 *Expected:* same
 
 There are no current announcements right now. New ones show up here once an admin approves them.
@@ -1319,7 +1320,7 @@ There are no current announcements right now. New ones show up here once an admi
 ## 12. About me
 
 ### What semester am I in?
-`structured` · `my_profile` · 72 ms · composer
+`structured` · `my_profile` · 101 ms · composer
 *Expected:* 3
 
 You're in **semester 3**.
@@ -1327,7 +1328,7 @@ You're in **semester 3**.
 *Source: your profile*
 
 ### Which section am I in?
-`structured` · `my_profile` · 69 ms · composer
+`structured` · `my_profile` · 103 ms · composer
 *Expected:* I
 
 You're in section **I**.
@@ -1335,7 +1336,7 @@ You're in section **I**.
 *Source: your profile*
 
 ### What is my department?
-`structured` · `my_profile` · 77 ms · composer
+`structured` · `my_profile` · 103 ms · composer
 *Expected:* CSE
 
 Your department is **Computer Science and Engineering**.
@@ -1343,7 +1344,7 @@ Your department is **Computer Science and Engineering**.
 *Source: your profile*
 
 ### Which regulations apply to me?
-`structured` · `my_profile` · 67 ms · composer
+`structured` · `my_profile` · 80 ms · composer
 *Expected:* UG Regulations 2021-25 batch
 
 The **UG Regulations (2021-25 batch)** apply to you.
@@ -1353,7 +1354,7 @@ The **UG Regulations (2021-25 batch)** apply to you.
 ## 13. Follow-up conversations
 
 ### Tell me about ICS 211
-`structured` · `course_info` · 377 ms · composer
+`structured` · `course_info` · 375 ms · composer
 
 **Design and Analysis of Algorithms** (ICS 211) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 3-1-0).
 
@@ -1364,7 +1365,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 2*
 
 ### ↳ Who teaches it?
-`structured` · `faculty_for_course` · 277 ms · composer · resolved as “Who teaches ICS 211?”
+`structured` · `faculty_for_course` · 292 ms · composer · resolved as “Who teaches ICS 211?”
 
 **Design and Analysis of Algorithms** (ICS 211) is taught by Dr. Priyadharshini S, Dr. Jisha Mariyam John, Dr. Manu Madhavan and Dr. Nandini J. Warrier. Different sections may have different teachers.
 
@@ -1376,7 +1377,7 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: your live timetable; faculty directory*
 
 ### ↳ What credits does it have?
-`structured` · `course_info` · 349 ms · composer · resolved as “What credits does ICS 211 have?”
+`structured` · `course_info` · 474 ms · composer · resolved as “What credits does ICS 211 have?”
 
 **Design and Analysis of Algorithms** (ICS 211) is a semester 3 B.Tech course. It carries **4 credits** (lecture-tutorial-practical: 3-1-0).
 
@@ -1387,14 +1388,14 @@ A syllabus summary isn't in ORION yet — the full syllabus is in your programme
 *Source: course catalog; B.Tech CSE Curriculum (2021-25 batch), p. 2*
 
 ### What is my next class?
-`structured` · `next_class` · 132 ms · composer
+`structured` · `next_class` · 316 ms · composer
 
-Your next class is **IT Workshop III (ICS 214)** — tomorrow (Wednesday), 10:00–10:55 AM — Dr. Deepak Jose · lab. You have no more classes today.
+You're in **IT Workshop III (ICS 214)** right now (10:00–10:55 AM) — Dr. Deepak Jose · lab. After that, your next class is **Probability, Statistics and Random Processes (IMA 211)** today (Wednesday), 11:05 AM – 12:00 PM — Dr. Anandhu Mohan.
 
 *Source: your live timetable*
 
 ### ↳ Who teaches it?
-`structured` · `faculty_for_course` · 288 ms · composer · resolved as “Who teaches ICS 214?”
+`structured` · `faculty_for_course` · 378 ms · composer · resolved as “Who teaches ICS 214?”
 
 **IT Workshop III** (ICS 214) is taught by Dr. Deepak Jose, Dr. P. Victer Paul, Dr. R Tharaniya Sairaj and Dr. Alkha Mohan. Different sections may have different teachers.
 
@@ -1406,39 +1407,39 @@ Your next class is **IT Workshop III (ICS 214)** — tomorrow (Wednesday), 10:00
 *Source: your live timetable; faculty directory*
 
 ### What is Dr. Manu Madhavan's email?
-`structured` · `faculty_lookup` · 141 ms · composer
+`structured` · `faculty_lookup` · 140 ms · composer
 
 Dr. Manu Madhavan's email is **manum@iiitkottayam.ac.in**.
 
 *Source: faculty directory*
 
 ### ↳ What does he research?
-`structured` · `faculty_lookup` · 155 ms · composer · resolved as “What does Dr. Manu Madhavan research?”
+`structured` · `faculty_lookup` · 173 ms · composer · resolved as “What does Dr. Manu Madhavan research?”
 
 Dr. Manu Madhavan's research interests: Natural Language Processing; Bioinformatics; Machine Learning; Computational Linguistics; Deep Learning, Graph Neural Networks.
 
 *Source: faculty directory*
 
 ### What's for lunch today?
-`structured` · `mess_today` · 153 ms · composer
+`structured` · `mess_today` · 231 ms · composer
 
-Lunch on **Tuesday, 22 September** (today): Tawa Pulao, Roti, ChettinadChicken, Chilli Paneer, Vegetable Raita, Salad Drink:Lemon juice/Litchi.
+Lunch on **Wednesday, 23 September** (today): Rice, Roti, Mudda Pappu, Pachi Pulusu, cabbage fry, Curd, Koottu curry, Salad Drink: Sweet Lassi.
 
-Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (25 August). It may change.
+Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (26 August). It may change.
 
 *Source: mess menu*
 
 ### ↳ And dinner?
-`structured` · `mess_today` · 178 ms · composer · resolved as “What's for dinner today?”
+`structured` · `mess_today` · 192 ms · composer · resolved as “What's for dinner today?”
 
-Dinner on **Tuesday, 22 September** (today): Rice, Roti, Chole curry, Onion Dal Tadka, Carrot Beans Thoran, Rasam, Chips Salad, Curd.
+Dinner on **Wednesday, 23 September** (today): Vegetable Fried rice, Roti, Paneer Butter masala, Chilli chicken, Onionchilli Raita Drink: Passion Fruit drink.
 
-Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (25 August). It may change.
+Note: a menu hasn't been published for these dates yet, so this is the regular weekly menu from the most recent week on file (26 August). It may change.
 
 *Source: mess menu*
 
 ### What is the attendance requirement?
-`semantic` · `none` · 277 ms · composer
+`semantic` · `none` · 239 ms · composer
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
 
@@ -1449,7 +1450,7 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 *Source: UG Regulations (2021-25 batch), R.5.1, p. 7*
 
 ### ↳ What if I don't meet it?
-`semantic` · `none` · 372 ms · composer · resolved as “What if I don't meet it? (What is the attendance requirement)”
+`semantic` · `none` · 266 ms · composer · resolved as “What if I don't meet it? (What is the attendance requirement)”
 
 Under the **UG Regulations (2021-25 batch)**, which apply to you:
 
@@ -1462,55 +1463,55 @@ Under the **UG Regulations (2021-25 batch)**, which apply to you:
 ## 14. Out of scope — must not invent anything
 
 ### What are my exam grades this semester?
-`unsupported` · `out_of_scope` · 63 ms · composer
+`unsupported` · `out_of_scope` · 62 ms · composer
 *Expected:* ORION doesn't hold grades; where to check
 
 I can't see grades, marks or CGPA — ORION doesn't store personal academic records. Your results are on the institute's academic portal, or ask your faculty advisor. I can explain how CGPA is calculated or tell you when results are published.
 
 ### What is my CGPA?
-`unsupported` · `out_of_scope` · 74 ms · composer
+`unsupported` · `out_of_scope` · 77 ms · composer
 *Expected:* same
 
 I can't see grades, marks or CGPA — ORION doesn't store personal academic records. Your results are on the institute's academic portal, or ask your faculty advisor. I can explain how CGPA is calculated or tell you when results are published.
 
 ### What is my attendance percentage?
-`unsupported` · `out_of_scope` · 62 ms · composer
+`unsupported` · `out_of_scope` · 66 ms · composer
 *Expected:* not held; ask faculty / portal
 
 ORION doesn't track your attendance — your course faculty maintain it, and you can check it with them. I can tell you the attendance rules if that helps ("What is the attendance requirement?").
 
 ### How do I pay my fees?
-`unsupported` · `out_of_scope` · 75 ms · composer
+`unsupported` · `out_of_scope` · 64 ms · composer
 *Expected:* fee payment not in ORION; fee deadlines from calendar if relevant
 
 ORION doesn't handle fee payments or balances — use the institute's official payment channels or the Accounts section. I can tell you fee payment deadlines from the academic calendar.
 
 ### What is the weather today?
-`unsupported` · `out_of_scope` · 66 ms · composer
+`unsupported` · `out_of_scope` · 76 ms · composer
 *Expected:* out of scope
 
 I'm ORION, IIIT Kottayam's campus assistant, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
 
 ### What is the capital of France?
-`unsupported` · `out_of_scope` · 69 ms · composer
+`unsupported` · `out_of_scope` · 65 ms · composer
 *Expected:* out of scope, campus assistant
 
 I'm ORION, IIIT Kottayam's campus assistant, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
 
 ### Write a Python program to sort a list
-`unsupported` · `out_of_scope` · 87 ms · composer
+`unsupported` · `out_of_scope` · 103 ms · composer
 *Expected:* out of scope
 
 I'm ORION, IIIT Kottayam's campus assistant, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
 
 ### What is the meaning of life?
-`unsupported` · `out_of_scope` · 65 ms · composer
+`unsupported` · `out_of_scope` · 115 ms · composer
 *Expected:* out of scope, friendly
 
 I'm ORION, IIIT Kottayam's campus assistant, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
 
 ### asdkfj qwer nonsense query
-`unsupported` · `none` · 63 ms · composer · ⚠️ review
+`unsupported` · `none` · 76 ms · composer · ⚠️ review
 *Expected:* didn't understand + examples
 
 I'm not sure what you mean. You can ask me things like:
@@ -1522,7 +1523,7 @@ I'm not sure what you mean. You can ask me things like:
 - Who is the warden of Sahyadri hostel?
 
 ### Who will win the IPL this year?
-`unsupported` · `out_of_scope` · 63 ms · composer
+`unsupported` · `out_of_scope` · 67 ms · composer
 *Expected:* out of scope
 
 I'm ORION, IIIT Kottayam's campus assistant, so I stick to campus information — your classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations.
