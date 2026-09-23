@@ -13,13 +13,13 @@ import { apiGet, apiDelete } from "@/lib/api-client";
 export const Route = createFileRoute("/ai")({
   head: () => ({
     meta: [
-      { title: "ORION AI — Campus Assistant" },
+      { title: "RION — ORION Campus Assistant" },
       {
         name: "description",
         content:
-          "Ask ORION about classes, faculty, the mess menu and campus rules — by text or voice.",
+          "Ask RION about classes, faculty, the mess menu and campus rules — by text or voice.",
       },
-      { property: "og:title", content: "ORION AI" },
+      { property: "og:title", content: "RION — ORION Campus Assistant" },
       { property: "og:description", content: "Your campus questions, answered instantly." },
     ],
   }),
@@ -197,7 +197,7 @@ function AiPage() {
               <History className="size-5" />
             </Button>
             <h1 className="min-w-0 flex-1 truncate px-1 text-sm font-semibold lg:px-2">
-              {activeTitle || "ORION"}
+              {activeTitle || "RION"}
             </h1>
             <Button
               variant="ghost"

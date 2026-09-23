@@ -5,7 +5,7 @@ import { MessageMarkdown } from "./message-markdown";
 import { ThinkingOrb, type ChatOrbState } from "./thinking-orb";
 
 // Full-screen voice conversation. The orb is the main control: tap it to
-// talk, tap it while ORION is speaking to interrupt and talk again.
+// talk, tap it while RION is speaking to interrupt and talk again.
 export type VoiceModeState = "listening" | "processing" | "responding" | "ready" | "error";
 
 const STATE_TO_ORB: Record<VoiceModeState, ChatOrbState> = {
@@ -17,18 +17,18 @@ const STATE_TO_ORB: Record<VoiceModeState, ChatOrbState> = {
 };
 
 const STATUS: Record<VoiceModeState, string> = {
-  listening: "Listening…",
+  listening: "Listening to you…",
   processing: "Thinking…",
-  responding: "Speaking…",
+  responding: "RION is speaking…",
   ready: "Tap the orb to talk",
   error: "",
 };
 
 const ORB_LABEL: Record<VoiceModeState, string> = {
   listening: "Stop listening",
-  processing: "Interrupt and talk",
-  responding: "Interrupt and talk",
-  ready: "Start listening",
+  processing: "Interrupt and talk to RION",
+  responding: "Stop RION",
+  ready: "Talk to RION",
   error: "Try again",
 };
 
@@ -45,7 +45,7 @@ export function VoiceMode({
   open: boolean;
   state: VoiceModeState;
   transcript: string;
-  /** ORION's latest answer in this voice session, shown as text too. */
+  /** RION's latest answer in this voice session, shown as text too. */
   response: string | null;
   errorMessage?: string | null;
   onOrbTap: () => void;
@@ -62,11 +62,11 @@ export function VoiceMode({
           transition={{ duration: 0.25, ease: "easeOut" }}
           role="dialog"
           aria-modal="true"
-          aria-label="ORION voice conversation"
+          aria-label="RION voice conversation"
           className="fixed inset-0 z-[60] flex flex-col bg-background px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold tracking-wide text-muted-foreground">ORION</span>
+            <span className="text-sm font-semibold tracking-wide text-muted-foreground">RION</span>
             <Button
               variant="ghost"
               size="icon"

@@ -49,10 +49,10 @@ ttsService.speak()             src/lib/ai/tts.ts  ← the ONLY API the UI calls
 | `KOKORO_SPEED` | `1.0` | Clamped to 0.7–1.3 |
 
 Voice allowlist (`backend/app/api/tts.py`): `af_heart af_bella af_nicole
-af_sarah af_sky am_adam am_michael bm_george bf_emma`. A person can override
-voice and speed for their own device in **Settings → ORION voice**, which
-also has a Preview button — that's the place to audition voices; nothing in
-the code ranks one as best.
+af_sarah af_sky am_adam am_michael bm_george bf_emma`. **`af_heart`
+(American English) is RION's chosen default voice** — settled after
+auditioning the set in Settings → RION's voice, which still lets anyone
+override it for their own device via the same Preview button.
 
 ## 3. Running Kokoro locally
 

@@ -4,8 +4,8 @@ import { ThinkingOrb as Orb, type OrbState } from "thinking-orbs";
 import { MODE_FRAMES, paintFrame, resolvePreset } from "thinking-orbs/engine";
 import { cn } from "@/lib/utils";
 
-// Adapts github.com/Jakubantalik/thinking-orbs (MIT) to ORION's chat states.
-// This file is the only place ORION's states map to the library's — and the
+// Adapts github.com/Jakubantalik/thinking-orbs (MIT) to RION's chat states.
+// This file is the only place RION's states map to the library's — and the
 // orb is only used inside src/components/ai/.
 export type ChatOrbState = "idle" | "listening" | "processing" | "responding" | "error";
 
@@ -112,7 +112,7 @@ export function ThinkingOrb({
     <div className={cn("flex flex-col items-center gap-2", className)}>
       <div
         role="img"
-        aria-label={label || "ORION assistant"}
+        aria-label={label || "RION"}
         className="relative"
         style={{ width: size, height: size }}
       >

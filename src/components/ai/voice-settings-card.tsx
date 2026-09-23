@@ -22,7 +22,7 @@ import {
 } from "@/lib/ai/voice-settings";
 
 const SAMPLE =
-  "Hi, I'm ORION. I can help you find information about your classes, timetable, faculty and campus.";
+  "Hi, I'm RION. I can help you find information about your classes, timetable, faculty and campus.";
 
 // Lets a person audition voices and pick one without code changes. The
 // server's default (KOKORO_VOICE / KOKORO_SPEED) applies until they choose.
@@ -82,14 +82,14 @@ export function VoiceSettingsCard() {
   const [minSpeed, maxSpeed] = config?.speed_range ?? [0.7, 1.3];
 
   return (
-    <SectionCard title="ORION voice" description="How ORION sounds when it reads answers aloud.">
+    <SectionCard title="RION's voice" description="How RION sounds when it reads answers aloud.">
       <div className="space-y-5">
         <p className="rounded-xl bg-muted px-3 py-2.5 text-xs text-muted-foreground">
           {config === null
             ? "Checking voice service…"
             : neural
-              ? "Neural voice (Kokoro) is enabled. If it can't be reached, ORION falls back to your device's voice."
-              : "ORION is currently using your device's built-in voice. Voice choices below apply once the neural voice is enabled on the server."}
+              ? "Neural voice (Kokoro) is enabled. If it can't be reached, RION falls back to your device's voice."
+              : "RION is currently using your device's built-in voice. Voice choices below apply once the neural voice is enabled on the server."}
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">

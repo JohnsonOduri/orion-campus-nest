@@ -44,7 +44,7 @@ type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 
 const studentNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/ai", label: "AI Chat", icon: Sparkles },
+  { to: "/ai", label: "RION", icon: Sparkles },
   { to: "/timetable", label: "Timetable", icon: CalendarDays },
   { to: "/calendar", label: "Calendar", icon: CalendarRange },
   { to: "/exams", label: "Exams", icon: GraduationCap },
@@ -58,7 +58,7 @@ const studentNav: NavItem[] = [
 // routes still exist, they're just not part of an admin's own navigation.
 const adminNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/ai", label: "AI Chat", icon: Sparkles },
+  { to: "/ai", label: "RION", icon: Sparkles },
   { to: "/calendar", label: "Calendar", icon: CalendarRange },
   { to: "/faculty", label: "Faculty", icon: Users },
   { to: "/announcements", label: "Announcements", icon: Megaphone },
@@ -68,7 +68,7 @@ const adminNav: NavItem[] = [
 const studentBottomNav: NavItem[] = [
   { to: "/dashboard", label: "Home", icon: LayoutDashboard },
   { to: "/timetable", label: "Classes", icon: CalendarDays },
-  { to: "/ai", label: "ORION", icon: Sparkles },
+  { to: "/ai", label: "RION", icon: Sparkles },
   { to: "/mess", label: "Mess", icon: UtensilsCrossed },
   { to: "/profile", label: "Profile", icon: User },
 ];
@@ -77,7 +77,7 @@ const studentBottomNav: NavItem[] = [
 // they no longer have in the sidebar.
 const adminBottomNav: NavItem[] = [
   { to: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { to: "/ai", label: "ORION", icon: Sparkles },
+  { to: "/ai", label: "RION", icon: Sparkles },
   { to: "/admin", label: "Admin", icon: ShieldCheck },
   { to: "/logs", label: "Logs", icon: ScrollText },
   { to: "/profile", label: "Profile", icon: User },

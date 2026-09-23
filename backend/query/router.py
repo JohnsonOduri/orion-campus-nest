@@ -127,7 +127,7 @@ _HOW_ARE_YOU_REPLIES = [
     "All good here! What do you need help with today?",
 ]
 _CAPABILITIES_REPLY = (
-    "I'm ORION, your campus assistant. I can help with: your timetable (today, "
+    "I'm RION, ORION's AI assistant. I can help with: your timetable (today, "
     "a specific day, a specific time, tomorrow/yesterday), the mess menu "
     "(today, this week, a specific meal or day), course info (credits, "
     "syllabus, prerequisites), faculty details (email, office, office hours), "
@@ -147,7 +147,7 @@ def _greeting_reply() -> str:
         salutation = "Good afternoon!"
     else:
         salutation = "Good evening!"
-    return f"{salutation} I'm ORION — ask me about your timetable, mess menu, courses, faculty, or campus regulations."
+    return f"{salutation} I'm RION — ask me about your timetable, mess menu, courses, faculty, or campus regulations."
 
 # ---------------------------------------------------------------- semantic
 

@@ -34,9 +34,9 @@ from ..services import gotrue_http
 
 router = APIRouter(prefix="/tts", tags=["tts"])
 
-# Deliberately a short, curated list rather than all 54 Kokoro voices — these
-# are the English voices worth auditioning for an assistant. Labels describe
-# the voice; they make no claim about which one is best.
+# Deliberately a short, curated list rather than all 54 Kokoro voices.
+# af_heart (American English) is RION's chosen default voice; the rest stay
+# selectable in Settings for anyone who prefers a different one.
 VOICES: list[dict[str, str]] = [
     {"id": "af_heart", "name": "Heart", "accent": "American", "gender": "female"},
     {"id": "af_bella", "name": "Bella", "accent": "American", "gender": "female"},

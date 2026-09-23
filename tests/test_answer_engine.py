@@ -217,7 +217,7 @@ def test_out_of_scope_never_invents_a_record():
     ctx = GroundedContext(query="What is my CGPA?", route=RouteType.UNSUPPORTED, facts=[], snippets=[], warnings=[],
                           has_answer=False, plan=classify("What is my CGPA?"))
     reply = compose.compose(ctx)
-    assert "doesn't store" in reply and not any(ch.isdigit() for ch in reply)
+    assert ("doesn't store" in reply or "don't store" in reply) and not any(ch.isdigit() for ch in reply)
 
 
 def test_only_the_students_own_regulations_say_they_apply():

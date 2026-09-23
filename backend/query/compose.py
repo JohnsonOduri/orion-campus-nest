@@ -313,7 +313,7 @@ def compose_course(ctx: GroundedContext) -> str:
     if teachers:
         text += f"\n\nTaught by {join_names(teachers)}."
     if not d.get("syllabus_summary"):
-        text += "\n\nA syllabus summary isn't in ORION yet — the full syllabus is in your programme's curriculum document."
+        text += "\n\nA syllabus summary isn't available yet — the full syllabus is in your programme's curriculum document."
     return text + source_line(*sources)
 
 
@@ -362,7 +362,7 @@ def compose_faculty(ctx: GroundedContext) -> str:
     src = source_line("faculty directory")
     if hints.get("focus") == "meet":
         slots = p.get("teaching_slots") or []
-        text = f"ORION doesn't have office hours on file for **{name}**, so I can't confirm when they're free."
+        text = f"I don't have office hours on file for **{name}**, so I can't confirm when they're free."
         if slots:
             text += f" They teach at these times, so they'll be busy then:\n\n{_slots_text(slots)}"
         if p.get("email"):
@@ -516,7 +516,7 @@ def compose_calendar(ctx: GroundedContext) -> str:
     today = now_ist().date()
     holiday_q = any(e.get("_holiday_query") for e in events) or re.search(r"holiday|vacation", ctx.query, re.I)
     if holiday_q and not any(e.get("event_type") in {"holiday", "vacation"} for e in events):
-        text = "The academic calendar in ORION doesn't list any holidays for this semester."
+        text = "The academic calendar doesn't list any holidays for this semester."
         upcoming = [e for e in events if date.fromisoformat(e["event_date"]) >= today][:3]
         if upcoming:
             text += " Coming up next:\n\n" + "\n".join(_event_line(e) for e in upcoming)
@@ -568,7 +568,7 @@ def compose_exam(ctx: GroundedContext) -> str:
     today = now_ist().date()
     end_start = next((e for e in window if re.search(r"end semester examination starts", e["event_name"], re.I)), None)
     end_end = next((e for e in window if re.search(r"end semester exam ends", e["event_name"], re.I)), None)
-    text = f"The exam timetable for {label} hasn't been published in ORION yet."
+    text = f"The exam timetable for {label} hasn't been published yet."
     if end_start and date.fromisoformat(end_start["event_date"]) >= today:
         text += (f" From the academic calendar, the end semester exams run from **{fmt_date(end_start['event_date'])}**"
                  + (f" to **{fmt_date(end_end['event_date'])}**" if end_end else "") + ", so it will fall in that window.")
@@ -748,23 +748,23 @@ def _quote_lines(text: str) -> list[str]:
 
 
 def _no_document_answer(ctx: GroundedContext) -> str:
-    return ("I couldn't find anything about that in ORION's campus documents (UG regulations, curricula, hostel rules, "
-            "anti-ragging documents and verification procedures), so I won't guess. The Academic Office or your "
-            "faculty advisor can confirm.")
+    return ("I couldn't find anything about that in the campus documents I have (UG regulations, curricula, hostel "
+            "rules, anti-ragging documents and verification procedures), so I won't guess. The Academic Office or "
+            "your faculty advisor can confirm.")
 
 
 # ---------------------------------------------------------------- out of scope
 
 _OUT_OF_SCOPE = {
-    "grades": ("I can't see grades, marks or CGPA — ORION doesn't store personal academic records. Your results are on "
+    "grades": ("I can't see grades, marks or CGPA — I don't store personal academic records. Your results are on "
                "the institute's academic portal, or ask your faculty advisor. I can explain how CGPA is calculated or "
                "tell you when results are published."),
-    "attendance": ("ORION doesn't track your attendance — your course faculty maintain it, and you can check it with them. "
+    "attendance": ("I don't track your attendance — your course faculty maintain it, and you can check it with them. "
                    "I can tell you the attendance rules if that helps (\"What is the attendance requirement?\")."),
-    "fees": ("ORION doesn't handle fee payments or balances — use the institute's official payment channels or the "
+    "fees": ("I don't handle fee payments or balances — use the institute's official payment channels or the "
              "Accounts section. I can tell you fee payment deadlines from the academic calendar."),
-    "general": ("I'm ORION, IIIT Kottayam's campus assistant, so I stick to campus information — your classes, "
-                "faculty, the mess menu, exams and deadlines, hostel rules and academic regulations."),
+    "general": ("I'm RION, ORION's campus assistant for IIIT Kottayam, so I stick to campus information — your "
+                "classes, faculty, the mess menu, exams and deadlines, hostel rules and academic regulations."),
 }
 
 _UNSUPPORTED = ("I'm not sure what you mean. You can ask me things like:\n\n"
@@ -856,4 +856,4 @@ def _no_structured_answer(ctx: GroundedContext) -> str:
         return "I couldn't find any upcoming classes in your timetable."
     if "profile" in warning:
         return "I don't have a student profile for your account yet. Complete registration so I can show your timetable."
-    return "I couldn't find that in ORION's campus data." + (f" ({warning})" if warning else "")
+    return "I couldn't find that in the campus data I have." + (f" ({warning})" if warning else "")

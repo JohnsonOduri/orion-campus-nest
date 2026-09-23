@@ -76,7 +76,7 @@ const ROUTE_LABEL: Partial<Record<Route, string>> = {
 const VOICE_ERROR_MESSAGES: Record<VoiceInputError, string> = {
   "no-speech": "I didn't catch that. Tap the orb to try again.",
   "not-allowed":
-    "Microphone access is blocked. Allow it in your browser settings to talk to ORION.",
+    "Microphone access is blocked. Allow it in your browser settings to talk to RION.",
   network: "Voice recognition needs an internet connection.",
   aborted: "",
   unsupported: "Voice input isn't supported in this browser.",
@@ -237,7 +237,7 @@ function AssistantMessage({ msg, children }: { msg: ChatMessage; children?: Reac
         <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-primary">
           <Sparkles className="size-3.5" />
         </span>
-        <span className="font-medium text-foreground">ORION</span>
+        <span className="font-medium text-foreground">RION</span>
         {label ? <span>· {label}</span> : null}
       </div>
       <div className={cn("pl-8", isError && "text-destructive")}>
@@ -267,7 +267,8 @@ function EmptyState({ onPick }: { onPick: (text: string) => void }) {
   return (
     <div className="flex min-h-full flex-col items-center justify-center px-2 py-10 text-center">
       <ThinkingOrb state="idle" size={64} showLabel={false} />
-      <h2 className="mt-5 text-xl font-semibold tracking-tight">How can I help?</h2>
+      <p className="mt-3 text-xs font-semibold tracking-widest text-muted-foreground uppercase">RION</p>
+      <h2 className="mt-1 text-xl font-semibold tracking-tight">How can I help?</h2>
       <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
         Ask about your classes, faculty, the mess menu or campus rules — type, or tap the mic and
         talk.
@@ -336,8 +337,8 @@ function Composer({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Message ORION"
-        aria-label="Message ORION"
+        placeholder="Message RION"
+        aria-label="Message RION"
         enterKeyHint="send"
         className="max-h-40 min-h-11 flex-1 resize-none bg-transparent py-2.5 text-base leading-6 outline-none placeholder:text-muted-foreground md:text-[15px]"
       />
@@ -346,8 +347,8 @@ function Composer({
         variant="ghost"
         size="icon"
         onClick={onMic}
-        aria-label="Talk to ORION"
-        title="Talk to ORION"
+        aria-label="Talk to RION"
+        title="Talk to RION"
         className="size-11 shrink-0 rounded-full"
       >
         <Mic className="size-5" />
@@ -464,7 +465,7 @@ export function AiChatPanel({
       if (fallbackNotified) return;
       fallbackNotified = true;
       toast.message("Using your device's voice", {
-        description: "ORION's neural voice isn't reachable right now.",
+        description: "RION's neural voice isn't reachable right now.",
       });
     });
     return () => {
@@ -537,7 +538,7 @@ export function AiChatPanel({
       const message =
         error instanceof ApiError
           ? error.message
-          : "I couldn't reach ORION's server. Check your connection and try again.";
+          : "I couldn't reach RION's server. Check your connection and try again.";
       setMessages((m) => [
         ...m,
         { id: crypto.randomUUID(), role: "ai", text: message, retryOf: userId },
@@ -601,7 +602,7 @@ export function AiChatPanel({
   }
 
   function startListening() {
-    ttsService.stop(); // barge-in: never listen while ORION is talking
+    ttsService.stop(); // barge-in: never listen while RION is talking
     window.clearTimeout(errorTimerRef.current);
     const turn = ++voiceTurnRef.current;
     setVoiceTranscript("");
@@ -744,7 +745,7 @@ export function AiChatPanel({
           busy={processing}
         />
         <p className="mt-2 hidden text-center text-[11px] text-muted-foreground sm:block">
-          ORION answers from campus data and can still make mistakes.
+          RION answers from campus data and can still make mistakes.
         </p>
       </div>
 
