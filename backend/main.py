@@ -8,6 +8,7 @@ cookie session transport (D7).
 
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -67,4 +68,8 @@ app.include_router(campus.router)
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    # RENDER_GIT_COMMIT is set by Render for every deploy; locally it is
+    # absent. Lets a deploy be verified ("is my fix actually live?") without
+    # guessing from behaviour.
+    commit = os.environ.get("RENDER_GIT_COMMIT") or os.environ.get("GIT_COMMIT") or "dev"
+    return {"status": "ok", "commit": commit[:7]}

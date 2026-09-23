@@ -50,3 +50,12 @@ def test_invalid_samesite_value_rejected(monkeypatch):
 def test_samesite_is_case_and_whitespace_insensitive(monkeypatch):
     config = _reload_config(monkeypatch, COOKIE_SAMESITE=" Strict ")
     assert config.COOKIE_SAMESITE == "strict"
+
+
+def test_health_reports_the_deployed_commit(monkeypatch):
+    """Deploys are verified by commit, not by guessing from behaviour."""
+    import main
+
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "abcdef1234567890")
+    body = main.health()
+    assert body["status"] == "ok" and body["commit"] == "abcdef1"
