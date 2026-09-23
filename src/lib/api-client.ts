@@ -5,7 +5,25 @@ import { getRequest } from "@tanstack/react-start/server";
 // live in httpOnly cookies set by that service (design decision D7) — the
 // browser never sees a Supabase access token directly, so every call here
 // carries `credentials: "include"` and nothing else needs to attach auth.
-const API_BASE_URL = import.meta.env["VITE_API_BASE_URL"] ?? "http://localhost:8000";
+const REAL_API_BASE_URL = import.meta.env["VITE_API_BASE_URL"] ?? "http://localhost:8000";
+
+// The browser calls its OWN origin at "/be" (proxied to REAL_API_BASE_URL
+// server-side — src/lib/backend-proxy.ts, src/server.ts), not the API
+// directly. The frontend (Vercel) and API (Render) are different
+// registrable domains, so a direct browser fetch is cross-site; Safari/
+// WebKit — which is every iOS browser, Chrome included, since Apple
+// requires that engine — blocks third-party cookies outright regardless of
+// SameSite=None; Secure, so the session cookie from a direct cross-site
+// call silently never persists there (confirmed live: login completed but
+// bounced back to /login on iOS Chrome, worked everywhere Chrome runs its
+// own engine). Routing through this app's own origin keeps the cookie
+// first-party for every browser. SSR loaders are unaffected: they call
+// REAL_API_BASE_URL directly and forward the incoming Cookie header by
+// hand (`getCookieHeader` below) — there's no browser cookie jar or
+// same-site policy involved in a server-to-server call.
+const API_BASE_URL = createIsomorphicFn()
+  .server(() => REAL_API_BASE_URL)
+  .client(() => "/be");
 
 export class ApiError extends Error {
   status: number;
@@ -28,7 +46,7 @@ const getCookieHeader = createIsomorphicFn()
 
 async function send(path: string, init?: RequestInit): Promise<Response> {
   const cookie = getCookieHeader();
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL()}${path}`, {
     ...init,
     credentials: "include",
     headers: {
@@ -83,5 +101,5 @@ export function apiDelete<T>(path: string): Promise<T> {
 }
 
 export function apiBaseUrl(): string {
-  return API_BASE_URL;
+  return API_BASE_URL();
 }
