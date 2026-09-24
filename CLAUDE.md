@@ -718,6 +718,18 @@ Rules that must not be regressed:
   clean 400, not an opaque 500.
 - The frontend reaches all of this through `src/lib/api-client.ts`, which
   forwards the incoming `Cookie` header during SSR.
+- **Query understanding is layered and each layer is separately testable**
+  (2026-09-24, docs/query-router.md): `followup` (text rewrite, then
+  plan-level slot inheritance) → `router.classify` → `tempo` (relative
+  dates resolved ONCE onto `QueryPlan.resolved_date`) → retrieval →
+  `compose` (relevance floor before any passage is quoted). Rules that
+  must not regress: a structured-domain question never falls through to
+  document search; retrieval never re-parses a date phrase the router
+  already resolved; a document passage below the relevance floor is not
+  shown at all. Failures are attributed per stage by
+  `scripts/eval_pipeline.py` (ROUTER / ENTITY_RESOLUTION /
+  DATE_RESOLUTION / RETRIEVAL / ANSWER_GROUNDING); every answer logs a
+  trace, and `ORION_DEBUG_TRACE=1` returns it from `/ai/ask` (dev only).
 - **Voice output goes through `ttsService` (`src/lib/ai/tts.ts`) only.** UI
   code never calls `speechSynthesis` directly. As of 2026-09-23 there is no
   backend TTS at all: `KokoroBrowserProvider` (`src/lib/ai/tts-providers.ts`)

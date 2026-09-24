@@ -714,6 +714,35 @@ def _cohort_label(
     return f"Under the **{title}**"
 
 
+# Confidence (share of the question's own key terms the chosen clause
+# covers, documents.best_passages) needed to quote a passage as the answer.
+_QUOTE_CONFIDENCE = 0.34
+# Below this, the passage is not shown at all — not even hedged.
+_MIN_RELEVANCE = 0.20
+# A question the router recognised no pattern for at all reaches document
+# search as a last resort; there is no independent signal that it is even a
+# document question, so a near-miss passage is far likelier to be unrelated.
+# It has to clear the full quoting bar or ORION says it doesn't have it.
+_FALLBACK_MIN_RELEVANCE = _QUOTE_CONFIDENCE
+
+
+# A positive signal from the router that this really is a document
+# question: it recognised a hostel/anti-ragging/procedure/regulation topic,
+# or the question named a cohort. Without one of these, reaching document
+# search only means nothing else matched.
+_DOCUMENT_SIGNALS = ("category", "document_type", "overview", "cohort_ref")
+
+
+def _is_document_question(plan_hints: dict[str, str]) -> bool:
+    return any(plan_hints.get(k) for k in _DOCUMENT_SIGNALS)
+
+
+def _relevance_floor(plan_hints: dict[str, str]) -> float:
+    """Below this, nothing is shown. A question the router only *guessed*
+    was a document question has to clear the full quoting bar."""
+    return _MIN_RELEVANCE if _is_document_question(plan_hints) else _FALLBACK_MIN_RELEVANCE
+
+
 def _citation(p: documents.Passage) -> str:
     sec = p.section_title or ""
     if not (re.match(r"^(R\.)?\d", sec) or (sec and len(sec) < 60 and not sec.isupper())):
@@ -765,7 +794,15 @@ def compose_documents(ctx: GroundedContext, cohort_family: Optional[str]) -> tup
     p = passages[0]
     source = _citation(p)
     quote = "\n>\n".join(f"> {line}" for line in _quote_lines(p.text))
-    if confidence < 0.34:
+    # Relevance floor. Full-text search always returns its best row, however
+    # weak — without a floor, "Where is Dr. X's cabin?" came back quoting an
+    # anti-ragging committee memo, and a free-period question came back with
+    # curriculum text that merely contained the word "Lectures". A retrieved
+    # passage that doesn't actually cover the question is worse than saying
+    # so: it reads as sourced and authoritative while being unrelated.
+    if confidence < _relevance_floor(plan_hints):
+        return (_no_document_answer(ctx), confidence, [])
+    if confidence < _QUOTE_CONFIDENCE:
         text = ("I couldn't find a rule that answers that directly. The closest thing in the documents I have is "
                 f"this, from the **{p.document_title}**:\n\n{quote}\n\nIf that's not it, the Academic Office can help.")
         return text + source_line(source), confidence, passages

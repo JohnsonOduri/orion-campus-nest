@@ -190,7 +190,46 @@ asked in the same conversation as the line above it.
 - asdkfj qwer nonsense query → didn't understand + examples
 - Who will win the IPL this year? → out of scope
 
-## 15. Semantic search & cohort isolation (post-embedding-backfill, 2026-09-23)
+## 15. Query-understanding regressions (2026-09-24)
+
+Each of these was answered from the wrong source, or with the wrong date,
+in the live app. Per-stage expectations for them live in
+`scripts/eval_pipeline.py` (which attributes a failure to the router /
+entity resolution / date resolution / retrieval / grounding); they are
+repeated here so the broad run covers them too.
+
+### Faculty location — must never reach document search
+- Where is Dr. Anisth S cabin? → Ansith S's office, or a "did you mean" between real names; never an anti-ragging memo
+- Where is Dr Anisth? → same (no attribute word in the question at all)
+- Where is Anisth's office? → same (possessive, no title)
+- Where is the cabin of Dr. Zzzz Nonexistent? → honest "couldn't find", never a document passage
+
+### Free periods — timetable, not curriculum PDFs
+- Is there any free class tomorrow? → tomorrow's gaps from the caller's own timetable
+- Is there any Free lectures? → today's gaps
+- Do I have a free period tomorrow? → tomorrow's gaps
+- When is my next free period? → today's gaps
+
+### Dates must be the date that was asked for
+- Tomorrow's breakfast? → tomorrow's breakfast, with tomorrow's date stated
+- whats for lunch tomorow → tomorrow's lunch (misspelled day still resolves)
+- What is my timetable for next Friday? → that Friday's classes, date stated
+
+### Follow-ups that carry conversational state
+- What's for lunch today?
+>> tomorrow?
+>> what about dinner?
+- What is my next class?
+>> what about Friday?
+- Tell me about Dr. Manu Madhavan
+>> Where is his cabin?
+
+### Research topics — phrasing must not defeat the match
+- Who researches computer vision on campus? → computer-vision faculty (the "on campus" tail is not part of the topic)
+- Who works on cryptography and network security? → faculty in either area
+- Recommend someone for quantum computing. → quantum-computing faculty
+
+## 16. Semantic search & cohort isolation (post-embedding-backfill, 2026-09-23)
 
 Every faculty/document answer here should be traceable to real data — no
 faculty name or rule invented, no rule from one cohort presented as if it

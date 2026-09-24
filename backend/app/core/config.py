@@ -78,6 +78,14 @@ if COOKIE_SAMESITE == "none" and not COOKIE_SECURE:
 # see src/lib/ai/tts-providers.ts and docs/tts.md) — this service does not
 # perform, proxy, or configure TTS at all.
 
+# Developer-only answer tracing. When on, POST /ai/ask also returns the
+# routing/retrieval trace (intent, resolved date, entities, source,
+# warnings) so a wrong answer can be attributed to a pipeline stage instead
+# of guessed at. OFF by default and expected to stay off in production: the
+# trace exposes routing internals and document scores that no student
+# should see. The same trace is always written to the server log either way.
+DEBUG_TRACE: bool = (os.environ.get("ORION_DEBUG_TRACE", "") or "").strip().lower() in {"1", "true", "yes"}
+
 
 def require_configured() -> None:
     """Fail fast and loudly at startup rather than on the first request."""

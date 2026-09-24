@@ -10,9 +10,12 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from backend.query.router import classify, detect_cohort_reference, strip_cohort_noise  # noqa: E402
+from backend.query import tempo  # noqa: E402
 from backend.query.types import RouteType, StructuredIntent  # noqa: E402
 
 
@@ -414,6 +417,9 @@ def test_plan_never_carries_fabricated_answer_data():
         "structured_intent",
         "topic_text",
         "meal",
+        # A date the router resolved from the question's own words — a
+        # routing decision, not retrieved data (backend/query/tempo.py).
+        "resolved_date",
         "course_code",
         "semantic_filters",
         "reasoning",
@@ -421,3 +427,64 @@ def test_plan_never_carries_fabricated_answer_data():
     }
     # hints are phrasing cues taken from the question itself, never data
     assert all(isinstance(v, str) for v in d["hints"].values())
+
+
+# --------------------------------------------------- live-bug regressions
+
+@pytest.mark.parametrize("query", [
+    "Where is Dr. Anisth S cabin?",     # no possessive, name ends in an initial
+    "Where is Dr Anisth?",              # no attribute word at all
+    "Where is Anisth's office?",        # possessive, no title
+    "Dr Kala S email",                  # attribute after the name, no question
+    "Where is the cabin of Dr. Ansith S?",
+])
+def test_faculty_location_questions_never_reach_document_search(query):
+    """All five phrasings ask one thing: where a person sits. Live, the
+    first two fell through the whole router into full-text document search
+    and came back quoting an anti-ragging committee memo."""
+    plan = classify(query)
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.FACULTY_LOOKUP
+    assert plan.topic_text
+
+
+def test_faculty_name_capture_keeps_a_trailing_initial():
+    """"Anisth S" must not be truncated to "Anisth" — under IGNORECASE an
+    optional possessive `s?` silently ate the initial."""
+    assert classify("Where is Dr. Anisth S cabin?").topic_text == "Anisth S"
+
+
+@pytest.mark.parametrize("query", [
+    "Is there any free class Tomorrow?",
+    "Is there any Free lectures?",
+    "Do I have a free period tomorrow?",
+    "When is my next free period?",
+    "free period on monday?",
+])
+def test_free_period_questions_route_to_the_timetable(query):
+    """Live, "free class"/"free lecture" phrasings matched no timetable
+    pattern and were answered from curriculum PDFs that happened to contain
+    the word "Lectures"."""
+    plan = classify(query)
+    assert plan.route == RouteType.STRUCTURED
+    assert plan.structured_intent == StructuredIntent.FREE_TIME
+    assert plan.resolved_date, "a free-period answer must be pinned to a date"
+
+
+def test_classroom_question_is_not_mistaken_for_a_faculty_lookup():
+    assert classify("Where is my class room?").structured_intent == StructuredIntent.CLASSROOM
+    assert classify("Where is my next class?").structured_intent == StructuredIntent.CLASSROOM
+
+
+@pytest.mark.parametrize("query,intent", [
+    ("Tomorrow's breakfast?", StructuredIntent.MESS_ON_DAY),
+    ("What's for lunch today?", StructuredIntent.MESS_TODAY),
+    ("What classes do I have tomorrow?", StructuredIntent.DAY_OF_WEEK_TIMETABLE),
+])
+def test_day_referencing_plans_carry_a_resolved_date(query, intent):
+    """The date has to travel on the QueryPlan: retrieval must not re-parse
+    "tomorrow" for itself, and the answer writer must not guess its own
+    "today" (backend/query/tempo.py)."""
+    plan = classify(query)
+    assert plan.structured_intent == intent
+    assert plan.resolved_date == tempo.resolve_to_date(tempo.day_reference(query)).isoformat()

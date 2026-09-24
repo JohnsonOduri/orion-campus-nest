@@ -28,7 +28,7 @@ import re
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 from typing import Any, Optional
 
-from . import embeddings
+from . import embeddings, tempo
 from .types import QueryPlan, RetrievalResult, SemanticSnippet, StructuredFact, StructuredIntent
 
 logger = logging.getLogger("orion.retrieval")
@@ -47,15 +47,15 @@ _LEGACY_MINILM_MODEL = None
 # 20260921000004_timetable_ist_timezone_fix.sql); these two helpers keep
 # the Python-side phrasing (today/tomorrow, gap notes, which weekday
 # "today" resolves to) consistent with that, not silently drifted from it.
-_IST_OFFSET = timedelta(hours=5, minutes=30)
+_IST_OFFSET = tempo.IST_OFFSET
 
 
 def _now_ist() -> datetime:
-    return datetime.now(timezone.utc) + _IST_OFFSET
+    return tempo.now_ist()
 
 
 def _today_ist() -> date:
-    return _now_ist().date()
+    return tempo.today_ist()
 
 
 def _embedding_provider() -> str:
@@ -307,11 +307,8 @@ def week_timetable(client: Any, on_date: Optional[str] = None) -> RetrievalResul
     return RetrievalResult(plan=_plan(StructuredIntent.WEEK_TIMETABLE), facts=facts, warnings=warnings)
 
 
-_WEEKDAY_TO_NUM = {
-    "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4,
-    "Friday": 5, "Saturday": 6, "Sunday": 7,
-}
-_WEEKDAY_NAME = {v: k for k, v in _WEEKDAY_TO_NUM.items()}
+_WEEKDAY_TO_NUM = tempo.WEEKDAY_TO_NUM
+_WEEKDAY_NAME = tempo.WEEKDAY_NAME
 
 
 def _day_name(day_of_week: Optional[int]) -> str:
@@ -319,31 +316,28 @@ def _day_name(day_of_week: Optional[int]) -> str:
 
 
 def _resolve_day_reference(day_ref: str) -> Optional[date]:
-    """"yesterday" / "tomorrow" / a named weekday -> an actual date. Shared
-    by both timetable (day_of_week_timetable) and mess (mess_on_day) — one
-    implementation instead of two near-identical ones."""
-    ref = day_ref.strip().lower()
-    today = _today_ist()
-    if ref == "yesterday":
-        return today - timedelta(days=1)
-    if ref == "tomorrow":
-        return today + timedelta(days=1)
-    target_num = _WEEKDAY_TO_NUM.get(day_ref.strip().capitalize())
-    if target_num is not None:
-        offset = (target_num - today.isoweekday()) % 7
-        return today + timedelta(days=offset)
-    return None
+    """"yesterday" / "tomorrow" / a named weekday -> an actual date.
+
+    Kept as the fallback for callers that only have the phrase (the REST
+    mess endpoints, direct unit tests). The normal request path no longer
+    reaches this: the router resolves the date once and passes it down as
+    `on_date` (tempo.py explains why)."""
+    return tempo.resolve_to_date(day_ref)
 
 
-def day_of_week_timetable(client: Any, day_ref: str) -> RetrievalResult:
+def day_of_week_timetable(client: Any, day_ref: str, on_date: Optional[date] = None) -> RetrievalResult:
     """"What classes do I have on Monday?", "what are my classes
     tomorrow?", "what did I have yesterday?" — resolves the actual
     referenced date (nearest upcoming occurrence for a named weekday,
     today counts if today already is that weekday) then calls
     orion_day_timetable for that specific date — same RPC and validity/
     status filtering as every other timetable query, just with the date
-    computed from the reference instead of always "today"."""
-    target = _resolve_day_reference(day_ref)
+    computed from the reference instead of always "today".
+
+    `on_date` is the date the router already resolved (QueryPlan.
+    resolved_date) — preferred over re-parsing `day_ref` here so the date
+    the answer talks about is provably the date that was queried."""
+    target = on_date or _resolve_day_reference(day_ref)
     if target is None:
         return RetrievalResult(
             plan=_plan(StructuredIntent.DAY_OF_WEEK_TIMETABLE),
@@ -631,13 +625,16 @@ def mess_week(client: Any, meal: Optional[str] = None) -> RetrievalResult:
     return RetrievalResult(plan=_plan(StructuredIntent.MESS_WEEK), facts=facts, warnings=warnings)
 
 
-def mess_on_day(client: Any, day_ref: str, meal: Optional[str] = None) -> RetrievalResult:
+def mess_on_day(client: Any, day_ref: str, meal: Optional[str] = None, on_date: Optional[date] = None) -> RetrievalResult:
     """"Yesterday's dinner", "what's for lunch tomorrow", "mess menu on
     Monday" — resolves the actual referenced date (never silently falling
     back to today's menu, the bug found live: mess_today() always used
     date.today() regardless of what the query asked for) and reuses the
-    same weekly-rotation fallback every other mess lookup uses."""
-    target = _resolve_day_reference(day_ref)
+    same weekly-rotation fallback every other mess lookup uses.
+
+    `on_date` is the router's already-resolved date (QueryPlan.
+    resolved_date); it wins over re-parsing `day_ref`."""
+    target = on_date or _resolve_day_reference(day_ref)
     if target is None:
         return RetrievalResult(
             plan=_plan(StructuredIntent.MESS_ON_DAY),

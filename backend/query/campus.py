@@ -395,13 +395,36 @@ _TOPIC_ALIASES = {
 }
 
 
+def _topic_variants(topic: str) -> list[list[str]]:
+    """Token sets to try, best first: the whole topic, then each part of a
+    compound one.
+
+    A question like "who works on cryptography and network security?" is
+    asking about either area, but `research_interests` stores them as
+    separate semicolon-separated phrases ("Cryptography; Network
+    Security"), so requiring one phrase to cover every token of the whole
+    compound matched nobody — confirmed live against the real directory."""
+    raw = topic.strip()
+    candidates = [raw]
+    parts = [p.strip() for p in re.split(r"\s*(?:,|&|\band\b|\bor\b)\s*", raw) if p.strip()]
+    if len(parts) > 1:
+        candidates.extend(parts)
+    variants: list[list[str]] = []
+    for candidate in candidates:
+        expanded = _TOPIC_ALIASES.get(candidate.lower(), candidate)
+        tokens = [t for t in _tokens(expanded) if len(t) > 1]
+        if tokens and tokens not in variants:
+            variants.append(tokens)
+    return variants
+
+
 def faculty_research(client: Any, topic: str, include_schedule: bool, top_k: int = 5) -> RetrievalResult:
     """Lexical match on research_interests: every phrase is compared to the
     topic (all topic words present = strong match), so "NLP" and "natural
-    language processing" both work without embeddings."""
-    raw = topic.strip()
-    expanded = _TOPIC_ALIASES.get(raw.lower(), raw)
-    phrase_tokens = [t for t in _tokens(expanded) if len(t) > 1]
+    language processing" both work without embeddings. A compound topic is
+    also tried part by part (_topic_variants)."""
+    variants = _topic_variants(topic)
+    phrase_tokens = variants[0] if variants else []
     if not phrase_tokens:
         return RetrievalResult(plan=_plan(StructuredIntent.FACULTY_RESEARCH), warnings=[f"no topic found in {topic!r}"])
     rows = (
@@ -417,16 +440,20 @@ def faculty_research(client: Any, topic: str, include_schedule: bool, top_k: int
     for f in rows:
         interests = [p.strip() for p in re.split(r"[;,\n]", f.get("research_interests") or "") if p.strip()]
         best, hits, first_pos = 0.0, [], len(interests)
-        for pos, p in enumerate(interests):
-            pt = _tokens(p)
-            covered = sum(1 for t in phrase_tokens if t in pt or any(x.startswith(t) for x in pt if len(t) >= 4))
-            if covered:
-                s = covered / len(phrase_tokens)
-                if s >= 0.99:
+        for variant in variants:
+            threshold = 1.0 if len(variant) <= 2 else 0.66
+            for pos, p in enumerate(interests):
+                pt = _tokens(p)
+                covered = sum(1 for t in variant if t in pt or any(x.startswith(t) for x in pt if len(t) >= 4))
+                if not covered:
+                    continue
+                s = covered / len(variant)
+                if s >= 0.99 and p not in hits:
                     hits.append(p)
                     first_pos = min(first_pos, pos)
-                best = max(best, s)
-        if best >= (1.0 if len(phrase_tokens) <= 2 else 0.67):
+                if s >= threshold:
+                    best = max(best, s)
+        if best > 0:
             # A topic listed first is more likely their main area than one listed tenth.
             scored.append((best + 0.3 / (1 + first_pos) + 0.05 * len(hits), f, hits))
     scored.sort(key=lambda t: (-t[0], t[1]["full_name"]))
@@ -636,13 +663,17 @@ def my_courses(client: Any) -> RetrievalResult:
                            warnings=[] if facts else ["no courses found in your active timetable"])
 
 
-def free_time(client: Any, day_ref: str) -> RetrievalResult:
-    if day_ref == "today":
+def free_time(client: Any, day_ref: str, on_date: Optional[date] = None) -> RetrievalResult:
+    """Gaps in the caller's own timetable for one day — "when am I free
+    today", "do I have a free period tomorrow", "any free classes on
+    Friday". `on_date` is the date the router already resolved
+    (QueryPlan.resolved_date); it is the date actually queried, so the
+    answer can never talk about a different day than it looked up."""
+    target = on_date or retrieval._resolve_day_reference(day_ref) or today_ist()
+    if target == today_ist():
         result = retrieval.day_timetable(client)
-        target = today_ist()
     else:
-        result = retrieval.day_of_week_timetable(client, day_ref)
-        target = retrieval._resolve_day_reference(day_ref) or today_ist()
+        result = retrieval.day_of_week_timetable(client, day_ref, on_date=target)
     for f in result.facts:
         f.data["_date"] = target.isoformat()
     result.plan = _plan(StructuredIntent.FREE_TIME)

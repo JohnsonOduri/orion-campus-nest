@@ -12,6 +12,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import re
+from datetime import date
 from typing import Any, Optional
 
 from . import campus, documents, retrieval
@@ -51,6 +52,20 @@ def answer_query(client: Any, query: str, *, profile: Optional[dict] = None, pla
     # richer one (hints, topic, reasoning) for composing and auditing.
     result.plan = plan
     return build_context(result)
+
+
+def _plan_date(plan: QueryPlan) -> Optional[date]:
+    """The date the router already resolved for this question
+    (QueryPlan.resolved_date). Retrieval gets this rather than re-parsing
+    "tomorrow" for itself, so the date queried and the date the answer
+    names are the same date by construction (backend/query/tempo.py)."""
+    if not plan.resolved_date:
+        return None
+    try:
+        return date.fromisoformat(plan.resolved_date)
+    except ValueError:
+        logger.warning("ignoring unparseable QueryPlan.resolved_date %r", plan.resolved_date)
+        return None
 
 
 def _link_entities(client: Any, plan: QueryPlan) -> QueryPlan:
@@ -119,9 +134,9 @@ def _dispatch(client: Any, plan: QueryPlan, profile: Optional[dict]) -> Retrieva
     if intent == StructuredIntent.WEEK_TIMETABLE:
         return retrieval.week_timetable(client)
     if intent == StructuredIntent.DAY_OF_WEEK_TIMETABLE:
-        return retrieval.day_of_week_timetable(client, plan.topic_text or "")
+        return retrieval.day_of_week_timetable(client, plan.topic_text or "", on_date=_plan_date(plan))
     if intent == StructuredIntent.FREE_TIME:
-        return campus.free_time(client, plan.topic_text or "today")
+        return campus.free_time(client, plan.topic_text or "today", on_date=_plan_date(plan))
     if intent == StructuredIntent.CLASSROOM:
         return campus.classroom(client, profile)
     if intent == StructuredIntent.FACULTY_FOR_COURSE:
@@ -145,7 +160,7 @@ def _dispatch(client: Any, plan: QueryPlan, profile: Optional[dict]) -> Retrieva
     if intent == StructuredIntent.MESS_WEEK:
         return retrieval.mess_week(client, meal=plan.meal)
     if intent == StructuredIntent.MESS_ON_DAY:
-        return retrieval.mess_on_day(client, plan.topic_text or "", meal=plan.meal)
+        return retrieval.mess_on_day(client, plan.topic_text or "", meal=plan.meal, on_date=_plan_date(plan))
     if intent == StructuredIntent.ACADEMIC_CALENDAR:
         return campus.academic_calendar(client, plan.topic_text or plan.raw_query)
     if intent == StructuredIntent.EXAM_SCHEDULE:

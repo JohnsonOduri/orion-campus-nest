@@ -72,6 +72,13 @@ class QueryPlan:
     # 4-fact list for one day was enough to make the LLM hedge with "I
     # don't have that information" even though the exact fact was present).
     meal: Optional[str] = None
+    # The date a relative reference in the question ("tomorrow", "Monday",
+    # "the day after tomorrow") actually means, resolved ONCE here in ISO
+    # form and then carried through retrieval and composition. Retrieval
+    # must prefer this over re-parsing `topic_text`, and the answer writer
+    # must never derive its own "today" — a mismatch between the two was a
+    # real live bug ("tomorrow's breakfast" answered with today's menu).
+    resolved_date: Optional[str] = None
     # optional explicit filters the query text itself implied (rare — cohort
     # etc. normally comes from the authenticated user's academic context,
     # never from free-text query parsing, per AGENTS.md §17)
@@ -88,6 +95,7 @@ class QueryPlan:
             "structured_intent": self.structured_intent.value,
             "topic_text": self.topic_text,
             "meal": self.meal,
+            "resolved_date": self.resolved_date,
             "course_code": self.course_code,
             "semantic_filters": self.semantic_filters,
             "reasoning": self.reasoning,

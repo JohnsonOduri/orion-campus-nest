@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from backend.query import campus, compose, documents, followup, retrieval  # noqa: E402
+from backend.query import campus, compose, documents, followup, retrieval, tempo  # noqa: E402
 from backend.query.router import classify  # noqa: E402
 from backend.query.types import GroundedContext, QueryPlan, RouteType, SemanticSnippet, StructuredFact, StructuredIntent as I  # noqa: E402
 
@@ -366,3 +366,94 @@ def test_requirement_question_prefers_the_clause_with_the_number():
     requirements" but R.5.1 states the 80% rule — the rule must win."""
     passages, _ = documents.best_passages("What is the attendance requirement?", [_snip(REGS)])
     assert "80% attendance" in passages[0].text
+
+
+# ------------------------------------------------- conversational state
+
+def test_inherit_plan_moves_only_the_day():
+    """"tomorrow?" after a lunch question keeps domain=mess and meal=lunch
+    and changes only the date — the conversational state is the plan, not
+    the sentence."""
+    previous = classify("What's for lunch today?")
+    nxt = followup.inherit_plan("tomorrow?", previous)
+    assert nxt is not None
+    assert nxt.structured_intent == I.MESS_ON_DAY
+    assert nxt.meal == "lunch"
+    assert nxt.resolved_date == tempo.resolve_to_date("tomorrow").isoformat()
+
+
+def test_inherit_plan_moves_only_the_meal():
+    previous = classify("What's for lunch tomorrow?")
+    nxt = followup.inherit_plan("what about dinner?", previous)
+    assert nxt is not None
+    assert nxt.meal == "dinner"
+    assert nxt.resolved_date == previous.resolved_date, "the day must not move"
+
+
+def test_inherit_plan_carries_a_timetable_question_to_another_day():
+    """The case text rewriting cannot reach: the previous sentence has no
+    day slot to substitute into."""
+    previous = classify("What is my next class?")
+    nxt = followup.inherit_plan("what about Friday?", previous)
+    assert nxt is not None
+    assert nxt.structured_intent == I.DAY_OF_WEEK_TIMETABLE
+    assert nxt.resolved_date == tempo.resolve_to_date("Friday").isoformat()
+
+
+def test_inherit_plan_refuses_when_nothing_is_named():
+    previous = classify("What's for lunch today?")
+    assert followup.inherit_plan("thanks!", previous) is None
+    assert followup.inherit_plan("who is the registrar?", previous) is None
+
+
+def test_inherit_plan_refuses_a_long_message():
+    """A full question is a new question, even if it names a day."""
+    previous = classify("What's for lunch today?")
+    assert followup.inherit_plan(
+        "what are the hostel rules about visitors on Monday evenings", previous) is None
+
+
+def test_inherit_plan_refuses_a_document_question_as_context():
+    previous = classify("What is the attendance requirement?")
+    assert followup.inherit_plan("tomorrow?", previous) is None
+
+
+def test_meal_followup_keeps_the_day_the_conversation_moved_to():
+    """Live chain bug: "lunch today?" -> "tomorrow?" -> "what about dinner?"
+    answered with *today's* dinner, because the rewrite hardcoded "today"."""
+    history = _hist(("user", "tomorrow?"), ("assistant", "Lunch on Friday..."))
+    assert followup.resolve("what about dinner?", history) == "What's for dinner tomorrow?"
+
+
+# ----------------------------------------------- document relevance floor
+
+def _doc_ctx(query: str, snippet_text: str, hints: dict | None = None) -> GroundedContext:
+    snip = SemanticSnippet(content=snippet_text, document_title="Office Memorandum: Anti-Ragging Committee",
+                           section_title=None, page_start=1, page_end=1, similarity=0.4,
+                           cohort=None, category="policy", document_type="policy",
+                           valid_from=None, valid_until=None)
+    plan = QueryPlan(raw_query=query, route=RouteType.SEMANTIC, topic_text=query, hints=hints or {})
+    return GroundedContext(query=query, route=RouteType.SEMANTIC, facts=[], snippets=[snip],
+                           warnings=[], has_answer=True, plan=plan)
+
+
+def test_unrelated_passage_is_not_quoted_as_an_answer():
+    """Full-text search always returns its best row, however weak. Quoting
+    an anti-ragging memo at a question about a faculty member's office is
+    worse than saying nothing: it reads as sourced but is unrelated."""
+    ctx = _doc_ctx("Where is Dr. Anisth S cabin?",
+                   "Students Grievance and Anti Ragging Committee members are Dr. Bakkyaraj T, Dr. Panchami V.")
+    text, confidence, passages = compose.compose_documents(ctx, "21-25")
+    assert "Anti Ragging" not in text
+    assert passages == []
+    assert "couldn't find" in text.lower()
+
+
+def test_catch_all_fallback_questions_need_a_higher_bar():
+    """A question the router recognised no pattern for has no independent
+    signal that it is even a document question."""
+    ctx = _doc_ctx("Is there any free lecture?", "Synthesis Lectures on Mechanical Engineering 2.2 (2018).",
+                   hints={"fallback": "yes"})
+    text, _, passages = compose.compose_documents(ctx, "21-25")
+    assert "Synthesis Lectures" not in text
+    assert passages == []

@@ -23,6 +23,7 @@ stays a pure function of the current query (backend/query/router.py).
 from __future__ import annotations
 
 import hashlib
+import logging
 import sys
 
 from fastapi import APIRouter, HTTPException, Request
@@ -33,12 +34,16 @@ from fastapi import APIRouter, HTTPException, Request
 # one up through `app`.
 from query import campus, compose, followup, llm_client
 from query import service as query_service
+from query.router import classify
 from query.types import RouteType
 
+from ..core import config
 from ..core.cookies import read_access_token
 from ..core.ratelimit import ASK_LIMITER
 from .deps import get_current_client
 from ..schemas import AskRequest
+
+logger = logging.getLogger("orion.ai")
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -98,8 +103,21 @@ def answer(client, query: str, history: list[dict[str, str]] | None = None, prof
        reword the quoted rule; any failure keeps the quote.
     """
     resolved = followup.resolve(query, history or [])
+    plan = classify(resolved)
+    # Text rewriting can only move a slot that exists in the previous
+    # sentence. When the rewritten message still doesn't classify to
+    # anything ("what about Friday?" after "What is my next class?"), fall
+    # back to carrying the previous turn's QueryPlan and changing only the
+    # dimensions this message names (followup.inherit_plan). Deliberately
+    # last: a message that classifies on its own is never overridden by
+    # stale conversational context.
+    if history and _is_unresolved(plan):
+        inherited = followup.inherit_plan(query, classify(followup.previous_user_query(history)))
+        if inherited is not None:
+            plan = inherited
+
     profile = campus.student_context(client, profile_key)
-    context = query_service.answer_query(client, resolved, profile=profile)
+    context = query_service.answer_query(client, resolved, profile=profile, plan=plan)
     family = campus.cohort_family(profile)
 
     answer_source = "composer"
@@ -121,13 +139,50 @@ def answer(client, query: str, history: list[dict[str, str]] | None = None, prof
     else:
         text = compose.compose(context, family)
 
-    return {
+    trace = _trace(query, resolved, context, answer_source)
+    logger.info("ai.answer %s", trace)
+    payload = {
         **context.to_dict(),
         "answer": text,
         "answer_source": answer_source,
         # Kept for older clients: an answer is always produced now.
         "generation_available": True,
         "resolved_query": resolved if resolved != query else None,
+    }
+    # Developer-only: never sent to normal users (config.DEBUG_TRACE is off
+    # in production), so routing internals and document scores can't leak
+    # into the UI.
+    if config.DEBUG_TRACE:
+        payload["trace"] = trace
+    return payload
+
+
+def _is_unresolved(plan) -> bool:
+    """The router found nothing specific: either explicitly unsupported, or
+    it fell through to "question-shaped, try the documents"."""
+    return plan.route == RouteType.UNSUPPORTED or (plan.hints or {}).get("fallback") == "yes"
+
+
+def _trace(query: str, resolved: str, context, answer_source: str) -> dict:
+    """One line per answer naming every stage's decision, so a bad answer
+    can be attributed to a layer (router / entity / date / retrieval /
+    grounding) instead of guessed at from the reply text."""
+    plan = context.plan
+    return {
+        "query": query,
+        "resolved_query": resolved if resolved != query else None,
+        "route": plan.route.value,
+        "intent": plan.structured_intent.value,
+        "entities": {k: v for k, v in
+                     (("topic", plan.topic_text), ("course_code", plan.course_code), ("meal", plan.meal))
+                     if v},
+        "resolved_date": plan.resolved_date,
+        "source": "structured" if context.facts else ("documents" if context.snippets else "none"),
+        "facts": len(context.facts),
+        "snippets": len(context.snippets),
+        "warnings": context.warnings,
+        "answer_source": answer_source,
+        "routing_reason": plan.reasoning,
     }
 
 

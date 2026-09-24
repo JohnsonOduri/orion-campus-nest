@@ -14,6 +14,7 @@ import random
 import re
 from datetime import datetime
 
+from . import tempo
 from .types import QueryPlan, RouteType, StructuredIntent
 
 # ------------------------------------------------------------- structured
@@ -70,6 +71,32 @@ _FACULTY_POSSESSIVE_RE = re.compile(
 _FACULTY_ATTR_OF_RE = re.compile(
     rf"\b(?:{_FACULTY_ATTR_WORDS})\b.*?\b(?:of|for)\s+"
     r"(dr\.?|prof\.?|professor|mr\.?|ms\.?|mrs\.?)?\s*([A-Za-z][A-Za-z.\s]{1,40}?)\s*\??$",
+    re.IGNORECASE,
+)
+# The third word order, with no possessive apostrophe and no "of": "Where
+# is Dr. Anisth S cabin?", "Dr Kala S email". A title is REQUIRED here —
+# without one, "where is my class room" would look like a name followed by
+# an attribute word. The name capture is non-greedy and must be followed
+# immediately by the attribute word, so it can't run away across a
+# sentence; it accepts bare initials ("Anisth S", "Kala S"), which the
+# possessive pattern's [A-Z][a-z]+ name class cannot match at all — the
+# reason "Where is Dr. Anisth S cabin?" reached document search and came
+# back with an anti-ragging committee memo.
+# The optional possessive is spelled `(?:'s|')?`, not `'?s?` — under
+# IGNORECASE the latter's `s?` happily eats the trailing initial of a name
+# like "Anisth S", capturing "Anisth" and losing the initial.
+_FACULTY_ATTR_AFTER_NAME_RE = re.compile(
+    r"\b(?:dr|prof|professor|mr|ms|mrs)\.?\s+"
+    r"([A-Za-z][A-Za-z.\s]{1,40}?)(?:'s|')?\s+"
+    rf"(?:{_FACULTY_ATTR_WORDS})\b",
+    re.IGNORECASE,
+)
+# "Where is Dr X?" with no attribute word at all — asking where to find a
+# person is asking for their office. A title is required (so "where is my
+# next class" can't match), and the name runs to the end of the question.
+_FACULTY_WHERE_RE = re.compile(
+    r"\bwhere\s+(?:is|are|can\s+i\s+find)\s+(?:dr|prof|professor|mr|ms|mrs)\.?\s+"
+    r"([A-Za-z][A-Za-z.\s]{1,40}?)\s*\??$",
     re.IGNORECASE,
 )
 _MESS_WORD_RE = re.compile(
@@ -280,9 +307,18 @@ _MY_COURSES_RE = re.compile(
     r"\b(my|i)\b[^?]*\b(courses|subjects|papers)\b|\bwhat\s+(courses|subjects)\s+(am\s+i|do\s+i)\b",
     re.IGNORECASE,
 )
+# "free time/slot/period" plus the phrasings students actually use for the
+# same question — "any free classes tomorrow?", "is there any free lecture",
+# "do I have a free hour". Found live: "Is there any free class Tomorrow?"
+# and "Is there any Free lectures?" matched none of the original three
+# phrases, fell through the whole router to the document-search fallback,
+# and came back with curriculum text that happened to contain the word
+# "Lectures" — the single worst failure mode in the pipeline, because the
+# answer looks sourced but is unrelated to the question.
 _FREE_TIME_RE = re.compile(
-    r"\bwhen\s+am\s+i\s+free\b|\b(free\s+(time|slots?|periods?)|gaps?\s+between|breaks?\s+between)\b|"
-    r"\bam\s+i\s+free\b",
+    r"\bwhen\s+am\s+i\s+free\b|\b(free\s+(time|slots?|periods?|classe?s?|lectures?|hours?|days?)"
+    r"|gaps?\s+between|breaks?\s+between)\b|"
+    r"\bam\s+i\s+free\b|\b(free|off|no\s+class(es)?)\s+(periods?|slots?)\b",
     re.IGNORECASE,
 )
 _CLASSROOM_RE = re.compile(
@@ -308,12 +344,13 @@ _WHO_TEACHES_NAME_RE = re.compile(
 # "who researches X", "anyone working on X", "recommend a faculty for X".
 _RESEARCH_RE = re.compile(
     r"(?:\b(?:research(?:es|ing)?|stud(?:y|ies|ying)|specializ\w*|specialis\w*|expert\w*|interested|works?|working|guide|supervis\w*|mentor\w*)"
-    r"\s+(?:in|on|with|about|for)?\s*|\b(?:recommend|suggest)\w*\s+(?:a\s+|some\s+)?(?:faculty|professor|guide|mentor|supervisor)\w*\s+(?:member\s+)?(?:for|in|on)\s+)"
+    r"\s+(?:in|on|with|about|for)?\s*|\b(?:recommend|suggest)\w*\s+(?:a\s+|an\s+|some\s+)?"
+    r"(?:faculty|professor|guide|mentor|supervisor|someone|somebody|anyone|anybody)\w*\s+(?:member\s+)?(?:for|in|on)\s+)"
     r"(?P<topic>[a-z0-9][a-z0-9 ,&/+\-]{1,80})",
     re.IGNORECASE,
 )
 _RESEARCH_TRIGGER_RE = re.compile(
-    r"\b(who|which|any|anyone|anybody|faculty|professors?|recommend|suggest|guide|supervisor|mentor)\b",
+    r"\b(who|which|any|anyone|anybody|someone|somebody|faculty|professors?|recommend|suggest|guide|supervisor|mentor)\b",
     re.IGNORECASE,
 )
 _RESEARCH_VERB_RE = re.compile(
@@ -431,12 +468,19 @@ def _course_code(q: str) -> str | None:
 
 
 def _day_reference(q: str) -> str | None:
-    if _YESTERDAY_RE.search(q):
-        return "yesterday"
-    if _TOMORROW_RE.search(q):
-        return "tomorrow"
-    weekday_m = _WEEKDAY_RE.search(q)
-    return weekday_m.group(1).capitalize() if weekday_m else None
+    """The day a question refers to, as a normalised phrase. Delegates to
+    tempo.day_reference() so the router, retrieval and the answer writer
+    all recognise the same vocabulary ("tomorrow", "the next day", "day
+    after tomorrow", "next Friday", "tonight")."""
+    return tempo.day_reference(q)
+
+
+def _resolved_date(day_ref: str | None) -> str | None:
+    """The ISO date a day reference resolves to, for QueryPlan.
+    resolved_date — resolved once, here, so no layer below has to re-parse
+    the phrase or invent its own "today" (tempo.py explains the bug)."""
+    target = tempo.resolve_to_date(day_ref)
+    return target.isoformat() if target else None
 
 
 def _timetable_hints(q: str) -> dict[str, str]:
@@ -457,12 +501,26 @@ def _timetable_hints(q: str) -> dict[str, str]:
     return hints
 
 
+# Tails that say nothing about the research topic itself and only ever
+# hurt the match: "...on campus", "...here at IIIT", "...who is teaching
+# soon". Found live: "Who researches computer vision on campus?" searched
+# for the literal phrase "computer vision on campus" and matched nobody,
+# while "Who researches computer vision?" matched 13 people.
+_TOPIC_TAIL_RE = re.compile(
+    r"\s+(?:on|at|in|around|across)\s+(?:the\s+)?(?:campus|college|institute|university|iiit\w*|here)\b.*$"
+    r"|\s+(?:who|whose|that|which)\b.*$"
+    r"|\s+(?:here|currently|right\s+now|nowadays)\b.*$",
+    re.IGNORECASE,
+)
+
+
 def _research_topic(q: str) -> str | None:
     m = _RESEARCH_RE.search(q)
     if not m:
         return None
     topic = m.group("topic")
     topic = re.split(r"\s+(?:and|&)\s+(?:when|where|how|can|could)\b|[?.!]", topic, maxsplit=1)[0]
+    topic = _TOPIC_TAIL_RE.sub("", topic)
     topic = re.sub(r"\b(research|researches|area|areas|field|fields|topics?|domain)\s*$", "", topic, flags=re.IGNORECASE)
     topic = re.sub(r"^(the|a|an)\s+", "", topic.strip(), flags=re.IGNORECASE).strip(" ,")
     return topic or None
@@ -562,10 +620,12 @@ def classify(query: str) -> QueryPlan:
             return plan(RouteType.STRUCTURED, StructuredIntent.MESS_WEEK, meal=meal,
                         reasoning="matched mess/food + week pattern -> mess_week (live mess_menus)")
         day_ref = _day_reference(q)
-        if day_ref:
+        if day_ref and day_ref != "today":
             return plan(RouteType.STRUCTURED, StructuredIntent.MESS_ON_DAY, topic_text=day_ref, meal=meal,
-                        reasoning=f"matched mess/food + day reference ({day_ref}) -> mess_on_day (live mess_menus)")
+                        resolved_date=_resolved_date(day_ref),
+                        reasoning=f"matched mess/food + day reference ({day_ref} = {_resolved_date(day_ref)}) -> mess_on_day (live mess_menus)")
         return plan(RouteType.STRUCTURED, StructuredIntent.MESS_TODAY, meal=meal,
+                    resolved_date=_resolved_date("today"),
                     reasoning="matched mess/food pattern -> mess_today (live mess_menus)")
 
     # --- my courses / free time / classroom -----------------------------------------
@@ -573,8 +633,10 @@ def classify(query: str) -> QueryPlan:
         return plan(RouteType.STRUCTURED, StructuredIntent.MY_COURSES,
                     reasoning="asks for the caller's courses -> distinct courses in their live timetable")
     if _FREE_TIME_RE.search(q):
-        return plan(RouteType.STRUCTURED, StructuredIntent.FREE_TIME, topic_text=_day_reference(q) or "today",
-                    reasoning="free time -> gaps in the caller's day timetable")
+        free_day = _day_reference(q) or "today"
+        return plan(RouteType.STRUCTURED, StructuredIntent.FREE_TIME, topic_text=free_day,
+                    resolved_date=_resolved_date(free_day),
+                    reasoning=f"free period/class question -> gaps in the caller's timetable for {free_day} ({_resolved_date(free_day)})")
     if _CLASSROOM_RE.search(q) and not course_code:
         return plan(RouteType.STRUCTURED, StructuredIntent.CLASSROOM, topic_text=q,
                     reasoning="where is my class -> next class + section room allocation")
@@ -589,11 +651,13 @@ def classify(query: str) -> QueryPlan:
                     reasoning="matched week-timetable pattern -> orion_week_timetable")
     if _TODAY_TIMETABLE_RE.search(q) or (_DID_I_HAVE_RE.search(q) and re.search(r"\btoday\b", q, re.IGNORECASE)):
         return plan(RouteType.STRUCTURED, StructuredIntent.DAY_TIMETABLE, hints=hints,
+                    resolved_date=_resolved_date("today"),
                     reasoning="matched today-timetable pattern -> orion_day_timetable")
     day_ref = _day_reference(q)
     if day_ref and (_TIMETABLE_WORD_RE.search(q) or _DID_I_HAVE_RE.search(q) or _LAB_RE.search(q)):
         return plan(RouteType.STRUCTURED, StructuredIntent.DAY_OF_WEEK_TIMETABLE, topic_text=day_ref, hints=hints,
-                    reasoning=f"matched a day reference ({day_ref}) + class/timetable word -> orion_day_timetable for that date")
+                    resolved_date=_resolved_date(day_ref),
+                    reasoning=f"matched a day reference ({day_ref} = {_resolved_date(day_ref)}) + class/timetable word -> orion_day_timetable for that date")
     time_m = _TIME_RE.search(q)
     if time_m and _TIMETABLE_WORD_RE.search(q):
         time_text = time_m.group(0).strip()
@@ -633,6 +697,16 @@ def classify(query: str) -> QueryPlan:
         name = attr_of_m.group(2).strip()
         return plan(RouteType.STRUCTURED, StructuredIntent.FACULTY_LOOKUP, topic_text=name,
                     reasoning=f"matched 'email/office/cabin of/for <name>' ({name}) -> faculty table lookup")
+    attr_after_m = _FACULTY_ATTR_AFTER_NAME_RE.search(q)
+    if attr_after_m:
+        name = attr_after_m.group(1).strip().rstrip("'").strip()
+        return plan(RouteType.STRUCTURED, StructuredIntent.FACULTY_LOOKUP, topic_text=name,
+                    reasoning=f"matched '<title> <name> email/office/cabin' ({name}) -> faculty table lookup")
+    where_m = _FACULTY_WHERE_RE.search(q)
+    if where_m:
+        name = where_m.group(1).strip()
+        return plan(RouteType.STRUCTURED, StructuredIntent.FACULTY_LOOKUP, topic_text=name,
+                    reasoning=f"matched 'where is <title> <name>' ({name}) -> faculty table lookup (office)")
     meet_m = re.search(r"\b(?:meet|reach|find|contact)\s+(dr\.?|prof\.?|professor)\s+([A-Za-z][A-Za-z.\s]{1,40}?)\s*\??$", q, re.IGNORECASE)
     if meet_m:
         name = meet_m.group(2).strip()
@@ -704,6 +778,11 @@ _STOPWORDS = {
     "which", "who", "what", "faculty", "professor", "instructor", "work", "works",
     "working", "on", "in", "and", "when", "can", "i", "meet", "them", "is", "the",
     "a", "an", "recommend", "for", "of", "to", "with", "research", "interests",
+    # Never part of a research area — these leaked into the search phrase
+    # live ("NLP research who" matched nobody).
+    "whose", "that", "teaching", "teaches", "soon", "available", "free",
+    "someone", "somebody", "anyone", "anybody", "member", "campus", "here",
+    "s", "any", "there",
 }
 
 

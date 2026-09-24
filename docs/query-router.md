@@ -1,26 +1,54 @@
 # Query Router / Retrieval / Context Layer
 
-> **2026-09-22 — current architecture (supersedes the "LLM" and "embedding"
-> notes below where they conflict).** Answers no longer depend on Gemini:
+> **2026-09-24 — current architecture (supersedes the "LLM", "embedding"
+> and TypeScript-port notes below where they conflict; `src/lib/query/` no
+> longer exists — `backend/query/` is the one implementation).** Answers do
+> not depend on Gemini. One question flows through:
 >
-> 1. `followup.resolve()` turns "Who teaches it?" into a full question using
->    the last turns of the conversation.
-> 2. `router.classify()` — 25+ intents incl. academic calendar, exam windows,
->    announcements, wardens, institutional roles, research topics, my courses,
->    profile, classroom, free time, out-of-scope records; broad "what are the
->    hostel/anti-ragging rules" get an overview; unmatched *questions* go to
->    document search (after trying to recognise a course/faculty name).
-> 3. `service.answer_query()` dispatches to `retrieval.py` / `campus.py`
->    (Supabase, caller's JWT) or `documents.search()` — Postgres full-text
->    search via `search_document_chunks`, cohort-filtered in SQL.
-> 4. `compose.compose()` writes the Markdown reply from the rows / quotes the
->    best clause (`documents.best_passages`), always with a `*Source:*` line.
-> 5. `ai.answer()` optionally lets Gemini reword a quoted rule
->    (`ORION_LLM_MODE=auto|off`, circuit breaker on failure).
+> 1. **Conversational state** — `followup.resolve()` rewrites "Who teaches
+>    it?" into a full question from the last turns. When the rewritten
+>    message still classifies to nothing, `followup.inherit_plan()` carries
+>    the *previous turn's QueryPlan* and changes only the dimensions the
+>    follow-up names ("what about Friday?" after "What is my next class?").
+> 2. **Routing** — `router.classify()`, 25+ intents incl. academic calendar,
+>    exam windows, announcements, wardens, institutional roles, research
+>    topics, free periods, my courses, profile, classroom, out-of-scope
+>    records. Broad "what are the hostel/anti-ragging rules" get an
+>    overview; only unmatched *questions* fall through to document search.
+> 3. **Temporal resolution** — `tempo.py` turns "tomorrow"/"next Friday"/
+>    "tomorow" (misspellings included) into a real IST date **once**, and it
+>    travels on `QueryPlan.resolved_date`. Retrieval takes that date; no
+>    layer re-parses the phrase or derives its own "today".
+> 4. **Retrieval** — `service.answer_query()` dispatches to `retrieval.py` /
+>    `campus.py` (Supabase, caller's JWT) or `documents.search()` — Postgres
+>    full-text search via `search_document_chunks`, cohort-filtered in SQL,
+>    with an explicit cohort override when the question names one.
+> 5. **Grounding** — `compose.compose()` writes Markdown from the rows, or
+>    quotes the best clause (`documents.best_passages`), always with a
+>    `*Source:*` line. A **relevance floor** (`compose._relevance_floor`)
+>    discards a passage that doesn't actually cover the question instead of
+>    quoting it: full-text search always returns *something*, and an
+>    unrelated passage reads as sourced while being wrong.
+> 6. **Optional rewording** — `ai.answer()` may let Gemini reword a quoted
+>    rule (`ORION_LLM_MODE=auto|off`, circuit breaker on failure). Facts are
+>    never the LLM's to produce.
 >
-> Evaluation: `AI-task.md` (question bank) → `scripts/run_ai_task.py` →
-> `AI-task-results.md`. Vector search (`retrieval.semantic_search`,
-> `faculty_topic_and_schedule`) is kept as an optional path and still tested.
+> **Observability:** every answer logs a one-line trace (route, intent,
+> entities, resolved date, source, warnings, routing reason). Set
+> `ORION_DEBUG_TRACE=1` to also return it from `POST /ai/ask` — developer
+> only, off in production.
+>
+> **Evaluation:** two complementary harnesses.
+> - `AI-task.md` → `scripts/run_ai_task.py` → `AI-task-results.md`: broad
+>   coverage (152 questions), flags answers that look like misses.
+> - `scripts/eval_pipeline.py`: per-stage expectations (intent, resolved
+>   date, source, answer content) that attribute a failure to a **stage** —
+>   `ROUTER`, `ENTITY_RESOLUTION`, `DATE_RESOLUTION`, `RETRIEVAL`,
+>   `ANSWER_GROUNDING` — instead of leaving it to be guessed from the reply.
+>
+> Vector search (`retrieval.semantic_search`, `faculty_topic_and_schedule`)
+> is kept as an optional path and still tested, but is not what answers
+> document or faculty-topic questions today (see `docs/embeddings.md`).
 
 Deterministic query routing → structured/semantic/hybrid retrieval →
 grounding-ready context. No LLM call anywhere in this layer (see §5).
