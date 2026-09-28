@@ -10,25 +10,18 @@ something to call instead of reading mock-data.ts.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from fastapi import APIRouter, Request
 
-from .deps import get_current_client
+from query import campus
+
+from .deps import get_current_profile
 
 router = APIRouter(prefix="/announcements", tags=["announcements"])
 
 
 @router.get("")
 def list_announcements(request: Request):
-    client = get_current_client(request)
-    now_iso = datetime.now(timezone.utc).isoformat()
-    return (
-        client.table("announcements")
-        .select("id,title,content,category,department,batch,target_role,created_at,published_at")
-        .eq("status", "active")
-        .or_(f"valid_until.is.null,valid_until.gte.{now_iso}")
-        .order("created_at", desc=True)
-        .execute()
-        .data
-    )
+    """Live, unexpired announcements relevant to the caller: campus-wide
+    ones plus notices for their own class (campus.announcement_visible_to)."""
+    client, profile = get_current_profile(request)
+    return campus.current_announcements(client, profile)

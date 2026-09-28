@@ -389,22 +389,65 @@ def exam_schedule(client: Any, query: str, course_code: Optional[str]) -> Retrie
 
 # ------------------------------------------------------------ announcements
 
-def announcements(client: Any) -> RetrievalResult:
+ANNOUNCEMENT_FIELDS = ("id,title,content,category,department,batch,section,semester,target_role,created_at,"
+                       "published_at,valid_until,event_date,event_time,auto_published")
+
+
+def announcement_visible_to(row: dict, profile: Optional[dict]) -> bool:
+    """Campus-wide notices reach everyone; a class notice (a CR's quiz/exam
+    update, scoped by semester/department/section) reaches that class only.
+    Admins see all. Not a secrecy boundary — just who it's relevant to."""
+    if (profile or {}).get("role") == "ADMIN":
+        return True
+    p = profile or {}
+    for key in ("semester", "department", "batch", "section"):
+        want = row.get(key)
+        if want is not None and str(want) != str(p.get(key)):
+            return False
+    return True
+
+
+def current_announcements(client: Any, profile: Optional[dict], limit: int = 50) -> list[dict]:
     now_iso = datetime.now(timezone.utc).isoformat()
     rows = (
         client.table("announcements")
-        .select("id,title,content,category,department,batch,target_role,created_at,published_at,valid_until")
+        .select(ANNOUNCEMENT_FIELDS)
         .eq("status", "active")
         .or_(f"valid_until.is.null,valid_until.gte.{now_iso}")
         .order("created_at", desc=True)
-        .limit(5)
+        .limit(limit)
         .execute()
         .data
         or []
     )
-    facts = [StructuredFact(claim=r["title"], data=r, source="announcements (approved)") for r in rows]
-    return RetrievalResult(plan=_plan(StructuredIntent.ANNOUNCEMENTS), facts=facts,
-                           warnings=[] if facts else ["no current approved announcements"])
+    return [r for r in rows if announcement_visible_to(r, profile)]
+
+
+_NOTICE_WORDS = {"QUIZ": r"quiz|class\s+test", "ASSIGNMENT": r"assignment|homework|record|submission",
+                 "CLASS_UPDATE": r"cancel|resched|postpon|extra\s+class|make[\s-]?up|shift"}
+
+
+def announcements(client: Any, profile: Optional[dict] = None, notice: Optional[str] = None,
+                  course_code: Optional[str] = None) -> RetrievalResult:
+    """Current announcements the caller should see. With `notice` (QUIZ,
+    ASSIGNMENT, CLASS_UPDATE, NOTICE) only the class notices of that kind,
+    soonest event first — "when is the quiz?"."""
+    rows = current_announcements(client, profile)
+    if notice:
+        words = _NOTICE_WORDS.get(notice)
+        rows = [r for r in rows if (r.get("category") == notice) or (
+            words and re.search(words, f"{r.get('title')} {r.get('content')}", re.I)) or (
+            notice == "NOTICE" and r.get("section") is not None)]
+        if course_code:
+            code = re.sub(r"\s+", "", course_code.upper())
+            rows = [r for r in rows if code in re.sub(r"\s+", "", f"{r.get('title')} {r.get('content')}".upper())] or rows
+        today = datetime.now(timezone.utc).date().isoformat()
+        rows.sort(key=lambda r: (r.get("event_date") is None, r.get("event_date") or "", r.get("event_time") or ""))
+        rows = [r for r in rows if not r.get("event_date") or r["event_date"] >= today] or rows
+    facts = [StructuredFact(claim=r["title"], data={**r, "_notice": notice}, source="announcements") for r in rows[:5]]
+    plan = QueryPlan(raw_query="", route=RouteType.STRUCTURED, structured_intent=StructuredIntent.ANNOUNCEMENTS,
+                     hints={"notice": notice} if notice else {})
+    return RetrievalResult(plan=plan, facts=facts, warnings=[] if facts else ["no current announcements"])
 
 
 # ------------------------------------------------------------ hostel wardens

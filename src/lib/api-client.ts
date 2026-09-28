@@ -84,6 +84,17 @@ export function apiPost<T>(
   return request<T>(path, init);
 }
 
+// Raw file body (the backend sniffs the real type from the bytes; no
+// multipart dependency). Kept under ~4 MB — the /be proxy runs on Vercel,
+// whose request bodies are capped at 4.5 MB.
+export function apiUpload<T>(path: string, file: Blob): Promise<T> {
+  return request<T>(path, {
+    method: "POST",
+    body: file,
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+  });
+}
+
 export function apiDelete<T>(path: string): Promise<T> {
   return request<T>(path, { method: "DELETE" });
 }

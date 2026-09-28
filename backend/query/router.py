@@ -274,6 +274,29 @@ _PROFILE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Class notices a CR posts (2026-09-28, CR upload workflow): the quiz,
+# assignment and class-change questions only those notices can answer.
+_CLASS_NOTICE_RULES: list[tuple[str, re.Pattern[str]]] = [
+    ("QUIZ", re.compile(r"\b(quiz(zes)?|class\s+test|surprise\s+test)\b", re.I)),
+    ("ASSIGNMENT", re.compile(r"\b(assignments?|home\s*work|lab\s+records?)\b", re.I)),
+    ("CLASS_UPDATE", re.compile(
+        r"\b(class(es)?|lecture|lab|tutorial)s?\b[^?]{0,30}\b(cancel\w*|resched\w*|postpone\w*|prepone\w*|shifted)"
+        r"|\b(cancel\w*|resched\w*|postpone\w*)\b[^?]{0,20}\b(class|lecture|lab)"
+        r"|\b(extra|make[\s-]?up|additional|substitute)\s+(class|lecture|lab)", re.I)),
+    ("NOTICE", re.compile(r"\b(from\s+(my|our|the)\s+cr|class\s+(notice|announcement)s?|cr\s+(posted|said|notice))\b", re.I)),
+]
+_RULE_ASK_RE = re.compile(r"\b(rules?|polic(y|ies)|regulations?|penalt\w*|allowed|weightage|how\s+(is|are)\s+.*(graded|evaluated|marked))\b", re.I)
+
+
+def class_notice_kind(q: str) -> Optional[str]:
+    if _RULE_ASK_RE.search(q):
+        return None
+    for kind, pattern in _CLASS_NOTICE_RULES:
+        if pattern.search(q):
+            return kind
+    return None
+
+
 _ANNOUNCEMENT_RE = re.compile(
     r"\b(announcements?|notices?|notice\s*board|news|latest\s+updates?|what'?s\s+new|any\s+updates?)\b",
     re.IGNORECASE,
@@ -737,6 +760,13 @@ def _classify(query: str) -> QueryPlan:
 
     course_code = _course_code(q)
     timed = bool(_TIMING_WORD_RE.search(q))
+
+    # --- notices a CR posted for the class (quiz on Monday, lab cancelled) ------------
+    notice = class_notice_kind(q)
+    if notice:
+        return plan(RouteType.STRUCTURED, StructuredIntent.ANNOUNCEMENTS, topic_text=q, course_code=course_code,
+                    hints={"notice": notice},
+                    reasoning=f"{notice.lower()} question -> class announcements posted by the CR")
 
     # --- the academic calendar as something to reason over ------------------------
     cal = _calendar_plan(q, plan, course_code)

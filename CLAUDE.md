@@ -74,6 +74,13 @@ Can view relevant academic information and maintain permitted profile informatio
 ### CR
 Controlled data contributor. Can submit timetable files, mess menus, announcements, notices, screenshots, and batch/class information. A CR submission is never authoritative until approved.
 
+One deliberate exception (decided 2026-09-28, `docs/cr-workflow.md`): an
+**academic** class notice (quiz, exam, assignment, class update, deadline)
+that a CR posts for **their own class** goes live without review. The rule
+is enforced in the `announcements` insert policy (not only the API), capped
+at ~2 months, blocked when sensitive data is detected, audit-logged, and an
+admin can take it down. Timetable changes still always need admin approval.
+
 ### ADMIN
 Trusted data manager. Can approve/reject submissions, manage authoritative data, users/roles, faculty, announcements, documents, OCR verification, lifecycle, and audit logs.
 
@@ -228,6 +235,9 @@ backend/app/            # FastAPI service (added 2026-09-21)
   api/{auth,oauth,registration,cr,admin,timetable,faculty,mess,announcements,ai,deps}.py
   core/{config,cookies,redirects}.py
   services/{gotrue_http,supabase_clients}.py
+
+backend/cr_ingest/      # CR uploads: rules, vision OCR, timetable drafts (2026-09-28)
+  rules.py  vision.py  timetable_draft.py  pipeline.py
 
 backend/query/          # routing / retrieval / context / Gemini client
   router.py
@@ -692,9 +702,11 @@ oauth          /auth/oauth/google/set-session   (frontend-driven; browser
                drives the Google/PKCE handshake via supabase-js, POSTs the
                resulting tokens here once — see §13)
 registration   /auth/register                     -> complete_registration
-cr             /cr/access-request [+ /status]  /cr/announcements [GET, POST]
+cr             /cr/access-request [+ /status]  /cr/announcements [GET, POST, /preview]
+               /cr/uploads [+ /url]  /cr/timetable/{current,check,submit,submissions}
 admin          /admin/cr-requests [+ /{id}/review]
-               /admin/announcements [+ /{id}/review]
+               /admin/announcements [+ /{id}/review, /live, /{id}/archive]
+               /admin/timetable-submissions [+ /{id}/review]
 timetable      /timetable/day  /timetable/week  /timetable/next
 faculty        /faculty
 mess           /mess/today  /mess/week
@@ -798,9 +810,13 @@ Do not claim the system is finished. As of 2026-09-21:
   services are different "sites" and will NOT share Lax cookies).
 
 ### CR document upload / OCR pipeline
-- No Supabase Storage bucket exists; `ingestion_jobs` is 0 rows; no upload UI,
-  no OCR preview, no publish step. CR *access requests* and CR *announcements*
-  are built; CR *documents* are not.
+- **Built 2026-09-28 for timetables and class announcements**
+  (`docs/cr-workflow.md`, `backend/cr_ingest/`, bucket `cr-uploads`):
+  upload → OCR/extraction → CR edits → timetable changes need admin
+  approval (`review_cr_timetable`), academic notices for the CR's own
+  class go live immediately (enforced by RLS, audit-logged, admin can take
+  down). Still not built: regulation/policy *documents* (RAG corpus) from
+  CRs, and clean-up of abandoned uploads.
 
 ### Structured data
 - `exams` = 0 (no source document exists at all).

@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
+from cr_ingest import timetable_draft as td
+
 from .deps import require_role
-from ..schemas import ReviewDecisionRequest
+from ..schemas import ArchiveRequest, ReviewDecisionRequest
 from ..services.supabase_clients import rpc
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -70,6 +72,94 @@ def review_announcement(announcement_id: int, body: ReviewDecisionRequest, reque
             "p_rejection_reason": body.rejection_reason,
         },
     )
+
+
+def _people(client, ids: set) -> dict:
+    if not ids:
+        return {}
+    rows = client.table("profiles").select("id,full_name,email").in_("id", list(ids)).execute().data or []
+    return {r["id"]: r for r in rows}
+
+
+@router.get("/timetable-submissions")
+def pending_timetable_submissions(request: Request):
+    """Pending CR timetable proposals, each re-checked against the live
+    directory and compared with the class's current timetable — the admin
+    reviews what would actually change, with names resolved server-side
+    (not whatever the submission claims)."""
+    client, _ = require_role(request, {"ADMIN"})
+    rows = (
+        client.table("approval_requests")
+        .select("id,submitted_by,submitter_note,created_at,payload,source_file_path")
+        .eq("submission_type", "timetable_update")
+        .eq("approval_status", "pending")
+        .order("created_at")
+        .execute()
+        .data
+    ) or []
+    if not rows:
+        return []
+    directory = td.Directory.load(client)
+    people = _people(client, {r["submitted_by"] for r in rows})
+    out = []
+    for r in rows:
+        payload = r.get("payload") or {}
+        cls = payload.get("class") or {}
+        entries, issues = td.check(payload.get("entries") or [], directory)
+        current = td.current_entries(client, cls) if cls else []
+        out.append({
+            "id": r["id"],
+            "submitted_by": people.get(r["submitted_by"]) or {"id": r["submitted_by"]},
+            "note": r.get("submitter_note"),
+            "created_at": r["created_at"],
+            "class": cls,
+            "class_label": td.class_label(cls) if cls else "unknown class",
+            "valid_from": payload.get("valid_from"),
+            "valid_until": payload.get("valid_until"),
+            "entries": entries,
+            "issues": [i.to_dict() for i in issues],
+            "diff": td.diff(current, entries),
+            "current_count": len(current),
+            "source_file_path": r.get("source_file_path"),
+        })
+    return out
+
+
+@router.post("/timetable-submissions/{request_id}/review")
+def review_timetable_submission(request_id: int, body: ReviewDecisionRequest, request: Request):
+    client, _ = require_role(request, {"ADMIN"})
+    return rpc(client, "review_cr_timetable", {
+        "p_request_id": request_id,
+        "p_approve": body.approve,
+        "p_rejection_reason": body.rejection_reason,
+    })
+
+
+@router.get("/announcements/live")
+def live_announcements(request: Request):
+    """Everything students can see right now, newest first — including
+    notices CRs published without review, which an admin can take down."""
+    client, _ = require_role(request, {"ADMIN"})
+    rows = (
+        client.table("announcements")
+        .select("id,title,content,category,semester,department,section,event_date,event_time,valid_until,"
+                "auto_published,submitted_by,published_at,source_file_path")
+        .eq("status", "active")
+        .order("published_at", desc=True)
+        .limit(50)
+        .execute()
+        .data
+    ) or []
+    people = _people(client, {r["submitted_by"] for r in rows if r.get("submitted_by")})
+    for r in rows:
+        r["submitted_by"] = people.get(r.get("submitted_by")) or {"id": r.get("submitted_by")}
+    return rows
+
+
+@router.post("/announcements/{announcement_id}/archive")
+def archive_announcement(announcement_id: int, body: ArchiveRequest, request: Request):
+    client, _ = require_role(request, {"ADMIN"})
+    return rpc(client, "archive_announcement", {"p_id": announcement_id, "p_reason": body.reason})
 
 
 @router.get("/logs")

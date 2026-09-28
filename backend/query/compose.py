@@ -777,20 +777,59 @@ def compose_exam(ctx: GroundedContext) -> str:
 
 # ---------------------------------------------------------------- misc structured
 
+_NOTICE_NAMES = {"QUIZ": "quiz", "ASSIGNMENT": "assignment", "CLASS_UPDATE": "class change or cancellation",
+                 "NOTICE": "class notice"}
+
+
+def _event_when(a: dict) -> str:
+    if not a.get("event_date"):
+        return ""
+    when = f"**{fmt_date(a['event_date'])}**"
+    rel = relative_day(a["event_date"])
+    if rel in ("today", "tomorrow"):
+        when += f" ({rel})"
+    if a.get("event_time"):
+        t = str(a["event_time"])[:5]
+        hh, mm = int(t[:2]), t[3:5]
+        when += f" at {hh % 12 or 12}:{mm} {'PM' if hh >= 12 else 'AM'}"
+    return when
+
+
 def compose_announcements(ctx: GroundedContext) -> str:
+    notice = (ctx.plan.hints or {}).get("notice") if ctx.plan else None
     if not ctx.facts:
-        return "There are no current announcements right now. New ones show up here once an admin approves them."
-    parts = ["Here are the current announcements:"]
-    for f in ctx.facts:
-        a = f.data
-        when = (a.get("published_at") or a.get("created_at") or "")[:10]
-        body = (a.get("content") or "").strip()
-        if len(body) > 220:
-            body = body[:220].rsplit(" ", 1)[0] + "…"
-        parts.append(f"\n**{a['title']}**" + (f" · {fmt_date(when, False)}" if when else ""))
-        if body:
-            parts.append(body)
-    return "\n".join(parts) + source_line("announcements (approved)")
+        if notice:
+            return (f"No {_NOTICE_NAMES.get(notice, 'notice')} has been posted for your class. "
+                    "Your CR posts these in ORION — if you heard about one elsewhere, check with them.")
+        return "There are no current announcements right now."
+    parts = []
+    if notice and notice != "NOTICE":
+        first = ctx.facts[0].data
+        when = _event_when(first)
+        parts.append(f"**{first['title']}**" + (f" — {when}." if when else "."))
+        body = (first.get("content") or "").strip()
+        if body and body.lower() != first["title"].strip().lower():
+            parts.append(body[:400] + ("…" if len(body) > 400 else ""))
+        rest = ctx.facts[1:]
+        if rest:
+            parts.append("\nAlso posted:")
+            parts.extend(f"- **{f.data['title']}**" + (f" — {_event_when(f.data)}" if f.data.get("event_date") else "")
+                         for f in rest)
+    else:
+        parts.append("Here are the current announcements:")
+        for f in ctx.facts:
+            a = f.data
+            posted = (a.get("published_at") or a.get("created_at") or "")[:10]
+            when = _event_when(a)
+            body = (a.get("content") or "").strip()
+            if len(body) > 220:
+                body = body[:220].rsplit(" ", 1)[0] + "…"
+            head = f"\n**{a['title']}**" + (f" · {when}" if when else (f" · posted {fmt_date(posted, False)}" if posted else ""))
+            parts.append(head)
+            if body:
+                parts.append(body)
+    by_cr = any(f.data.get("auto_published") for f in ctx.facts)
+    return "\n".join(parts) + source_line("announcements" + (" (class notices posted by your CR)" if by_cr else ""))
 
 
 _WARDEN_ROLE = {"hostel_warden": "Warden", "assistant_warden": "Assistant warden", "standby_warden": "Standby warden",
