@@ -1,4 +1,4 @@
-"""Regenerate backend/query/data/protected_words.txt.
+"""Regenerate backend/query/data/protected_words.txt and name_words.txt.
 
 The spelling corrector (backend/query/lexicon.py) snaps typos to the nearest
 campus word. A real English word that happens to sit near a campus word
@@ -8,12 +8,18 @@ some campus word. Only those neighbours matter, which keeps the file small
 and makes the corrector behave identically on every machine (Render has no
 system dictionary).
 
+name_words.txt holds every word of every name in the institute directory
+(Data/iiit_kottayam_people.csv, the source faculty was built from): a name
+is never "corrected" into a campus word ("Manu sir" must not become "menu").
+
 Usage: .venv/bin/python scripts/build_lexicon_data.py [--dict /usr/share/dict/words]
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
+import re
 import sys
 from pathlib import Path
 
@@ -42,6 +48,15 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(sorted(keep)) + "\n")
     print(f"{len(keep)} protected words -> {out.relative_to(ROOT)}")
+
+    names: set[str] = set()
+    with (ROOT / "Data" / "iiit_kottayam_people.csv").open(encoding="utf-8-sig") as fh:
+        for row in csv.DictReader(fh):
+            names.update(w for w in re.findall(r"[a-z]+", (row.get("name") or "").lower()) if len(w) >= 3)
+    names -= {"dr", "prof", "mrs", "miss"}
+    name_out = out.parent / "name_words.txt"
+    name_out.write_text("\n".join(sorted(names)) + "\n")
+    print(f"{len(names)} name words -> {name_out.relative_to(ROOT)}")
     return 0
 
 

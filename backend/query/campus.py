@@ -387,6 +387,55 @@ def exam_schedule(client: Any, query: str, course_code: Optional[str]) -> Retrie
     return RetrievalResult(plan=_plan(StructuredIntent.EXAM_SCHEDULE), facts=facts, warnings=warnings)
 
 
+# ------------------------------------------------------------ working day
+
+_WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+
+def working_day(client: Any, on: date) -> RetrievalResult:
+    """Is <date> a working day / do I have class on <date>: the timetable
+    for that date + the calendar's events that day + where the date falls
+    in the term (instructional days, exams)."""
+    day = retrieval.day_of_week_timetable(client, _WEEKDAY_NAMES[on.isoweekday() - 1], on_date=on)
+    events = calendar_events(client)
+    todays = [e for e in events if e["event_date"] == on.isoformat()]
+    def first(pattern: str) -> Optional[str]:
+        return next((e["event_date"] for e in events if re.search(pattern, e["event_name"], re.I)), None)
+    meta = {"_working_day": True, "date": on.isoformat(),
+            "class_begins": first(r"class\s+begins|1st\s+instructional"),
+            "class_ends": first(r"^class\s+ends"),
+            "exams_start": first(r"end\s+semester\s+examination\s+starts"),
+            "exams_end": first(r"end\s+semester\s+exam\s+ends"),
+            "holidays_listed": any(e["event_type"] == "holiday" or "holiday" in e["event_name"].lower() for e in events),
+            "events": todays}
+    facts = [StructuredFact(claim=f"working day check {on}", data=meta, source="academic_calendar (live)")]
+    facts += [f for f in day.facts if f.data.get("start_time")]
+    return RetrievalResult(plan=_plan(StructuredIntent.WORKING_DAY), facts=facts)
+
+
+# ------------------------------------------------------------ mess timings
+
+def mess_timings(client: Any) -> StructuredFact:
+    """Serving times per meal (mess_meal_timings, from the published menu)."""
+    rows = (client.table("mess_meal_timings").select("meal,start_time,end_time,source_id")
+            .eq("status", "active").execute().data or [])
+    timings: dict[str, tuple[int, int]] = {}
+    source = None
+    for r in rows:
+        s, e = timeq_minutes(r["start_time"]), timeq_minutes(r["end_time"])
+        if s is not None and e is not None:
+            timings[r["meal"]] = (s, e)
+            source = r.get("source_id")
+    label = "published menu" if not source else re.sub(r"[_ ]+", " ", source.replace(".pdf", "")).strip()
+    return StructuredFact(claim="mess timings", data={"_timings": True, "timings": timings, "source": label},
+                          source="mess_meal_timings")
+
+
+def timeq_minutes(value: Any) -> Optional[int]:
+    m = re.match(r"^(\d{1,2}):(\d{2})", str(value or ""))
+    return int(m.group(1)) * 60 + int(m.group(2)) if m else None
+
+
 # ------------------------------------------------------------ announcements
 
 ANNOUNCEMENT_FIELDS = ("id,title,content,category,department,batch,section,semester,target_role,created_at,"
@@ -505,6 +554,9 @@ _ROLE_DESIGNATION = {
     "physical_education": ["Physical Education"],
     "cvo": ["CVO"],
     "nodal": ["Nodal"],
+    "placement": ["Career"],
+    "librarian": ["Librarian", "Library"],
+    "iqac": ["IQAC"],
 }
 _DEPT_ALIASES = [
     (r"\b(eee|electrical)\b", ["Electronics"]),
@@ -514,7 +566,8 @@ _DEPT_ALIASES = [
     (r"\b(humanities|computational\s+science|maths?|mathematics)\b", ["Computational Science", "Humanities"]),
     (r"\bacademic", ["Academic"]),
     (r"\bhostel|student\s+events\b", ["Hostel"]),
-    (r"\bstudents?\s+welfare|career\b", ["Students Welfare", "Career"]),
+    (r"\bplacements?\b|\bt\s?&\s?p\b|\btnp\b|\bcareer\b", ["Career"]),
+    (r"\bstudents?\s+welfare\b", ["Students Welfare", "Career"]),
     (r"\balumni|international\b", ["Alumni"]),
     (r"\bindustr|funding\b", ["Industrial"]),
     (r"\bcontinuing\s+education|training|consultancy\b", ["Continuing Education"]),
@@ -543,10 +596,16 @@ def faculty_by_role(client: Any, role: str, query: str) -> RetrievalResult:
             narrowed = [r for r in picked if any(f.lower() in r["designation"].lower() for f in frags)]
             if narrowed:
                 picked = narrowed
+                if re.search(r"\bplacements?\b|\bt\s?&\s?p\b|\btnp\b|\btraining\b", q):
+                    note = ("The directory has no separate placement coordinator; career development and "
+                            "placements come under this Associate Dean.")
                 if re.search(r"\b(eee|electrical)\b", q):
                     note = ("IIIT Kottayam doesn't have a separate Electrical Engineering department — the "
                             "closest is Electronics & Communication Engineering (ECE).")
                 break
+    if role == "placement" and not note:
+        note = ("The directory has no separate training/placement officer; career development and placements come "
+                "under this Associate Dean.")
     facts = [StructuredFact(claim=f"{r['full_name']} — {r['designation']}", data={**r, "_note": note},
                             source="faculty directory (live)")
              for r in picked[:8]]
@@ -809,7 +868,17 @@ def resolve_course(client: Any, code: Optional[str] = None, name: Optional[str] 
                 score = len(n_tokens & ct) / max(len(n_tokens), len(ct))
                 if score > best_score:
                     best, best_score = c, score
-        return best if best_score >= 0.6 else None
+        if best_score >= 0.6:
+            return best
+        # "OS", "DAA", "TOC": the initials of a course name, when exactly one course has them.
+        acro = re.sub(r"[^a-z]", "", n)
+        if 2 <= len(acro) <= 5 and " " not in n.strip():
+            skip = {"and", "of", "for", "the", "in", "to", "with", "a", "an"}
+            hits = [c for c in courses
+                    if "".join(w[0] for w in re.findall(r"[a-z]+", c["course_name"].lower()) if w not in skip) == acro]
+            if len(hits) == 1:
+                return hits[0]
+        return None
     return None
 
 
@@ -825,39 +894,104 @@ def name_tokens(full_name: str) -> list[str]:
     return [t for t in _norm(_TITLE_RE.sub("", full_name)).split() if len(t) > 2]
 
 
-def match_faculty_name(query: str, faculty: list[dict]) -> Optional[str]:
-    """The faculty member a question names, typos included ("Jhon Paul
-    Martin", "Christina Joseph" for "Christina Terese Joseph"). Needs two of
-    their name words, or one distinctive word (5+ letters, unique in the
-    directory) when the question is clearly about a person. Never invents a
-    name: the answer is always someone in the directory, or None."""
-    q_words = [w for w in _norm(query).split()
-               if len(w) > 2 and w not in _FILLER and w not in lexicon.DOMAIN_WORDS]
+# Words that are about the person, not part of their name.
+_NOT_NAME = {
+    "sir", "mam", "maam", "madam", "miss", "dr", "prof", "professor", "mr", "mrs", "ms", "email", "mail", "id",
+    "office", "cabin", "room", "phone", "mobile", "number", "contact", "details", "research", "area", "areas",
+    "interest", "interests", "subject", "subjects", "course", "courses", "teach", "teaches", "teaching", "position",
+    "designation", "profile", "find", "whats", "what", "who", "whom", "where", "does", "his", "her", "their",
+    "faculty", "teacher", "can", "get", "give", "send", "want", "need", "know", "please", "pls", "today",
+}
+
+
+def query_name_words(query: str) -> list[str]:
+    """The words of a question that could be (part of) a name: possessives
+    dropped ("Joseph's"), punctuation inside a word removed ("mirotha;;i"),
+    question/attribute words and honorifics removed."""
+    t = re.sub(r"['’]s\b", "", (query or "").lower())
+    # "Dr.Jobin Jose" (as the directory spells it): split the title off first
+    t = re.sub(r"\b(dr|prof|mr|mrs|ms|sri|smt)\.", r"\1 ", t)
+    t = re.sub(r"(?<=[a-z])[^a-z\s]+(?=[a-z])", "", t)
+    return [w for w in re.findall(r"[a-z]+", t)
+            if len(w) > 2 and w not in _FILLER and w not in _NOT_NAME and w not in lexicon.DOMAIN_WORDS]
+
+
+def match_faculty_names(query: str, faculty: list[dict]) -> list[str]:
+    """Everyone in the directory the question could be naming, best first —
+    typos included ("Jhon Paul Martin", "mirotha;;i chand"), partial names
+    ("Christina Joseph" for "Christina Terese Joseph"), and a first name on
+    its own when only one person has it ("Amit sir", "Athira mam", "A Balu").
+
+    Rules: two matching name words is a match. One matching word is a match
+    only if that word belongs to one person alone (a shared word like
+    "Joseph" returns everyone who has it, for the answer to ask which one).
+    Never invents a name: the answer is always someone in the directory."""
+    q_words = query_name_words(query)
     if not q_words:
-        return None
-    token_owners: dict[str, int] = {}
+        return []
+    owners: dict[str, int] = {}
     for f in faculty:
         for t in set(name_tokens(f["full_name"])):
-            token_owners[t] = token_owners.get(t, 0) + 1
-    person_cue = bool(_PERSON_CUE_RE.search(query))
-    best: tuple[int, float, str] | None = None
+            owners[t] = owners.get(t, 0) + 1
+    person_cue = bool(_PERSON_CUE_RE.search(query)) or bool(re.search(r"\b(mam|maam|miss)\b", query, re.I))
+    scored: list[tuple[int, float, str]] = []
     for f in faculty:
         toks = name_tokens(f["full_name"])
         if not toks:
             continue
-        hits, total, distinctive = 0, 0.0, False
+        hits, total, unique = 0, 0.0, False
         for t in toks:
             sim = max(lexicon.similarity(w, t) for w in q_words)
-            if sim >= _NAME_MATCH:
+            # a short word must match exactly ("amit", "balu"); longer ones may carry a typo
+            if sim >= (1.0 if len(t) <= 4 else _NAME_MATCH):
                 hits += 1
                 total += sim
-                if len(t) >= 5 and token_owners.get(t, 0) == 1:
-                    distinctive = True
-        if hits >= 2 or (hits == 1 and distinctive and person_cue and len(toks) >= 1):
-            key = (hits, total / len(toks), f["full_name"])
-            if best is None or key[:2] > best[:2]:
-                best = key
-    return best[2] if best else None
+                if owners.get(t, 0) == 1:
+                    unique = True
+        if hits >= 2 or (hits == 1 and (unique or person_cue)):
+            scored.append((hits, total, f["full_name"]))
+    if not scored:
+        return []
+    scored.sort(key=lambda x: (-x[0], -x[1], x[2]))
+    top_hits = scored[0][0]
+    best = [n for h, _, n in scored if h == top_hits]
+    # One clear best (more words matched, or a unique word): that person.
+    if len(best) == 1 or top_hits >= 2:
+        top_total = scored[0][1]
+        return [n for h, t, n in scored if h == top_hits and abs(t - top_total) < 1e-9][:3]
+    return best[:3] if person_cue else []
+
+
+def match_faculty_name(query: str, faculty: list[dict]) -> Optional[str]:
+    """The single person a question names, or None (none, or ambiguous)."""
+    found = match_faculty_names(query, faculty)
+    return found[0] if len(found) == 1 else None
+
+
+def faculty_subjects(client: Any, faculty_id: int) -> list[dict]:
+    """What a faculty member teaches, from the live timetable: one row per
+    course (with the kinds of sessions and the classes they take)."""
+    rows = (
+        client.table("timetable_entry_faculty")
+        .select("timetable_entries(entry_type,semester,department,section,status,courses(course_code,course_name))")
+        .eq("faculty_id", faculty_id)
+        .execute()
+        .data
+        or []
+    )
+    courses: dict[str, dict] = {}
+    for r in rows:
+        e = r.get("timetable_entries") or {}
+        course = e.get("courses") or {}
+        if e.get("status") != "active" or not course.get("course_code"):
+            continue
+        c = courses.setdefault(course["course_code"], {"course_code": course["course_code"],
+                                                       "course_name": course.get("course_name"),
+                                                       "types": set(), "classes": set()})
+        c["types"].add(e.get("entry_type") or "class")
+        c["classes"].add(f"S{e.get('semester')} {e.get('department')} {e.get('section') or ''}".strip())
+    return [{**c, "types": sorted(c["types"]), "classes": sorted(c["classes"])}
+            for c in sorted(courses.values(), key=lambda c: c["course_code"])]
 
 
 def link_entities(client: Any, query: str) -> dict[str, str]:
@@ -928,13 +1062,14 @@ def course_info(client: Any, course_code: str, family: Optional[str], department
                                                  source="courses (live)" + (" + curriculum" if data.get("curriculum") else ""))])
 
 
-def faculty_for_course(client: Any, course_code: Optional[str], course_name: Optional[str]) -> RetrievalResult:
+def faculty_for_course(client: Any, course_code: Optional[str], course_name: Optional[str],
+                       entry_type: Optional[str] = None) -> RetrievalResult:
     course = resolve_course(client, code=course_code, name=None if course_code else course_name)
     if not course:
         label = course_code or course_name or "that course"
         return RetrievalResult(plan=_plan(StructuredIntent.FACULTY_FOR_COURSE),
                                warnings=[f"couldn't find a course matching {label!r} in the catalog"])
-    result = retrieval.faculty_for_course(client, course["course_code"])
+    result = retrieval.faculty_for_course(client, course["course_code"], entry_type)
     for fact in result.facts:
         fact.data["course"] = {"course_code": course["course_code"], "course_name": course["course_name"]}
     if not result.facts:

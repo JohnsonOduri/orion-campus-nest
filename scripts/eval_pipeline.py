@@ -175,7 +175,69 @@ def cases() -> list[Case]:
         Case("unsupported", "What is the price of a laptop on campus?",
              reject=["Synthesis Lectures"],
              note="no such data: must not quote an unrelated passage"),
-    ] + ai_tests_cases()
+    ] + ai_tests_cases() + ai_tests_2_cases()
+
+
+# AI-Tests/ round 2 (screenshots + WhatsApp images, 2026-09-28): each case
+# asserts the answer is the specific thing asked, not the whole day's data.
+_DUMP = "your classes today:"
+
+
+def ai_tests_2_cases() -> list[Case]:
+    return [
+        # --- free time: the exact constraint asked --------------------------
+        Case("ai2-free", "Am I free at 2?", intent="free_time", expect=["2 PM"], reject=[_DUMP]),
+        Case("ai2-free", "Do I have a free hour between 2 and 4?", intent="free_time",
+             expect=["between 2 PM and 4 PM"], reject=[_DUMP]),
+        Case("ai2-free", "Am I free after 3pm?", intent="free_time", expect=["after 3 PM"], reject=[_DUMP]),
+        Case("ai2-free", "What's my longest free slot today?", intent="free_time", expect=["longest free slot"],
+             reject=[_DUMP]),
+        Case("ai2-free", "Do I have a break before lunch?", intent="free_time", reject=[_DUMP, "breakfast:"]),
+        Case("ai2-free", "Is Tuesday evening free?", intent="free_time", reject=[_DUMP]),
+        # --- mess timings --------------------------------------------------
+        Case("ai2-mess", "Is the mess open now?", intent="mess_today", expect=["mess"], reject=["breakfast:**", "lunch:**"]),
+        Case("ai2-mess", "What time does the mess close?", intent="mess_today", expect=["8:30 PM"], reject=["lunch:**"]),
+        Case("ai2-mess", "What time does the mess open?", intent="mess_today", expect=["7 AM"]),
+        Case("ai2-mess", "When is breakfast?", intent="mess_today", expect=["7 AM–9:45 AM"]),
+        Case("ai2-mess", "What are the lunch timings?", intent="mess_today", expect=["12 PM–2:30 PM"]),
+        Case("ai2-mess", "Is today's lunch vegetarian?", intent="mess_today", expect=["vegetarian"]),
+        # --- names as people actually type them ----------------------------
+        Case("ai2-names", "Amit sir email", intent="faculty_lookup", expect=["amit@iiitkottayam.ac.in"]),
+        Case("ai2-names", "Amit Sir email?", intent="faculty_lookup", expect=["amit@iiitkottayam.ac.in"]),
+        Case("ai2-names", "Athira mam's office?", intent="faculty_lookup", expect=["Athira B", "BB 213"]),
+        Case("ai2-names", "Amit sir office?", intent="faculty_lookup", expect=["BD 407"]),
+        Case("ai2-names", "Dr. A Balu sir email", intent="faculty_lookup", expect=["balu@iiitkottayam.ac.in"]),
+        Case("ai2-names", "Ansith sir office?", intent="faculty_lookup", expect=["CAB 202 B"], reject=_NO_DOCS),
+        Case("ai2-names", "Dr. Ansith phone number?", intent="faculty_lookup", expect=["2202229"], reject=_NO_DOCS),
+        Case("ai2-names", "mirotha;;i chand contact", intent="faculty_lookup", expect=["Mirothali Chand"]),
+        Case("ai2-names", "What Christina Joseph's research area?", intent="faculty_lookup", expect=["Microservices"]),
+        Case("ai2-names", "What subjects does Dr. Ansith teach?", intent="faculty_lookup", expect=["CSE 311"]),
+        Case("ai2-names", "manu sir email", intent="faculty_lookup", expect=["manum@iiitkottayam.ac.in"],
+             note="'manu' must not be spell-corrected to 'menu'"),
+        Case("ai2-names", "joseph sir email", intent="faculty_lookup", expect=["which one did you mean"],
+             note="several people share the name: ask, don't guess"),
+        Case("ai2-names", "Rekha ma'am email", intent="faculty_lookup", expect=["Rekha"], reject=["@iiitkottayam"],
+             note="not in the directory: say so"),
+        Case("ai2-names", "Faculty who teaches OS", intent="faculty_for_course", expect=["OS"]),
+        Case("ai2-names", "Which faculty handles the lab for CSE 312?", intent="faculty_for_course", expect=["lab"]),
+        # --- the rest of the screenshots ------------------------------------
+        Case("ai2-misc", "what number should i call for help regarding ragging", expect=["1800-180-5522"]),
+        Case("ai2-misc", "is manimala boys hostel or girls hostel", intent="hostel_wardens", expect=["boys'"]),
+        Case("ai2-misc", "Is there a class going on right now?", intent="next_class", reject=["curriculum"]),
+        Case("ai2-misc", "Is today a working day?", intent="working_day", reject=["library"]),
+        Case("ai2-misc", "Do I have class on the 15th?", intent="working_day", expect=["15 October"]),
+        Case("ai2-misc", "Is AC306 my classroom?", intent="classroom", expect=["AC 306"]),
+        Case("ai2-misc", "Where is the lab?", intent="classroom", reject=["curriculum"]),
+        Case("ai2-misc", "Who can guide me for MS in AI?", intent="faculty_research", reject=["guide book"]),
+        Case("ai2-misc", "Who is the placement coordinator?", intent="faculty_role", expect=["Career"]),
+        Case("ai2-misc", "Who is the sports officer?", intent="faculty_role", expect=["Physical Education"]),
+        Case("ai2-misc", "Who handles academic affair?", intent="faculty_role", expect=["Academic Affairs"]),
+        Case("ai2-misc", "What are my courses with their credits?", intent="my_courses", expect=["credits"]),
+        Case("ai2-misc", "Which of my courses have labs?", intent="my_courses", expect=["have labs"]),
+        Case("ai2-misc", "How many classes do I have this week?", intent="week_timetable", expect=["classes** this week"]),
+        Case("ai2-misc", "How do I get a bonafide certificate?", expect=["don't mention"],
+             reject=["verification procedure"], note="no such document: say so, don't quote the nearest one"),
+    ]
 
 
 # Every question from AI-Tests/ (screenshots + orion_qwwrongans*.pdf,

@@ -748,6 +748,8 @@ Rules that must not be regressed:
   find nothing; fuzzy faculty names (`campus.match_faculty_name`) never
   guess between two people. Misrouted phrasing → add examples to
   `intents.EXAMPLES`, don't bolt on another regex.
+  Time questions are answered by constraint, not by dumping the day
+  (`query/timeq.py`); mess serving times live in `mess_meal_timings`.
 - **Voice output goes through `ttsService` (`src/lib/ai/tts.ts`) only.** UI
   code never calls `speechSynthesis` directly. As of 2026-09-23 there is no
   backend TTS at all: `KokoroBrowserProvider` (`src/lib/ai/tts-providers.ts`)

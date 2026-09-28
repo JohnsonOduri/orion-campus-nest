@@ -1,5 +1,27 @@
 # Query Router / Retrieval / Context Layer
 
+> **2026-09-28 (later) — answer exactly what was asked** (`AI-Tests-results.md` round 2).
+> - `timeq.py` (pure): `parse()` turns "at 2", "between 2 and 4",
+>   "after 3pm", "longest", "free hour", "morning/afternoon/evening" and
+>   "before lunch" into a `TimeAsk`, carried as plan hints. `answer_free()`
+>   answers that constraint, not the whole day. Bare hours 1–7 are PM.
+>   `mess_time_question()` / `answer_mess_time()` handle open-now,
+>   open, close and per-meal timings from `mess_meal_timings` (migration
+>   `20260928170000`).
+> - People: `campus.match_faculty_names()` resolves sir/ma'am first names,
+>   short unique names, typos, stray punctuation and possessives. A shared
+>   name returns a list; an unknown name is reported. `service._faculty_lookup`
+>   uses it before the substring match. Directory names are protected from
+>   spelling correction (`data/name_words.txt`, `scripts/build_lexicon_data.py`).
+> - New: `StructuredIntent.WORKING_DAY` (is it a working day / class on
+>   the 15th). Faculty `focus` hints: `subjects` and `availability`.
+>   Classroom hints: `room` and `lab`. Hostel `focus=gender`. My-courses
+>   hints: `lab`, `credits`, `count`. Course acronyms ("OS") resolve only
+>   when unique.
+> - Documents: if the question's specific word (bonafide, timings) is in
+>   none of the retrieved passages and has no synonym mapping, the answer
+>   says the documents don't mention it instead of quoting a neighbour.
+
 > **2026-09-28 — understanding layer + hybrid document search** (from the
 > failures in `AI-Tests/`; results in `AI-Tests-results.md`). Additions to
 > the pipeline below, each separately testable (`tests/test_understanding.py`):

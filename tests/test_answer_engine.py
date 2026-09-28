@@ -446,7 +446,7 @@ def test_unrelated_passage_is_not_quoted_as_an_answer():
     text, confidence, passages = compose.compose_documents(ctx, "21-25")
     assert "Anti Ragging" not in text
     assert passages == []
-    assert "couldn't find" in text.lower()
+    assert "couldn't find" in text.lower() or "don't mention" in text.lower()
 
 
 def test_catch_all_fallback_questions_need_a_higher_bar():

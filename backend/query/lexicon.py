@@ -97,6 +97,10 @@ _COMMON_EXTRA = {
     "iiit", "kottayam", "btech", "mtech", "phd", "ms", "hod", "hods", "cse", "ece", "csy", "aids",
 }
 
+# Hostel names (hostel_wardens.hall_name, Wardens Team July 2026).
+_HALL_WORDS = {"anamudi", "sahyadri", "manimala", "meenachil", "chitar", "agasthya", "coptyre", "nila",
+               "kalapurackal", "maryland", "panackal", "sunshine", "ktm", "anna"}
+
 _DATA_DIR = Path(__file__).resolve().parent / "data"
 
 
@@ -104,12 +108,16 @@ _DATA_DIR = Path(__file__).resolve().parent / "data"
 def protected_words() -> frozenset[str]:
     """Real English words that sit within edit distance 2 of a campus word.
     Without this list, "hostile" would be "corrected" to "hostel"."""
-    path = _DATA_DIR / "protected_words.txt"
-    try:
-        words = path.read_text().split()
-    except OSError:
-        words = []
-    return frozenset(words) | _COMMON_EXTRA
+    words: list[str] = []
+    # protected_words.txt: English neighbours of campus words.
+    # name_words.txt: every word of every name in the institute directory —
+    # "Manu sir email" must not become "menu sir email".
+    for name in ("protected_words.txt", "name_words.txt"):
+        try:
+            words += (_DATA_DIR / name).read_text().split()
+        except OSError:
+            pass
+    return frozenset(words) | _COMMON_EXTRA | _HALL_WORDS
 
 
 # --------------------------------------------------------------- distance

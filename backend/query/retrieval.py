@@ -361,9 +361,11 @@ def day_of_week_timetable(client: Any, day_ref: str, on_date: Optional[date] = N
     return RetrievalResult(plan=_plan(StructuredIntent.DAY_OF_WEEK_TIMETABLE), facts=facts, warnings=warnings)
 
 
-def faculty_for_course(client: Any, course_code: str) -> RetrievalResult:
+def faculty_for_course(client: Any, course_code: str, entry_type: Optional[str] = None) -> RetrievalResult:
     """RLS-scoped direct table query (no RPC needed): courses + timetable
-    join, respecting the same `status='active'` policies as the RPCs."""
+    join, respecting the same `status='active'` policies as the RPCs. Every
+    teacher linked to the course's periods (timetable_entry_faculty), not
+    just the primary one; `entry_type="lab"` narrows it to who takes the lab."""
     course_res = (
         client.table("courses")
         .select("id,course_code,course_name")
@@ -379,22 +381,31 @@ def faculty_for_course(client: Any, course_code: str) -> RetrievalResult:
     course = course_res.data[0]
     entries = (
         client.table("timetable_entries")
-        .select("id,faculty_id")
+        .select("id,faculty_id,entry_type")
         .eq("course_id", course["id"])
         .execute()
         .data
-    )
-    faculty_ids = sorted({e["faculty_id"] for e in entries if e.get("faculty_id")})
+    ) or []
+    if entry_type:
+        entries = [e for e in entries if e.get("entry_type") == entry_type]
+    entry_ids = [e["id"] for e in entries]
+    faculty_ids: list[int] = []
+    if entry_ids:
+        links = (client.table("timetable_entry_faculty").select("faculty_id,ord").in_("entry_id", entry_ids)
+                 .execute().data or [])
+        faculty_ids = sorted({l["faculty_id"] for l in links})
+    if not faculty_ids:
+        faculty_ids = sorted({e["faculty_id"] for e in entries if e.get("faculty_id")})
     facts: list[StructuredFact] = []
     if faculty_ids:
         fac_rows = (
             client.table("faculty").select("id,full_name,initials,email").in_("id", faculty_ids).execute().data
-        )
-        for f in fac_rows:
+        ) or []
+        for f in sorted(fac_rows, key=lambda r: r["full_name"]):
             facts.append(
                 StructuredFact(
                     claim=f"{f['full_name']} ({f['initials']}) teaches {course['course_code']}",
-                    data={**f, "course": course},
+                    data={**f, "course": course, "_entry_type": entry_type},
                     source="timetable_entries + faculty (live timetable)",
                 )
             )
@@ -488,6 +499,20 @@ def fuzzy_faculty_names(client: Any, name_text: str, limit: int = 3, cutoff: flo
     return [name for _, name in scored[:limit]]
 
 
+FACULTY_COLS = "id,full_name,initials,designation,email,phone,office_location,office_hours,research_interests,status"
+
+
+def faculty_by_names(client: Any, full_names: list[str]) -> RetrievalResult:
+    """Rows for names already resolved against the directory
+    (campus.match_faculty_names), in the order given."""
+    rows = (client.table("faculty").select(FACULTY_COLS).in_("full_name", full_names).eq("status", "active")
+            .execute().data or []) if full_names else []
+    rows.sort(key=lambda r: full_names.index(r["full_name"]) if r["full_name"] in full_names else 99)
+    facts = [StructuredFact(claim=f"{f['full_name']} ({f.get('initials')})", data=f, source="faculty (live)") for f in rows]
+    return RetrievalResult(plan=_plan(StructuredIntent.FACULTY_LOOKUP), facts=facts,
+                           warnings=[] if facts else ["no faculty found for the resolved names"])
+
+
 def faculty_lookup(client: Any, name_text: str) -> RetrievalResult:
     """"Tell me about Dr. X", "What is Dr. X's email?" — fuzzy ILIKE match
     on full_name (limit 3, not 1: common names/initials could plausibly
@@ -503,7 +528,7 @@ def faculty_lookup(client: Any, name_text: str) -> RetrievalResult:
     to the real "Anish S" rather than reporting no match for a name that's
     actually on file under a slightly different spelling."""
     cleaned = name_text.strip()
-    select_cols = "full_name,initials,designation,email,office_location,office_hours,research_interests,status"
+    select_cols = FACULTY_COLS
     rows = (
         client.table("faculty")
         .select(select_cols)

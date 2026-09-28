@@ -19,7 +19,7 @@ import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Iterable, Optional
 
-from . import documents, router
+from . import documents, router, timeq
 from .types import GroundedContext, RouteType, StructuredIntent
 
 _IST = timedelta(hours=5, minutes=30)
@@ -119,7 +119,9 @@ def entry_label(e: dict) -> str:
     if e.get("course_code"):
         return f"{nice_title(e.get('course_name'))} ({e['course_code']})".strip()
     if e.get("source_text"):
-        st = e["source_text"].strip()
+        # "B Coding Club Activities": the "B" of a vertical "Break" column
+        # the PDF extractor picked up with the cell text.
+        st = re.sub(r"^[A-Z]\s+(?=[A-Z][a-z])", "", e["source_text"].strip())
         return st if len(st) <= 4 else nice_title(st)
     return (e.get("entry_type") or "Class").replace("_", " ").title()
 
@@ -190,6 +192,26 @@ def compose_day(ctx: GroundedContext, day_ref: Optional[str]) -> str:
         return f"You have no classes {phrase}." + (" Enjoy the weekend!" if weekend and day_ref == "Sunday" else "")
     src = source_line("your live timetable")
     focus = hints.get("focus")
+    if hints.get("from") and hints.get("to"):
+        lo, hi = timeq.to_minutes(hints["from"]), timeq.to_minutes(hints["to"])
+        inside = [e for e in entries if timeq.to_minutes(e["start_time"]) < hi and timeq.to_minutes(e["end_time"]) > lo]
+        part = hints.get("part") or f"between {fmt_time(hints['from'])} and {fmt_time(hints['to'])}"
+        where = f"in the {part}" if part in ("morning", "afternoon", "evening") else part
+        if not inside:
+            return f"Nothing {where} {phrase} — you're free then." + src
+        return (f"{where[0].upper() + where[1:]} {phrase} you have:\n\n"
+                + "\n".join(_entry_line(e, today=is_today) for e in inside) + src)
+    if focus == "past":
+        now = now_ist()
+        now_m = now.hour * 60 + now.minute
+        done = [e for e in entries if timeq.to_minutes(e["end_time"]) <= now_m]
+        ongoing = [e for e in entries if timeq.to_minutes(e["start_time"]) <= now_m < timeq.to_minutes(e["end_time"])]
+        if not done and not ongoing:
+            return "Nothing yet — none of today's classes have started." + src
+        text = ("Classes already over today:\n\n" + "\n".join(_entry_line(e) for e in done)) if done else "No class has finished yet today."
+        if ongoing:
+            text += "\n\nGoing on now: " + "; ".join(f"**{entry_label(e)}** ({fmt_range(e['start_time'], e['end_time'])})" for e in ongoing)
+        return text + "\n\nFor what was covered, check with your classmates or the course faculty." + src
     if focus == "first":
         e = entries[0]
         return f"Your first class {phrase} is **{entry_label(e)}** at {fmt_time(e['start_time'])} ({fmt_range(e['start_time'], e['end_time'])}){entry_extras(e)}.{src}"
@@ -212,6 +234,21 @@ def compose_week(ctx: GroundedContext) -> str:
         head = "Your labs this week:"
         if not entries:
             return "You have no labs scheduled this week."
+    if hints.get("focus") == "count" and not hints.get("course_filter"):
+        teaching = [e for e in entries if (e.get("entry_type") or "class") in {"class", "lab", "tutorial"}]
+        kinds: dict[str, int] = {}
+        for e in teaching:
+            kinds[e.get("entry_type") or "class"] = kinds.get(e.get("entry_type") or "class", 0) + 1
+        per_day: dict[int, int] = {}
+        for e in teaching:
+            per_day[e.get("day_of_week") or 0] = per_day.get(e.get("day_of_week") or 0, 0) + 1
+        split = ", ".join(f"{n} {k}{'s' if n != 1 and k != 'class' else ('es' if n != 1 else '')}"
+                          for k, n in sorted(kinds.items(), key=lambda x: -x[1]))
+        days = " · ".join(f"{_DAYS.get(d, '')[:3]} {n}" for d, n in sorted(per_day.items()))
+        extra = len(entries) - len(teaching)
+        return (f"You have **{len(teaching)} classes** this week ({split}).\n\nPer day: {days}."
+                + (f" Plus {extra} activity slot{'s' if extra != 1 else ''} (clubs, sports, interaction hours)." if extra else "")
+                + source_line("your live timetable"))
     wanted = hints.get("course_filter")
     if wanted:
         w_tokens = {t for t in re.findall(r"[a-z0-9]+", wanted.lower()) if t not in {"my", "the", "class", "lab"}}
@@ -259,6 +296,17 @@ def compose_next(ctx: GroundedContext, at_label: Optional[str] = None) -> str:
     else:
         prefix = "Your next class is"
     text = f"{prefix} **{entry_label(d)}** — {when}, {fmt_range(d['start_time'], d['end_time'])}{entry_extras(d)}."
+    s_m, e_m = timeq.to_minutes(d.get("start_time")), timeq.to_minutes(d.get("end_time"))
+    if re.search(r"\bhow\s+long\s+(is|does)\b|\bduration\b|\bhow\s+long\s+.*\blast\b", ctx.query, re.I) and s_m is not None and e_m is not None:
+        text = f"Your next class, **{entry_label(d)}**, is {timeq.fmt_duration(e_m - s_m)} long — {when}, {fmt_range(d['start_time'], d['end_time'])}."
+        return text + src
+    if re.search(r"\bhow\s+(long|much\s+time)\s+(until|till|before|left)\b|\bwhen\s+does\s+my\s+next\s+class\s+start\b|\bstarts?\s+in\b", ctx.query, re.I) \
+            and s_m is not None and "today" in when.lower():
+        now = now_ist()
+        gap = s_m - (now.hour * 60 + now.minute)
+        if gap > 0:
+            return (f"Your next class, **{entry_label(d)}**, starts in **{timeq.fmt_duration(gap)}** "
+                    f"(at {fmt_time(d['start_time'])}){entry_extras(d)}." + src)
     if d.get("_gap") and "no more classes today" in d["_gap"]:
         text += " You have no more classes today."
     elif d.get("_gap"):
@@ -278,24 +326,58 @@ def _with_next_event(ctx: GroundedContext, text: str, src: str) -> str:
 
 
 def compose_free(ctx: GroundedContext, day_ref: str) -> str:
+    """Answers the exact time question asked (timeq.py): free AT a time,
+    within a window, after/before a time, the longest slot — and only lists
+    the whole day when the question was just "when am I free?"."""
     facts = [f.data for f in ctx.facts]
-    if facts and facts[0].get("_empty"):
-        return f"You have no classes {_day_phrase(day_ref, None)}, so you're free all day."
-    entries = _merge_slots([e for e in facts if e.get("start_time")])
     phrase = _day_phrase(day_ref, None)
-    gaps: list[str] = []
-    first = entries[0]
-    if first["start_time"] > "09:00:00":
-        gaps.append(f"before {fmt_time(first['start_time'])}")
-    for a, b in zip(entries, entries[1:]):
-        if b["start_time"] > a["end_time"]:
-            start, end = datetime.strptime(a["end_time"], "%H:%M:%S"), datetime.strptime(b["start_time"], "%H:%M:%S")
-            if (end - start).total_seconds() >= 30 * 60:
-                gaps.append(fmt_range(a["end_time"], b["start_time"]))
-    gaps.append(f"after {fmt_time(max(e['end_time'] for e in entries))}")
-    busy = "; ".join(f"{fmt_range(e['start_time'], e['end_time'])} {entry_label(e)}" for e in entries)
-    return (f"You're free {phrase} {join_names(gaps)}.\n\nYour classes {phrase}: {busy}."
-            + source_line("your live timetable"))
+    ask = timeq.TimeAsk.from_hints((ctx.plan.hints or {}) if ctx.plan else {})
+    if facts and facts[0].get("_empty"):
+        return f"You have no classes {phrase}, so you're free all day." + source_line("your live timetable")
+    entries = _merge_slots([e for e in facts if e.get("start_time")])
+    blocks = timeq.busy_blocks(entries, entry_label)
+    now = now_ist()
+    on = facts[0].get("_date") if facts else None
+    now_minute = now.hour * 60 + now.minute if (not on or on == now.date().isoformat()) else None
+    if ask.now and now_minute is None:
+        ask = timeq.TimeAsk()
+    return timeq.answer_free(blocks, ask, phrase, now_minute) + source_line("your live timetable")
+
+
+def compose_working_day(ctx: GroundedContext) -> str:
+    meta = next((f.data for f in ctx.facts if f.data.get("_working_day")), {})
+    on = date.fromisoformat(meta["date"])
+    rel = relative_day(on)
+    label = f"**{fmt_date(on)}**" + (f" ({rel})" if rel in {"today", "tomorrow", "yesterday"} else "")
+    entries = _merge_slots([f.data for f in ctx.facts if f.data.get("start_time")])
+    teaching = [e for e in entries if (e.get("entry_type") or "class") in {"class", "lab", "tutorial"}]
+    events = meta.get("events") or []
+    src = source_line("your live timetable", "academic calendar, Odd semester 2026-27")
+    def in_range(a: Optional[str], b: Optional[str]) -> bool:
+        return bool(a and b and a <= on.isoformat() <= b)
+    if meta.get("exams_start") and in_range(meta["exams_start"], meta.get("exams_end")):
+        text = (f"{label} falls in the **end-semester exam period** "
+                f"({fmt_date(meta['exams_start'], False)} – {fmt_date(meta['exams_end'], False)}), so regular classes don't run.")
+    elif meta.get("class_ends") and on.isoformat() > meta["class_ends"]:
+        text = (f"No regular classes on {label} — the last instructional day is "
+                f"{fmt_date(meta['class_ends'])}.")
+    elif meta.get("class_begins") and on.isoformat() < meta["class_begins"]:
+        text = f"No — classes start on {fmt_date(meta['class_begins'])}, after {label}."
+    elif on.isoweekday() == 7 and not entries:
+        text = f"No — {label} is a Sunday; you have no classes."
+    elif teaching:
+        text = (f"Yes — {label} is a working day. You have **{len(teaching)} class{'es' if len(teaching) != 1 else ''}**, "
+                f"from {fmt_time(teaching[0]['start_time'])} to {fmt_time(max(e['end_time'] for e in teaching))}:\n\n"
+                + "\n".join(f"- {fmt_range(e['start_time'], e['end_time'])} · {entry_label(e)}" for e in teaching))
+    elif entries:
+        text = (f"{label} has no classes in your timetable, only " + ", ".join(entry_label(e) for e in entries) + ".")
+    else:
+        text = f"You have no classes on {label}."
+    if events:
+        text += "\n\nOn the academic calendar that day: " + "; ".join(f"**{event_name(e)}**" for e in events) + "."
+    if not meta.get("holidays_listed") and re.search(r"\b(holiday|working|off)\b", ctx.query, re.I):
+        text += "\n\nThe academic calendar in ORION doesn't list public holidays, so check the notice board for any declared holiday."
+    return text + src
 
 
 # ---------------------------------------------------------------- courses & faculty
@@ -323,7 +405,10 @@ def compose_course(ctx: GroundedContext) -> str:
     teachers = d.get("teachers") or []
     if teachers:
         text += f"\n\nTaught by {join_names(teachers)}."
-    if not d.get("syllabus_summary"):
+    if (ctx.plan.hints or {}).get("ask") == "core_elective" if ctx.plan else False:
+        text += ("\n\nThe course catalogue doesn't record whether a course is core or an elective — your programme's "
+                 "curriculum document lists it under its course category.")
+    elif not d.get("syllabus_summary"):
         text += "\n\nA syllabus summary isn't available yet — the full syllabus is in your programme's curriculum document."
     return text + source_line(*sources)
 
@@ -336,7 +421,8 @@ def compose_course_faculty(ctx: GroundedContext) -> str:
         return f"{label} is in the course catalog, but no teacher is linked to it in the current timetable."
     people = [f.data for f in facts if f.data.get("full_name")]
     names = [p["full_name"] for p in people]
-    text = f"{label} is taught by {join_names(names)}."
+    lab = any(p.get("_entry_type") == "lab" for p in people)
+    text = (f"The {label} lab is taken by {join_names(names)}." if lab else f"{label} is taught by {join_names(names)}.")
     if len(names) > 1:
         text += " Different sections may have different teachers."
     contacts = [f"- {p['full_name']} — {p['email']}" for p in people if p.get("email")]
@@ -346,6 +432,8 @@ def compose_course_faculty(ctx: GroundedContext) -> str:
 
 
 _ATTR_EMAIL = re.compile(r"\b(e-?mail|mail\s+id)\b", re.I)
+_ATTR_PHONE = re.compile(r"\b(phone|mobile|number|call|contact\s+no|landline|extension)\b", re.I)
+_ATTR_CONTACT = re.compile(r"\b(contact|reach|get\s+in\s+touch)\b", re.I)
 _ATTR_OFFICE = re.compile(r"\b(office|cabin|room|where\s+(is|can\s+i\s+find|do\s+i\s+find))\b", re.I)
 _ATTR_RESEARCH = re.compile(r"\b(research|work(s|ing)?\s+on|interests?|specializ|expert)\w*", re.I)
 _ATTR_POSITION = re.compile(r"\b(position|designation|role|post|title|fit\s+in|what\s+(does|is)\s+\S+(\s+\S+){0,3}\s+do)\b", re.I)
@@ -353,12 +441,19 @@ _ATTR_POSITION = re.compile(r"\b(position|designation|role|post|title|fit\s+in|w
 
 def _matched_differently(typed: Optional[str], full_name: str) -> bool:
     """True when the name found isn't what was typed ("Jhon" -> "John"), so
-    the answer should say which person it resolved to."""
+    the answer should say which person it resolved to. Only the name words
+    of the question count — "Amit sir email" typed "Amit" correctly."""
     if not typed:
         return False
+    from . import campus  # lazy: campus pulls in retrieval
+
+    from . import lexicon
+
     found = set(re.sub(r"[^a-z ]+", " ", full_name.lower()).split())
-    words = [w for w in re.sub(r"[^a-z ]+", " ", typed.lower()).split() if len(w) > 2 and w not in {"dr", "prof"}]
-    return any(w not in found for w in words)
+    # A typed word that is close to — but not exactly — one of the name's
+    # words ("Jhon" / "John"); unrelated words ("available") don't count.
+    return any(w not in found and max((lexicon.similarity(w, t) for t in found), default=0) >= 0.75
+               for w in campus.query_name_words(typed))
 
 
 def _slots_text(slots: list[dict]) -> str:
@@ -376,8 +471,9 @@ def compose_faculty(ctx: GroundedContext) -> str:
     q = ctx.query
     hints = ctx.plan.hints if ctx.plan else {}
     if len(people) > 1 and not any(p["full_name"].lower() == (ctx.plan.topic_text or "").lower() for p in people):
-        return ("I found more than one match — which one did you mean?\n\n"
-                + "\n".join(f"- **{p['full_name']}**" + (f" — {p['email']}" if p.get("email") else "") for p in people)
+        return ("More than one person matches — which one did you mean?\n\n"
+                + "\n".join(f"- **{p['full_name']}**" + (f" — {p['designation']}" if p.get("designation") else "")
+                             + (f" · {p['email']}" if p.get("email") else "") for p in people)
                 + source_line("faculty directory"))
     p = people[0]
     name = p["full_name"]
@@ -395,6 +491,57 @@ def compose_faculty(ctx: GroundedContext) -> str:
         if p.get("office_location"):
             text += f" (office: {p['office_location']})."
         return text + source_line("faculty directory", "your live timetable" if slots else None)
+    if hints.get("focus") == "availability":
+        slots = p.get("teaching_slots") or []
+        now = now_ist()
+        now_m, dow = now.hour * 60 + now.minute, now.isoweekday()
+        today = sorted((s for s in slots if s.get("day_of_week") == dow), key=lambda s: s["start_time"])
+        busy = next((s for s in today if timeq.to_minutes(s["start_time"]) <= now_m < timeq.to_minutes(s["end_time"])), None)
+        nxt = next((s for s in today if timeq.to_minutes(s["start_time"]) > now_m), None)
+        if busy:
+            text = (f"By the timetable, **{name}** is teaching right now — {busy.get('course_code') or 'a class'} "
+                    f"until {fmt_time(busy['end_time'])}.")
+        else:
+            text = f"By the timetable, **{name}** isn't teaching right now."
+            text += (f" Their next class today is {nxt.get('course_code') or 'a class'} at {fmt_time(nxt['start_time'])}."
+                     if nxt else " They have no more classes today.")
+        text += (" I can't see whether they're actually in their cabin"
+                 + (f" ({p['office_location']})" if p.get("office_location") else "")
+                 + (f" — email **{p['email']}** to be sure." if p.get("email") else "."))
+        return lead + text + source_line("your live timetable", "faculty directory")
+    if hints.get("focus") == "subjects":
+        subjects = p.get("subjects") or []
+        mine = p.get("_my_courses")
+        if mine is not None:
+            shared = [c for c in subjects if c["course_code"] in mine]
+            if shared:
+                return (lead + f"Yes — **{name}** teaches "
+                        + join_names([f"**{nice_title(c['course_name'])}** ({c['course_code']})" for c in shared])
+                        + ", which you take this semester." + source_line("your live timetable"))
+            return (lead + f"No — **{name}** doesn't teach any of your courses this semester"
+                    + (f" (they teach {', '.join(c['course_code'] for c in subjects)})." if subjects else ".")
+                    + source_line("your live timetable"))
+        if not subjects:
+            return lead + (f"**{name}** isn't linked to any course in the current timetable, so I can't say what they "
+                           f"teach this semester.") + src
+        lines = []
+        for c in subjects:
+            kinds = [t for t in c["types"] if t != "class"]
+            lines.append(f"- **{nice_title(c['course_name'])}** ({c['course_code']})"
+                         + (f" — {', '.join(kinds)}" if kinds else "")
+                         + (f" · {', '.join(c['classes'][:3])}" + ("…" if len(c["classes"]) > 3 else "") if c["classes"] else ""))
+        return (lead + f"**{name}** teaches {len(subjects)} course{'s' if len(subjects) > 1 else ''} this semester:\n\n"
+                + "\n".join(lines) + source_line("your live timetable", "faculty directory"))
+    if _ATTR_PHONE.search(q) and not _ATTR_EMAIL.search(q):
+        return lead + (f"{name}'s phone number is **{p['phone']}**." if p.get("phone")
+                       else f"I don't have a phone number on file for {name}.") + (
+                    f" Email: {p['email']}." if p.get("email") else "") + src
+    if _ATTR_CONTACT.search(q) and not (_ATTR_EMAIL.search(q) or _ATTR_OFFICE.search(q)):
+        bits = [x for x in (f"email **{p['email']}**" if p.get("email") else None,
+                            f"phone **{p['phone']}**" if p.get("phone") else None,
+                            f"office {p['office_location']}" if p.get("office_location") else None) if x]
+        return lead + (f"You can reach **{name}** by " + ", ".join(bits) + "." if bits
+                       else f"I don't have contact details on file for {name}.") + src
     if _ATTR_POSITION.search(q) and p.get("designation") and not _ATTR_EMAIL.search(q) and not _ATTR_RESEARCH.search(q):
         article = "an" if p["designation"][:1].lower() in "aeiou" else "a"
         text = f"**{name}** is {article} **{p['designation']}**"
@@ -416,6 +563,8 @@ def compose_faculty(ctx: GroundedContext) -> str:
         lines.append(f"- {p['designation']}")
     if p.get("email"):
         lines.append(f"- Email: {p['email']}")
+    if p.get("phone"):
+        lines.append(f"- Phone: {p['phone']}")
     if p.get("office_location"):
         lines.append(f"- Office: {p['office_location']}")
     if p.get("office_hours"):
@@ -464,7 +613,9 @@ def compose_research(ctx: GroundedContext) -> str:
 def compose_roles(ctx: GroundedContext) -> str:
     role = (ctx.plan.hints or {}).get("role", "") if ctx.plan else ""
     if not ctx.facts:
-        return f"I couldn't find anyone with that role in the faculty directory."
+        label = {"librarian": "a librarian", "iqac": "an IQAC coordinator", "placement": "a training/placement officer"}.get(role, "anyone with that role")
+        return (f"The faculty directory in ORION doesn't list {label}. The administrative office can point you to the "
+                "right person.")
     people = [f.data for f in ctx.facts]
     note = next((p.get("_note") for p in people if p.get("_note")), None)
     if note:
@@ -571,8 +722,29 @@ def _dish_answer(rows: list[dict], dish: str) -> Optional[str]:
 
 
 def compose_mess(ctx: GroundedContext) -> str:
-    rows = [f.data for f in ctx.facts if f.data.get("meal")]
     meal = ctx.plan.meal if ctx.plan else None
+    mess_time = ((ctx.plan.hints or {}) if ctx.plan else {}).get("mess_time")
+    if mess_time:
+        timing = next((f.data for f in ctx.facts if f.data.get("_timings")), None)
+        if not timing or not timing.get("timings"):
+            return ("I don't have the mess timings on file. The menu board at the dining hall lists them."
+                    + source_line("mess timings (not on file)"))
+        now = now_ist()
+        return (timeq.answer_mess_time(timing["timings"], mess_time, meal, now.hour * 60 + now.minute)
+                + source_line(f"mess timings ({timing.get('source') or 'published menu'})"))
+    rows = [f.data for f in ctx.facts if f.data.get("meal")]
+    if rows and ((ctx.plan.hints or {}) if ctx.plan else {}).get("veg_check"):
+        nonveg_re = re.compile(r"\b(chicken|egg\w*|fish|mutton|beef|pork|prawns?|meat|omelette|keema|non[\s-]?veg\w*)\b", re.I)
+        lines = []
+        for r_ in sorted(rows, key=lambda r_: _MEAL_ORDER.get(r_["meal"], 9)):
+            found = [i for i in r_["items"] if nonveg_re.search(i)]
+            lines.append(f"- **{r_['meal'].capitalize()}:** " + (f"non-veg — {', '.join(found)} (veg items too)" if found else "vegetarian"))
+        d = rows[0]["display_date"]
+        head = (f"{rows[0]['meal'].capitalize()} on **{fmt_date(d)}** is **"
+                + ("not fully vegetarian" if any("non-veg" in l for l in lines) else "vegetarian") + "**."
+                if len(rows) == 1 else f"On **{fmt_date(d)}**:")
+        return (head + ("\n\n" + "\n".join(lines) if len(rows) > 1 or "non-veg" in lines[0] else "")
+                + "\n\n(Judged from the dish names on the menu.)" + source_line("mess menu"))
     if not rows:
         return "There's no mess menu on file for that day." + (f" (asked about {meal})" if meal else "")
     dish = (ctx.plan.hints or {}).get("dish") if ctx.plan else None
@@ -842,10 +1014,26 @@ def _contact(r: dict) -> str:
     return f" · {' · '.join(bits)}" if bits else ""
 
 
+def _hall_gender(hall: str) -> Optional[str]:
+    m = re.search(r"\((BOYS|GIRLS)\)", hall.upper())
+    return {"BOYS": "boys'", "GIRLS": "girls'"}.get(m.group(1)) if m else None
+
+
 def compose_wardens(ctx: GroundedContext) -> str:
     rows = [f.data for f in ctx.facts]
     if not rows:
         return "I couldn't find warden details for that hostel."
+    if ((ctx.plan.hints or {}) if ctx.plan else {}).get("focus") == "gender":
+        halls = list(dict.fromkeys(r["hall_name"] for r in rows if r.get("hall_name")))
+        src = source_line("Wardens Team, July 2026")
+        def bare(h: str) -> str:
+            return nice_title(re.sub(r"\s*\((BOYS|GIRLS)\)\s*", "", h, flags=re.I))
+        if rows[0].get("_mode") == "hall" and halls:
+            return "\n".join(f"**{bare(h)}** is a **{_hall_gender(h) or 'mixed'}** hostel." for h in halls) + src
+        girls = [bare(h) for h in halls if _hall_gender(h) == "girls'"]
+        boys = [bare(h) for h in halls if _hall_gender(h) == "boys'"]
+        return (f"**Girls' hostels:** {', '.join(girls) or 'none listed'}\n\n**Boys' hostels:** {', '.join(boys) or 'none listed'}"
+                + src)
     mode = rows[0].get("_mode")
     src = source_line("Wardens Team, July 2026")
     if mode == "hall":
@@ -872,6 +1060,32 @@ def compose_wardens(ctx: GroundedContext) -> str:
 def compose_my_courses(ctx: GroundedContext) -> str:
     if not ctx.facts:
         return "I couldn't find any courses in your timetable."
+    hints = (ctx.plan.hints or {}) if ctx.plan else {}
+    facts = ctx.facts
+    if hints.get("lab"):
+        with_lab = [f for f in facts if "lab" in (f.data.get("types") or [])]
+        if not with_lab:
+            return "None of your courses has a lab session in the current timetable." + source_line("your live timetable")
+        return (f"**{len(with_lab)} of your {len(facts)} courses** have labs:\n\n"
+                + "\n".join(f"- **{nice_title(f.data['course_name'])}** ({f.data['course_code']})"
+                             + (f" — {join_names(f.data['faculty'])}" if f.data.get("faculty") else "") for f in with_lab)
+                + source_line("your live timetable"))
+    if hints.get("credits"):
+        lines, total, known = [], 0, 0
+        docs = set()
+        for f in facts:
+            c, cur = f.data, f.data.get("curriculum")
+            credit = c.get("credits") if c.get("credits") is not None else (cur or {}).get("credits")
+            if credit is not None:
+                total += int(credit)
+                known += 1
+            if cur:
+                docs.add(cur["document_title"])
+            lines.append(f"- **{nice_title(c['course_name'])}** ({c['course_code']}) — "
+                         + (f"**{credit} credits**" if credit is not None else "credits not found in your curriculum"))
+        head = f"Your {len(facts)} courses this semester"
+        head += f" add up to **{total} credits**:" if known == len(facts) else f" ({known} with credits on file):"
+        return head + "\n\n" + "\n".join(lines) + source_line("your live timetable", *sorted(docs))
     parts = [f"You have **{len(ctx.facts)} courses** this semester:\n"]
     for f in ctx.facts:
         c = f.data
@@ -897,8 +1111,19 @@ def compose_profile(ctx: GroundedContext) -> str:
                 + source_line("your profile"))
     if "section" in q or "batch" in q:
         return f"You're in section **{p.get('section')}**." + source_line("your profile")
+    if re.search(r"\b(advis[oe]r|class\s+teacher|mentor)\b", q):
+        return ("ORION doesn't have faculty-advisor assignments yet, so I can't tell you who yours is — your "
+                "department office or CR will know." + source_line("your profile"))
     if "semester" in q or "year" in q:
-        return f"You're in **semester {p.get('semester')}**." + source_line("your profile")
+        sem = p.get("semester")
+        year = (int(sem) + 1) // 2 if sem else None
+        ordinal = {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth"}.get(year or 0, "")
+        asked = re.search(r"\b(first|second|third|fourth|final|1st|2nd|3rd|4th)[\s-]+year\b", q)
+        if asked and year:
+            want = {"first": 1, "1st": 1, "second": 2, "2nd": 2, "third": 3, "3rd": 3, "fourth": 4, "4th": 4, "final": 4}[asked.group(1)]
+            return (("Yes" if want == year else "No") + f" — you're in semester {sem}, which is your **{ordinal} year**."
+                    + source_line("your profile"))
+        return (f"You're in **semester {sem}**" + (f" — your **{ordinal} year**." if ordinal else ".")) + source_line("your profile")
     if "department" in q or "branch" in q:
         return f"Your department is **{dept}**." + source_line("your profile")
     lines = [f"- Semester **{p.get('semester')}**, section **{p.get('section')}**",
@@ -908,9 +1133,34 @@ def compose_profile(ctx: GroundedContext) -> str:
     return "Here's what I have for you:\n\n" + "\n".join(lines) + source_line("your profile")
 
 
+def _room_key(r: Optional[str]) -> str:
+    return re.sub(r"[^A-Z0-9]", "", (r or "").upper())
+
+
 def compose_classroom(ctx: GroundedContext) -> str:
     room = next((f.data for f in ctx.facts if f.data.get("_classroom")), None)
     nxt = next((f.data for f in ctx.facts if f.data.get("_role")), None)
+    hints = (ctx.plan.hints or {}) if ctx.plan else {}
+    src = source_line("classroom allocation, Odd semester 2026" if room else None)
+    asked = hints.get("room")
+    if asked:
+        if not room:
+            return (f"I don't have a classroom allocation on file for your section, so I can't confirm whether "
+                    f"**{asked}** is yours. The timetable doesn't list rooms either.")
+        if _room_key(room["room_no"]) == _room_key(asked):
+            return f"Yes — **{room['room_no']}** is your section's classroom this semester." + src
+        return (f"No — your section's classroom this semester is **{room['room_no']}**, not {asked}. "
+                "(Labs are held in the labs, not the classroom.)" + src)
+    if hints.get("lab"):
+        labs = _merge_slots([f.data for f in ctx.facts if f.data.get("_lab")])
+        text = "The timetable doesn't list lab rooms, so I can't tell you which lab to go to — ask your lab faculty or CR."
+        if labs:
+            text += "\n\nYour labs this week:\n" + "\n".join(
+                f"- {_DAYS.get(e.get('day_of_week'), '')} {fmt_range(e['start_time'], e['end_time'])} · {entry_label(e)}"
+                + (f" — {join_names(e['faculty_names'])}" if e.get("faculty_names") else "") for e in labs)
+        if room:
+            text += f"\n\nYour section's classroom (for lectures) is **{room['room_no']}**."
+        return text + source_line("your live timetable", "classroom allocation, Odd semester 2026" if room else None)
     parts = []
     target = (nxt.get("_followup") if nxt and nxt.get("_role") == "ongoing" and nxt.get("_followup") else nxt)
     if target and target.get("room"):
@@ -1036,6 +1286,36 @@ def _compose_cohort_comparison(
     return text, confidence, passages
 
 
+# Words that say what kind of answer is wanted, not what it's about.
+_GENERIC_ASK = {
+    "about", "apply", "applying", "application", "obtain", "getting", "procedure", "process", "allowed", "permitted",
+    "student", "students", "college", "campus", "institute", "iiitk", "kottayam", "during", "should", "would",
+    "could", "there", "their", "which", "where", "these", "those", "maximum", "minimum", "number", "details",
+    "information", "explain", "tell", "means", "meaning", "happens", "happen", "someone", "anyone", "people",
+    "person", "within", "before", "after", "without", "through", "rules", "regulation", "regulations", "policy",
+    "policies", "guidelines", "allowed", "possible", "require", "required", "requirement", "requirements",
+    "please", "exactly", "really", "semester", "course", "courses", "class", "classes", "first", "second", "third",
+    "fourth", "final", "batch", "document", "documents", "section", "things", "thing", "other", "different",
+    "total", "today", "tomorrow", "right", "being", "doing", "using", "going", "getting", "taking", "making",
+}
+
+
+def _unmentioned_terms(query: str, snippets: list) -> list[str]:
+    """Specific words of the question that no retrieved passage contains
+    (prefix match, so "timings" ~ "timing"), unless the synonym table maps
+    them to wording the documents use."""
+    text = " ".join((getattr(s, "content", "") or "").lower() for s in snippets)
+    if not text:
+        return []
+    out = []
+    for w in dict.fromkeys(re.findall(r"[a-z]{5,}", query.lower())):
+        if w in _GENERIC_ASK or w in documents._STOP or documents.expand_query(w)[1]:
+            continue
+        if w[:5] not in text:
+            out.append(w)
+    return out
+
+
 def compose_documents(ctx: GroundedContext, cohort_family: Optional[str]) -> tuple[str, float, list[documents.Passage]]:
     plan_hints = ctx.plan.hints or {}
     cohort_ref = plan_hints.get("cohort_ref")
@@ -1055,6 +1335,14 @@ def compose_documents(ctx: GroundedContext, cohort_family: Optional[str]) -> tup
     # passage that doesn't actually cover the question is worse than saying
     # so: it reads as sourced and authoritative while being unrelated.
     verdict = semantic_verdict(p, ctx.snippets)
+    missing = _unmentioned_terms(ctx.query, ctx.snippets) if verdict != "accept" else []
+    if missing:
+        # "bonafide certificate", "library timings": the documents never
+        # mention the thing asked about, so a passage that shares the other
+        # word ("certificate", "library") would be a confident wrong answer.
+        return (f"The campus documents I have don't mention **{' '.join(missing[:2])}**, so I can't answer that "
+                "from them. The Academic Office (or the office concerned) can help." + source_line("campus documents"),
+                0.0, [])
     if verdict == "reject":
         # Shares words with the question but isn't about it ("examination
         # hall rules" -> a textbook by Prentice Hall). Worse than silence.
@@ -1154,6 +1442,8 @@ def compose(ctx: GroundedContext, cohort_family: Optional[str] = None) -> str:
         return compose_day(ctx, plan.topic_text if plan else None)
     if intent == StructuredIntent.WEEK_TIMETABLE:
         return compose_week(ctx)
+    if intent == StructuredIntent.WORKING_DAY:
+        return compose_working_day(ctx)
     if intent == StructuredIntent.FREE_TIME:
         return compose_free(ctx, (plan.topic_text if plan else None) or "today")
     if intent == StructuredIntent.COURSE_INFO:
@@ -1204,9 +1494,22 @@ def _time_24(text: str) -> str:
 def _no_structured_answer(ctx: GroundedContext) -> str:
     warning = ctx.warnings[0] if ctx.warnings else ""
     if "course code" in warning or "couldn't find a course" in warning:
-        return "I couldn't find that course in the catalog. Check the course code (for example ICS 211)."
+        asked = re.search(r"matching '([^']+)'", warning)
+        name = f" called **{asked.group(1)}**" if asked and len(asked.group(1)) < 40 else ""
+        return (f"I couldn't find a course{name} in ORION's course catalogue — it only has the courses in this "
+                "semester's timetables. Try the course code (for example ICS 211) or the full course name.")
+    if "designation found" in warning:
+        role = re.search(r"'([^']+)' designation", warning)
+        label = {"librarian": "a librarian", "iqac": "an IQAC coordinator"}.get(role.group(1) if role else "", "anyone in that role")
+        return (f"The faculty directory in ORION doesn't list {label}. The administrative office can point you to the "
+                "right person.")
     if "no faculty found" in warning:
-        return "I couldn't find a faculty member with that name. Try their full name, e.g. \"Tell me about Dr. Manu Madhavan\"."
+        from . import campus  # lazy: campus pulls in retrieval
+
+        words = campus.query_name_words(ctx.plan.topic_text or ctx.query) if ctx.plan else []
+        who = f" named **{' '.join(w.capitalize() for w in words)}**" if words else " with that name"
+        return (f"I couldn't find anyone{who} in the faculty directory. If they're new or visiting they may not be "
+                "listed yet — try their full name or surname.")
     if "no upcoming class" in warning:
         return "I couldn't find any upcoming classes in your timetable."
     if "profile" in warning:

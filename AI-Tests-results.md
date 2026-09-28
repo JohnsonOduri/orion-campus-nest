@@ -91,3 +91,100 @@ full-text search alone.
 - The intent classifier learns only from the examples in
   `backend/query/intents.py`. A phrasing unlike any of them still falls
   through to document search.
+
+---
+
+# Round 2 — precise answers, names as typed (2026-09-28, later)
+
+Source: the new screenshots and WhatsApp images in `AI-Tests/`, plus the
+❌/⚠️ rows of `ORION_QUESTION_ANALYSIS.md`. Added as the `ai2-*` groups in
+`scripts/eval_pipeline.py`; offline in `tests/test_precise_answers.py`.
+
+| | before | after |
+|---|---|---|
+| Screenshot questions answered correctly | 9 / 39 | 39 / 39 |
+| `eval_pipeline.py` (all groups) | 100 / 100 | 142 / 142 |
+| Broad bank (173) | 0 errors, 7 flagged | 0 errors, the same 7 flagged |
+| Unit tests | 437 | 505 |
+
+## What each screenshot asked, and what ORION says now
+
+**Free time: the specific time, not the whole day.** Before, every one
+of these returned the same full-day list.
+
+| Question | Answer now (Monday S5 CSE III timetable) |
+|---|---|
+| Am I free at 2? | Yes — free at 2 PM; that free time runs 12:25 PM until 2:30 PM, when you have HRM (IHS 311) |
+| Do I have a free hour between 2 and 4? | No — no 1-hour gap between 2 and 4 PM; the most is 2–2:30 PM (30 min); classes then: … |
+| Am I free after 3pm? | After 3 PM you're free from 6:30 PM onwards; busy with: … |
+| What's my longest free slot today? | 12:25–2:30 PM (2 h 5 min); other breaks …; free after 6:30 PM |
+
+**Mess timings.** They were never stored, so ORION returned the whole
+menu. They're printed on the published menu (`august_menu .pdf`:
+Breakfast 7:00–9:45, Lunch 12:00–2:30, Snacks 4:00–6:00, Dinner
+7:00–8:30) and are now in `mess_meal_timings`. So "Is the mess open now?"
+says whether it's open, which meal is on, and until when. "What time does
+the mess close?" gives 8:30 PM plus each meal's hours. "When is
+breakfast?" gives 7–9:45 AM. A question about the food itself still gets
+the menu.
+
+**Names as people type them.** A new resolver (`campus.match_faculty_names`)
+handles:
+- a first name with sir/mam ("Amit sir email", "Athira mam's office");
+- a short unique name ("Dr. A Balu");
+- stray punctuation ("mirotha;;i chand");
+- possessives ("Christina Joseph's");
+- names written without a space ("Dr.Jobin Jose").
+
+A name several people share ("joseph sir") returns a list to choose
+from. A name not in the directory ("Rekha ma'am") gets an answer saying
+nobody by that name is listed. Directory names are protected from spelling
+correction: "manu" was being turned into "menu". Phone numbers and "what
+subjects does X teach" (from the live timetable) are now answered.
+
+**The rest of the screenshots**
+
+| Question | Answer now |
+|---|---|
+| Is there a class going on right now? | Your timetable, not a curriculum page |
+| Is today a working day? / Do I have class on the 15th? | Timetable for that date + where it falls in the term |
+| Is AC306 my classroom? | No — your section's classroom is BC 302 |
+| Where is the lab? | Lab rooms aren't in the data; your labs this week are … |
+| Is Manimala a boys or girls hostel? | Boys' (from the hall names) |
+| Who is the sports officer? | The Physical Education Instructor |
+| Who is the placement coordinator? | The Associate Dean (Students Welfare & Career Development), with a note |
+| Who handles academic affair? | The Associate Deans (Academic Affairs) |
+| Who can guide me for MS in AI? | Faculty whose research includes AI |
+| Faculty who teaches OS | No course called OS in the catalogue (no guessing) |
+| Which faculty handles the lab for CSE 312? | The lab teachers, from the timetable |
+| What are my courses with their credits? | Each course's credits from your curriculum, with the total |
+| Which of my courses have labs? | 3 of your 8, listed |
+| How many classes do I have this week? | 24 (17 classes, 4 tutorials, 3 labs), per day |
+| What number should I call for help regarding ragging? | The anti-ragging helpline 1800-180-5522 |
+
+## ORION_QUESTION_ANALYSIS.md — what changed
+
+Now answered:
+- how long until / how long is my next class;
+- what did I miss today;
+- classes in the morning / afternoon / evening;
+- is today's lunch vegetarian;
+- is a faculty member free or teaching now, according to the timetable;
+- does Dr X teach any of my courses;
+- "What is OS?" (course acronyms), and core/elective (says it isn't recorded);
+- days left in the semester;
+- which year am I in / am I a first-year student;
+- faculty advisor (says it isn't in ORION);
+- librarian / IQAC (says they aren't in the directory);
+- small talk: who made you, are you an AI, good night, I'm bored.
+
+When the documents don't mention the thing asked ("bonafide certificate",
+"library timings"), ORION now says so. It no longer quotes a passage that
+only shares a word with the question.
+
+Still unanswerable because ORION has no data for them (the answer says
+so): clubs, transport, emergency contacts, library hours, hall tickets,
+exam seating, hostel allocation, faculty-advisor mapping, special meals.
+Several claims in that document are out of date. For example, it lists
+`mess_menus`, `academic_calendar`, `document_chunks` and `rooms` as empty,
+but they have 124, 30, 1,269 and 30 rows.

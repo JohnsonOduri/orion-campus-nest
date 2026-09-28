@@ -56,6 +56,9 @@ class StructuredIntent(str, Enum):
     # answered from the conversation itself (backend/app/api/ai.py), never
     # from campus data.
     CONVERSATION = "conversation"
+    # "Is today a working day?", "do I have class on the 15th?" — calendar
+    # holidays + the timetable for that date (2026-09-28).
+    WORKING_DAY = "working_day"
     NONE = "none"
 
 
