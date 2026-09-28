@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 import sys
 
 from fastapi import APIRouter, HTTPException, Request
@@ -35,7 +36,7 @@ from fastapi import APIRouter, HTTPException, Request
 from query import campus, compose, followup, llm_client
 from query import service as query_service
 from query.router import classify
-from query.types import RouteType
+from query.types import RouteType, StructuredIntent
 
 from ..core import config
 from ..core.cookies import read_access_token
@@ -80,6 +81,17 @@ def _recent_history(client, conversation_id: str) -> list[dict[str, str]]:
     return [{"role": r["role"], "content": r["content"]} for r in rows]
 
 
+def _conversation_first_question(client, conversation_id: str) -> str | None:
+    """The conversation's first user message — beyond the HISTORY_WINDOW,
+    so "what was the first question I asked?" is answered correctly in a
+    long chat, not with the oldest message that happens to be in view."""
+    rows = (
+        client.table("ai_messages").select("content").eq("conversation_id", conversation_id).eq("role", "user")
+        .order("created_at", desc=False).limit(1).execute().data
+    )
+    return rows[0]["content"] if rows else None
+
+
 def _save_turn(client, conversation_id: str, question: str, reply: str, route: str | None) -> None:
     """Both messages in one insert, then one conversation touch — four round
     trips became two, which matters because the API and the database are in
@@ -91,7 +103,88 @@ def _save_turn(client, conversation_id: str, question: str, reply: str, route: s
     client.table("ai_conversations").update({"updated_at": "now()"}).eq("id", conversation_id).execute()
 
 
-def answer(client, query: str, history: list[dict[str, str]] | None = None, profile_key: str | None = None) -> dict:
+# Several questions in one message ("Who handles student welfare?\n\nWhat is
+# their position?") — found live: only the last one was answered, with the
+# first one's context silently dropped.
+_MAX_PARTS = 6
+
+
+def split_questions(query: str) -> list[str]:
+    """The separate questions in one message, or [query] if it's one."""
+    parts = [p.strip() for p in re.split(r"\n+|(?<=\?)\s+(?=[A-Z])", query or "") if p.strip()]
+    parts = [p for p in parts if len(re.findall(r"[A-Za-z]{2,}", p)) >= 2]
+    return parts if 2 <= len(parts) <= _MAX_PARTS else [query]
+
+
+def answer(client, query: str, history: list[dict[str, str]] | None = None, profile_key: str | None = None,
+           first_question: str | None = None) -> dict:
+    """Answer one message — each question in it, in order, with the earlier
+    ones as context for the later ("What is their position?" after "Who
+    handles student welfare?")."""
+    parts = split_questions(query)
+    if len(parts) == 1:
+        return _answer_one(client, query, history, profile_key, first_question)
+    turns = list(history or [])
+    results = []
+    for part in parts:
+        r = _answer_one(client, part, turns, profile_key, first_question or _first_user(turns) or parts[0])
+        results.append((part, r))
+        turns += [{"role": "user", "content": part}, {"role": "assistant", "content": r["answer"]}]
+    combined = "\n\n".join(f"**{i}. {part}**\n\n{r['answer']}" for i, (part, r) in enumerate(results, 1))
+    first = results[0][1]
+    payload = {**first, "answer": combined, "parts": [{"question": q, "route": r["route"]} for q, r in results]}
+    if config.DEBUG_TRACE:
+        payload["trace"] = {**(first.get("trace") or {}), "parts": [r.get("trace") for _, r in results]}
+    return payload
+
+
+def _first_user(history: list[dict[str, str]] | None) -> str | None:
+    return next((m["content"] for m in (history or []) if m.get("role") == "user" and m.get("content")), None)
+
+
+_SOURCE_LINE_RE = re.compile(r"\*Sources?:\s*(.+?)\*\s*$", re.S)
+
+
+def _conversation_answer(plan, history: list[dict[str, str]] | None, first_question: str | None) -> str:
+    """"Which source did you use?" / "What was my first question?" —
+    answered from this conversation only."""
+    turns = history or []
+    if (plan.hints or {}).get("meta") == "source":
+        last = next((m["content"] for m in reversed(turns) if m.get("role") == "assistant" and m.get("content")), None)
+        if not last:
+            return "There's no earlier answer in this conversation yet, so there's no source to point to."
+        m = _SOURCE_LINE_RE.search(last.strip())
+        if not m:
+            return ("My last answer didn't come from a document or a campus record — it was a general reply, "
+                    "so there's no source to cite.")
+        return (f"That answer came from: **{m.group(1).strip()}**. Everything I answer comes from ORION's campus "
+                "records (timetable, faculty directory, mess menu, academic calendar) or quotes an approved document.")
+    which = (plan.hints or {}).get("which", "previous")
+    if which == "first":
+        q = first_question or _first_user(turns)
+        return f"Your first question in this chat was: “{q}”" if q else "This is the first question in our chat."
+    q = next((m["content"] for m in reversed(turns) if m.get("role") == "user" and m.get("content")), None)
+    return f"Your previous question was: “{q}”" if q else "This is the first question in our chat."
+
+
+_GUARD_LEADS = {
+    "mess": "I can only tell you the actual menu — I won't make one up. Here's what's really on it:",
+    "documents": "I can't make up or change campus rules, so here's what the official regulation actually says:",
+    "default": "I can only share what's actually on record — I won't make it up:",
+}
+
+
+def _guard_lead(context) -> str:
+    intent = context.plan.structured_intent.value if context.plan else ""
+    if intent.startswith("mess"):
+        return _GUARD_LEADS["mess"]
+    if context.route == RouteType.SEMANTIC:
+        return _GUARD_LEADS["documents"]
+    return _GUARD_LEADS["default"]
+
+
+def _answer_one(client, query: str, history: list[dict[str, str]] | None = None, profile_key: str | None = None,
+                first_question: str | None = None) -> dict:
     """The whole answer pipeline for one question — also what
     scripts/run_ai_task.py calls, so tests exercise exactly this path.
 
@@ -102,6 +195,21 @@ def answer(client, query: str, history: list[dict[str, str]] | None = None, prof
     4. only for document answers, and only when Gemini is reachable, let it
        reword the quoted rule; any failure keeps the quote.
     """
+    # About this conversation itself ("which source did you use?") — checked
+    # before follow-up rewriting, which would otherwise glue the previous
+    # question onto it.
+    meta_plan = classify(query)
+    if meta_plan.structured_intent == StructuredIntent.CONVERSATION:
+        text = _conversation_answer(meta_plan, history, first_question)
+        context = query_service.answer_query(client, query, plan=meta_plan)
+        trace = _trace(query, query, context, "conversation")
+        logger.info("ai.answer %s", trace)
+        payload = {**context.to_dict(), "answer": text, "answer_source": "conversation", "generation_available": True,
+                   "resolved_query": None}
+        if config.DEBUG_TRACE:
+            payload["trace"] = trace
+        return payload
+
     resolved = followup.resolve(query, history or [])
     plan = classify(resolved)
     # Text rewriting can only move a slot that exists in the previous
@@ -139,6 +247,9 @@ def answer(client, query: str, history: list[dict[str, str]] | None = None, prof
     else:
         text = compose.compose(context, family)
 
+    if (context.plan.hints or {}).get("guard"):
+        text = f"{_guard_lead(context)}\n\n{text}"
+
     trace = _trace(query, resolved, context, answer_source)
     logger.info("ai.answer %s", trace)
     payload = {
@@ -159,8 +270,14 @@ def answer(client, query: str, history: list[dict[str, str]] | None = None, prof
 
 def _is_unresolved(plan) -> bool:
     """The router found nothing specific: either explicitly unsupported, or
-    it fell through to "question-shaped, try the documents"."""
-    return plan.route == RouteType.UNSUPPORTED or (plan.hints or {}).get("fallback") == "yes"
+    it fell through to "question-shaped, try the documents" — or only the
+    semantic classifier recognised it and it's short enough to be a
+    follow-up ("what about the next day?" after a mess question is about
+    the mess, whatever the classifier guesses on its own)."""
+    hints = plan.hints or {}
+    if hints.get("via") == "semantic" and len((plan.raw_query or "").split()) <= followup._MAX_FOLLOWUP_WORDS:
+        return True
+    return plan.route == RouteType.UNSUPPORTED or hints.get("fallback") == "yes"
 
 
 def _trace(query: str, resolved: str, context, answer_source: str) -> dict:
@@ -195,7 +312,10 @@ def ask(body: AskRequest, request: Request):
     history = _recent_history(client, conversation_id)
 
     token = read_access_token(request)
-    result = answer(client, body.query, history, hashlib.sha256(token.encode()).hexdigest() if token else None)
+    first_question = _conversation_first_question(client, conversation_id) if re.search(
+        r"\bfirst\b.*\b(question|message|thing)\b|\bwhat\s+did\s+i\s+(ask|say)\b", body.query, re.I) else None
+    result = answer(client, body.query, history, hashlib.sha256(token.encode()).hexdigest() if token else None,
+                    first_question)
 
     _save_turn(client, conversation_id, body.query, result["answer"], result["route"])
 

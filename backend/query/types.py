@@ -48,6 +48,14 @@ class StructuredIntent(str, Enum):
     CLASSROOM = "classroom"
     FREE_TIME = "free_time"
     OUT_OF_SCOPE = "out_of_scope"
+    # Added 2026-09-28 (AI-Tests/): "who are the teachers/professors here?",
+    # "which faculty are assistant professors?" — the directory as a whole,
+    # filtered by designation/category/department, not one named person.
+    FACULTY_DIRECTORY = "faculty_directory"
+    # "Which source did you use?", "What was the first question I asked?" —
+    # answered from the conversation itself (backend/app/api/ai.py), never
+    # from campus data.
+    CONVERSATION = "conversation"
     NONE = "none"
 
 
@@ -130,6 +138,10 @@ class SemanticSnippet:
     document_type: Optional[str]
     valid_from: Optional[str]
     valid_until: Optional[str]
+    # Cosine similarity of this chunk's Gemini vector to the question
+    # (documents.search, hybrid retrieval) — None when vector search didn't
+    # run. Used by compose to judge relevance by meaning, not just shared words.
+    vector_similarity: Optional[float] = None
 
 
 @dataclass

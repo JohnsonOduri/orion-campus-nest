@@ -49,9 +49,16 @@ def answer_query(client: Any, query: str, *, profile: Optional[dict] = None, pla
         result = RetrievalResult(plan=plan, warnings=["campus data is temporarily unavailable — please try again"])
 
     # Retrieval functions build their own minimal plan; keep the router's
-    # richer one (hints, topic, reasoning) for composing and auditing.
-    result.plan = plan
+    # richer one (hints, topic, reasoning) for composing and auditing — plus
+    # any hint dispatch itself added about how it answered.
+    added = {k: v for k, v in ((result.plan.hints or {}) if result.plan else {}).items() if k in _DISPATCH_HINTS}
+    result.plan = dataclasses.replace(plan, hints={**plan.hints, **added}) if added else plan
     return build_context(result)
+
+
+# Hints set during dispatch, not by the router ("answered from the other
+# cohort's regulations") that the composer needs to see.
+_DISPATCH_HINTS = {"cross_cohort"}
 
 
 def _plan_date(plan: QueryPlan) -> Optional[date]:
@@ -66,6 +73,27 @@ def _plan_date(plan: QueryPlan) -> Optional[date]:
     except ValueError:
         logger.warning("ignoring unparseable QueryPlan.resolved_date %r", plan.resolved_date)
         return None
+
+
+def _other_cohort(family: Optional[str]) -> Optional[str]:
+    return {"21-25": "26-onwards", "26-onwards": "21-25"}.get(family or "")
+
+
+def _is_rule_question(plan: QueryPlan) -> bool:
+    hints = plan.hints or {}
+    return hints.get("document_type") == "regulations" or hints.get("semantic") == "documents" or (
+        not hints.get("category") and not hints.get("fallback"))
+
+
+def _answers(query: str, snippets: list) -> bool:
+    """Would these snippets answer the question well enough to quote?"""
+    from . import compose  # noqa: PLC0415 - compose imports this module's callers
+
+    passages, confidence = documents.best_passages(query, snippets)
+    if not passages:
+        return False
+    verdict = compose.semantic_verdict(passages[0], snippets)
+    return verdict != "reject" and (confidence >= compose._QUOTE_CONFIDENCE or verdict == "accept")
 
 
 def _link_entities(client: Any, plan: QueryPlan) -> QueryPlan:
@@ -122,11 +150,30 @@ def _dispatch(client: Any, plan: QueryPlan, profile: Optional[dict]) -> Retrieva
             snippets = search(cohort_ref)
         else:
             snippets = search(family)
+            other = _other_cohort(family)
+            if other and not _answers(query_text, snippets) and _is_rule_question(plan):
+                # The student's own regulations are silent on this (e.g. the
+                # 2021-25 regulations have no examination-hall section; the
+                # 2026 ones do). Show the other cohort's rule — labelled as
+                # not theirs (compose, "cross_cohort") — rather than nothing,
+                # and never presented as applying to them (CLAUDE.md §20).
+                theirs = documents.search(client, query_text, other, document_type="regulations")
+                if _answers(query_text, theirs):
+                    snippets = theirs
+                    plan = dataclasses.replace(plan, hints={**plan.hints, "cross_cohort": "yes"})
         return RetrievalResult(plan=plan, snippets=snippets,
                                warnings=[] if snippets else ["no document passages matched"])
 
     if intent == StructuredIntent.NEXT_CLASS:
-        return retrieval.next_class(client)
+        result = retrieval.next_class(client)
+        if plan.hints.get("with_event"):
+            # A bare "what's next?" could mean the next class or the next
+            # thing on campus — answer both rather than guessing one.
+            upcoming = campus.academic_calendar(client, "upcoming", {"cal_mode": "upcoming"}).facts[:1]
+            for f in upcoming:
+                f.data["_next_event"] = True
+            result.facts.extend(upcoming)
+        return result
     if intent == StructuredIntent.CLASS_AT_TIME:
         return retrieval.class_at_time(client, plan.topic_text or "")
     if intent == StructuredIntent.DAY_TIMETABLE:
@@ -162,7 +209,13 @@ def _dispatch(client: Any, plan: QueryPlan, profile: Optional[dict]) -> Retrieva
     if intent == StructuredIntent.MESS_ON_DAY:
         return retrieval.mess_on_day(client, plan.topic_text or "", meal=plan.meal, on_date=_plan_date(plan))
     if intent == StructuredIntent.ACADEMIC_CALENDAR:
-        return campus.academic_calendar(client, plan.topic_text or plan.raw_query)
+        return campus.academic_calendar(client, plan.topic_text or plan.raw_query, plan.hints)
+    if intent == StructuredIntent.FACULTY_DIRECTORY:
+        return campus.faculty_directory(client, plan.topic_text or plan.raw_query)
+    if intent == StructuredIntent.CONVERSATION:
+        # Answered from the conversation in backend/app/api/ai.py; there is
+        # nothing to retrieve from campus data.
+        return RetrievalResult(plan=plan, warnings=["conversation question"])
     if intent == StructuredIntent.EXAM_SCHEDULE:
         return campus.exam_schedule(client, plan.raw_query, plan.course_code)
     if intent == StructuredIntent.ANNOUNCEMENTS:

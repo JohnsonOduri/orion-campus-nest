@@ -730,6 +730,12 @@ Rules that must not be regressed:
   `scripts/eval_pipeline.py` (ROUTER / ENTITY_RESOLUTION /
   DATE_RESOLUTION / RETRIEVAL / ANSWER_GROUNDING); every answer logs a
   trace, and `ORION_DEBUG_TRACE=1` returns it from `/ai/ask` (dev only).
+  Added 2026-09-28 (docs/query-router.md top): `lexicon` spelling
+  correction toward campus vocabulary runs first in `router.classify`;
+  `intents` (TF-IDF classifier) is consulted only when the regex rules
+  find nothing; fuzzy faculty names (`campus.match_faculty_name`) never
+  guess between two people. Misrouted phrasing → add examples to
+  `intents.EXAMPLES`, don't bolt on another regex.
 - **Voice output goes through `ttsService` (`src/lib/ai/tts.ts`) only.** UI
   code never calls `speechSynthesis` directly. As of 2026-09-23 there is no
   backend TTS at all: `KokoroBrowserProvider` (`src/lib/ai/tts-providers.ts`)
@@ -753,6 +759,10 @@ Last run **2026-09-21** on the merged tree (commit `146bb9a`):
 npx tsc --noEmit                      => clean
 npm run build                         => passes
 ```
+
+Update 2026-09-28: `pytest` 368 passed; `scripts/eval_pipeline.py` 100/100
+(incl. 60 cases from `AI-Tests/`, 9/60 before); `run_ai_task.py` 173
+questions, 0 errors. Results: `AI-Tests-results.md`.
 
 Update 2026-09-22 (evening): `pytest` 262 passed, `npm test` 23 passed, build
 passes; the AI question bank (`AI-task.md`, 134 questions) runs end-to-end via
@@ -814,9 +824,13 @@ Do not claim the system is finished. As of 2026-09-21:
 
 ### AI answers (2026-09-22)
 - **Gemini is optional now.** Every answer is composed from Supabase rows or a
-  quoted document clause (`backend/query/compose.py`, `documents.py`); document
-  search is Postgres full-text (`search_document_chunks`), not embeddings.
-  Keep it that way: never make an answer depend on the LLM. See
+  quoted document clause (`backend/query/compose.py`, `documents.py`). Document
+  search is **hybrid** since 2026-09-28: Postgres full-text
+  (`search_document_chunks`) fused with vector search
+  (`search_document_chunks_semantic`), and vector similarity vetoes passages
+  that only share words with the question. The vector side is an enhancement:
+  if Gemini fails or `ORION_VECTOR_SEARCH=off`, full-text alone answers. Keep
+  it that way: never make an answer depend on the LLM or the embedding API. See
   `docs/query-router.md` (top) and `production-tasks.md`.
 
 ### UI

@@ -13,7 +13,7 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
 
-from . import retrieval
+from . import lexicon, retrieval
 from .types import QueryPlan, RetrievalResult, RouteType, StructuredFact, StructuredIntent
 
 _IST = timedelta(hours=5, minutes=30)
@@ -165,9 +165,138 @@ def _base_name(name: str) -> str:
     return re.sub(r"\bexam\b", "examination", n)
 
 
-def academic_calendar(client: Any, query: str) -> RetrievalResult:
+def _event_score(text: str, e: dict) -> float:
+    """How well a phrase ("exams start", "classes end") names event `e`."""
+    q = text.lower()
+    for pattern, replacement in _CAL_PHRASES:
+        q = re.sub(pattern, replacement, q)
+    q_tokens = _cal_tokens(q)
+    name = e["event_name"]
+    score = float(len(q_tokens & _cal_tokens(name)))
+    if "start" in q_tokens and re.search(r"\b(starts?|begins?)\b", name, re.I):
+        score += 0.6
+    if ("end" in q_tokens or "class ends" in q) and re.search(r"\bends?\b", name, re.I):
+        score += 0.6
+    return score
+
+
+def _best_event(text: str, events: list[dict], near: Optional[date] = None) -> Optional[dict]:
+    """The event a phrase names. Ties go to the event closest to `near`
+    (the other event in a "days between" question), so "exams" next to
+    "classes end" means the end semester exams, not the mid semester ones."""
+    scored = [(_event_score(text, e), e) for e in events]
+    best = max((sc for sc, _ in scored), default=0.0)
+    if best < 1.0:
+        return None
+    tied = [e for sc, e in scored if sc == best]
+    if near is not None:
+        tied.sort(key=lambda e: abs((date.fromisoformat(e["event_date"]) - near).days))
+    else:
+        today = today_ist()
+        tied.sort(key=lambda e: (date.fromisoformat(e["event_date"]) < today, e["event_date"]))
+    return tied[0]
+
+
+_GAP_SPLIT_RE = re.compile(r"\b(?:between|and|before|after|until|till|from|to|do|does|will)\b", re.I)
+
+
+def _calendar_mode(client: Any, query: str, hints: dict[str, str]) -> Optional[RetrievalResult]:
+    """Answers that need reasoning over the calendar rather than one lookup
+    (router._calendar_plan sets the mode)."""
+    mode = hints.get("cal_mode")
+    if not mode:
+        return None
+    events = calendar_events(client)
+    today = today_ist()
+    src = lambda e: f"academic_calendar ({e.get('source_id') or 'live'})"  # noqa: E731
+
+    def facts_for(picked: list[dict], **extra: Any) -> list[StructuredFact]:
+        return [StructuredFact(claim=f"{e['event_name']}: {e['event_date']}", data={**e, "_mode": mode, **extra},
+                               source=src(e)) for e in picked]
+
+    result = lambda facts, warnings=None: RetrievalResult(  # noqa: E731
+        plan=_plan(StructuredIntent.ACADEMIC_CALENDAR), facts=facts, warnings=warnings or ([] if facts else ["no matching academic calendar events"]))
+
+    if mode == "on_date":
+        target = date.fromisoformat(hints["date"])
+        on = [e for e in events if e["event_date"] == target.isoformat()]
+        if on:
+            return result(facts_for(on, _target=target.isoformat()))
+        before = [e for e in events if e["event_date"] < target.isoformat()][-1:]
+        after = [e for e in events if e["event_date"] > target.isoformat()][:1]
+        return result(facts_for(before + after, _target=target.isoformat(), _nearest=True))
+
+    if mode == "gap":
+        # Split the question into the two event phrases and match each one.
+        body = re.sub(r"^.*?\bhow\s+many\s+days\b|^.*?\b(gap|difference)\b", " ", query, flags=re.I)
+        parts = [p.strip(" ?.,") for p in _GAP_SPLIT_RE.split(body) if p and len(p.strip(" ?.,")) > 2]
+        # Filler ("are there") names no event; the first two phrases that do
+        # are the two events.
+        named = [p for p in parts if _best_event(p, events)]
+        first = _best_event(named[0], events) if named else None
+        second = None
+        for p in named[1:]:
+            cand = _best_event(p, [e for e in events if e is not first],
+                               near=date.fromisoformat(first["event_date"]) if first else None)
+            if cand:
+                second = cand
+                break
+        parts = named or parts
+        if first and not second:
+            # "How many days until the end sem exams?" — counted from today.
+            return result(facts_for([first], _gap_from_today=True))
+        if first and second:
+            # Re-pick the first with the second as the anchor, so ties resolve
+            # consistently in both directions.
+            first = _best_event(parts[0], [e for e in events if e is not second],
+                                near=date.fromisoformat(second["event_date"])) or first
+            a, b = sorted([first, second], key=lambda e: e["event_date"])
+            days = (date.fromisoformat(b["event_date"]) - date.fromisoformat(a["event_date"])).days
+            return result(facts_for([a, b], _gap_days=days))
+        return result([])
+
+    if mode == "after_event":
+        anchor = _best_event(hints.get("anchor", ""), events)
+        if not anchor:
+            return result([], [f"no calendar event matching {hints.get('anchor', '')!r}"])
+        base = _base_name(anchor["event_name"])
+        last_day = max(e["event_date"] for e in events if _base_name(e["event_name"]) == base or e is anchor)
+        nxt = [e for e in events if e["event_date"] > last_day][:1]
+        return result(facts_for(nxt, _anchor=anchor["event_name"], _anchor_date=last_day))
+
+    if mode == "exams":
+        exams = [e for e in events if e["event_type"] == "exam" or re.search(r"\bexam", e["event_name"], re.I)]
+        return result(facts_for(exams))
+
+    if mode == "upcoming":
+        return result(facts_for([e for e in events if date.fromisoformat(e["event_date"]) >= today][:8]))
+
+    if mode == "past":
+        past = [e for e in events if date.fromisoformat(e["event_date"]) < today]
+        return result(facts_for(list(reversed(past[-8:]))))
+
+    if mode == "today":
+        on = [e for e in events if e["event_date"] == today.isoformat()]
+        nxt = [e for e in events if date.fromisoformat(e["event_date"]) > today][:1]
+        facts = facts_for(on, _today=True) + facts_for(nxt, _next=True)
+        try:
+            classes = retrieval.day_timetable(client).facts
+        except Exception:  # noqa: BLE001 - the calendar answer stands on its own
+            classes = []
+        for f in classes:
+            facts.append(StructuredFact(claim=f.claim, data={**f.data, "_mode": mode, "_class": True}, source=f.source))
+        return result(facts, [])
+    return None
+
+
+def academic_calendar(client: Any, query: str, hints: Optional[dict[str, str]] = None) -> RetrievalResult:
     """Best-matching calendar event (+ its Starts/Ends partner), or the next
-    events for "what's coming up" / "upcoming deadlines" questions."""
+    events for "what's coming up" / "upcoming deadlines" questions. With a
+    `cal_mode` hint: events on a date, the gap between two events, the event
+    after another, all exams, upcoming/past events, today's overview."""
+    moded = _calendar_mode(client, query, hints or {})
+    if moded is not None:
+        return moded
     events = calendar_events(client)
     today = today_ist()
     q = query.lower()
@@ -335,6 +464,7 @@ _ROLE_DESIGNATION = {
     "nodal": ["Nodal"],
 }
 _DEPT_ALIASES = [
+    (r"\b(eee|electrical)\b", ["Electronics"]),
     (r"\b(cse|computer\s+science)\b", ["Computer Science"]),
     (r"\b(ece|electronics|communication)\b", ["Electronics"]),
     (r"\b(cyber|security|csy)\b", ["Cyber"]),
@@ -364,16 +494,100 @@ def faculty_by_role(client: Any, role: str, query: str) -> RetrievalResult:
     if role == "director":
         picked = [r for r in picked if "nit" not in r["designation"].lower()] or picked
     q = query.lower()
+    note = None
     for pattern, frags in _DEPT_ALIASES:
         if re.search(pattern, q):
             narrowed = [r for r in picked if any(f.lower() in r["designation"].lower() for f in frags)]
             if narrowed:
                 picked = narrowed
+                if re.search(r"\b(eee|electrical)\b", q):
+                    note = ("IIIT Kottayam doesn't have a separate Electrical Engineering department — the "
+                            "closest is Electronics & Communication Engineering (ECE).")
                 break
-    facts = [StructuredFact(claim=f"{r['full_name']} — {r['designation']}", data=r, source="faculty directory (live)")
+    facts = [StructuredFact(claim=f"{r['full_name']} — {r['designation']}", data={**r, "_note": note},
+                            source="faculty directory (live)")
              for r in picked[:8]]
     return RetrievalResult(plan=_plan(StructuredIntent.FACULTY_ROLE), facts=facts,
                            warnings=[] if facts else [f"no one with a '{role}' designation found in the faculty directory"])
+
+
+# ------------------------------------------------------------ faculty directory
+
+# (question pattern, label, test on (designation, categories)). The first
+# matching filter narrows the directory; none = the whole directory.
+_DIRECTORY_FILTERS: list[tuple[str, str, Any]] = [
+    (r"\bassistant\s+professors?\b", "Assistant Professor", lambda d, c: "assistant professor" in d),
+    (r"\bassociate\s+professors?\b", "Associate Professor", lambda d, c: "associate professor" in d),
+    (r"\blab\s+(faculty|teaching|staff|instructors?)|\blab\s+faculty", "Lab Faculty", lambda d, c: "lab faculty" in d),
+    (r"\badjuncts?\b", "Adjunct", lambda d, c: "adjunct" in d),
+    (r"\bvisiting\b", "Visiting", lambda d, c: "visiting" in d),
+    (r"\bacademic\s+administration\b", "academic administration",
+     lambda d, c: "administrative" in c and ("academic" in d or "registrar" in d)),
+    (r"\badministrat\w*|\badmin\b|\bacademic\s+and\s+(an\s+)?administrative\b", "administrative",
+     lambda d, c: "administrative" in c and "faculty" in c),
+    (r"\b(support\s+staff|professional\s+support|medical\s+staff)\b", "professional support",
+     lambda d, c: "professional_support" in c),
+]
+
+
+def _designation_group(d: str) -> str:
+    low = d.lower()
+    if low.startswith("hod"):
+        return "Heads of Department"
+    if "associate dean" in low:
+        return "Associate Deans"
+    if "adjunct" in low:
+        return "Adjunct Faculty"
+    if "assistant professor" in low:
+        return "Assistant Professors"
+    if "lab faculty" in low:
+        return "Lab Faculty"
+    return re.sub(r"\s*\(.*$", "", d).strip() or "Other"
+
+
+def faculty_directory(client: Any, query: str) -> RetrievalResult:
+    """The faculty as a group: counts by designation, or everyone with the
+    designation/category the question names ("assistant professors",
+    "adjunct faculty", "administrative positions")."""
+    rows = (
+        client.table("faculty")
+        .select("full_name,initials,designation,category,email,office_location,status")
+        .eq("status", "active")
+        .execute()
+        .data
+        or []
+    )
+    rows = [r for r in rows if r.get("designation") and "former" not in r["designation"].lower()
+            and "nit calicut" not in r["designation"].lower()]
+    q = query.lower()
+    label, picked = None, rows
+    for pattern, name, test in _DIRECTORY_FILTERS:
+        if re.search(pattern, q):
+            label = name
+            picked = [r for r in rows if test((r["designation"] or "").lower(), r.get("category") or [])]
+            break
+    teaching = [r for r in rows if "faculty" in (r.get("category") or [])]
+    groups: dict[str, int] = {}
+    for r in (picked if label else teaching):
+        g = _designation_group(r["designation"])
+        groups[g] = groups.get(g, 0) + 1
+    picked.sort(key=lambda r: (_designation_group(r["designation"]), r["full_name"].lower()))
+    dept_asked = bool(re.search(r"\b(cse|ece|computer\s+science|electronics|cyber|humanities|department|dept)\b", q))
+    summary = {"_filter": label, "_groups": groups, "_total": len(picked if label else teaching),
+               "_yes_no": bool(re.match(r"^\s*(are|is|do|does)\b", q)), "_dept_asked": dept_asked}
+    facts = [StructuredFact(claim=f"{r['full_name']} — {r['designation']}", data={**r, **summary},
+                            source="faculty directory (live)") for r in picked]
+    if not facts:
+        facts = [StructuredFact(claim=f"no one designated {label}", data={"full_name": None, **summary},
+                                source="faculty directory (live)")]
+        # The honest near miss for "associate professor": the associate deans.
+        if label == "Associate Professor":
+            for r in rows:
+                if "associate dean" in r["designation"].lower():
+                    facts.append(StructuredFact(claim=f"{r['full_name']} — {r['designation']}",
+                                                data={**r, **summary, "_near_miss": True},
+                                                source="faculty directory (live)"))
+    return RetrievalResult(plan=_plan(StructuredIntent.FACULTY_DIRECTORY), facts=facts)
 
 
 # ------------------------------------------------------------ faculty by research topic
@@ -543,6 +757,10 @@ def resolve_course(client: Any, code: Optional[str] = None, name: Optional[str] 
             cn = _norm(c["course_name"])
             if cn == n or (len(n) > 6 and (n in cn or cn in n)):
                 return c
+            # "datastructures" / "data structure s": compare without spaces too
+            n_flat, cn_flat = n.replace(" ", ""), cn.replace(" ", "")
+            if len(n_flat) > 8 and (n_flat == cn_flat or n_flat in cn_flat):
+                return c
             ct = set(cn.split())
             if n_tokens and ct:
                 score = len(n_tokens & ct) / max(len(n_tokens), len(ct))
@@ -552,9 +770,57 @@ def resolve_course(client: Any, code: Optional[str] = None, name: Optional[str] 
     return None
 
 
+_TITLE_RE = re.compile(r"^\s*(dr|prof|professor|mr|mrs|ms)\.?\s*", re.I)
+_PERSON_CUE_RE = re.compile(r"\b(dr|prof|professor|mr|mrs|ms|sir|madam|ma'?am|named|called|who\s+is|faculty|teacher)\b", re.I)
+_NAME_MATCH = 0.85  # "jhon"/"john" = 0.875; "joseph"/"joshi" = 0.5
+
+
+def name_tokens(full_name: str) -> list[str]:
+    """"Dr.John Paul Martin" -> ["john", "paul", "martin"] (titles and bare
+    initials dropped — nearly every name here has an initial, so initials
+    carry no signal)."""
+    return [t for t in _norm(_TITLE_RE.sub("", full_name)).split() if len(t) > 2]
+
+
+def match_faculty_name(query: str, faculty: list[dict]) -> Optional[str]:
+    """The faculty member a question names, typos included ("Jhon Paul
+    Martin", "Christina Joseph" for "Christina Terese Joseph"). Needs two of
+    their name words, or one distinctive word (5+ letters, unique in the
+    directory) when the question is clearly about a person. Never invents a
+    name: the answer is always someone in the directory, or None."""
+    q_words = [w for w in _norm(query).split()
+               if len(w) > 2 and w not in _FILLER and w not in lexicon.DOMAIN_WORDS]
+    if not q_words:
+        return None
+    token_owners: dict[str, int] = {}
+    for f in faculty:
+        for t in set(name_tokens(f["full_name"])):
+            token_owners[t] = token_owners.get(t, 0) + 1
+    person_cue = bool(_PERSON_CUE_RE.search(query))
+    best: tuple[int, float, str] | None = None
+    for f in faculty:
+        toks = name_tokens(f["full_name"])
+        if not toks:
+            continue
+        hits, total, distinctive = 0, 0.0, False
+        for t in toks:
+            sim = max(lexicon.similarity(w, t) for w in q_words)
+            if sim >= _NAME_MATCH:
+                hits += 1
+                total += sim
+                if len(t) >= 5 and token_owners.get(t, 0) == 1:
+                    distinctive = True
+        if hits >= 2 or (hits == 1 and distinctive and person_cue and len(toks) >= 1):
+            key = (hits, total / len(toks), f["full_name"])
+            if best is None or key[:2] > best[:2]:
+                best = key
+    return best[2] if best else None
+
+
 def link_entities(client: Any, query: str) -> dict[str, str]:
     """Course or faculty names mentioned without a code/title ("What is IT
-    Workshop III?", "what does Manu Madhavan research")."""
+    Workshop III?", "what does Manu Madhavan research", "who is jhon paul
+    martin") — course names exactly, people fuzzily."""
     q = f" {_norm(query)} "
     found: dict[str, str] = {}
     for c in sorted(all_courses(client), key=lambda c: -len(c["course_name"])):
@@ -562,12 +828,9 @@ def link_entities(client: Any, query: str) -> dict[str, str]:
         if len(cn) > 5 and f" {cn} " in q:
             found["course_code"] = c["course_code"]
             break
-    for f in all_faculty_names(client):
-        name = _norm(re.sub(r"^(dr|prof|mr|ms|mrs)\.?\s+", "", f["full_name"], flags=re.I))
-        parts = [p for p in name.split() if len(p) > 2]
-        if len(parts) >= 2 and all(f" {p} " in q for p in parts[:2]):
-            found["faculty_name"] = f["full_name"]
-            break
+    name = match_faculty_name(query, all_faculty_names(client))
+    if name:
+        found["faculty_name"] = name
     return found
 
 

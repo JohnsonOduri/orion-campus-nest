@@ -1,5 +1,18 @@
 """Deterministic query classification (README §8, AGENTS.md §4).
 
+2026-09-28: understanding happens in three passes, all local and
+deterministic (no LLM, no quota):
+
+1. lexicon.correct_spelling — "tommorow"/"teching"/"facluty" are fixed
+   before anything reads the question (names are left to fuzzy entity
+   linking against the directory itself);
+2. the regex rules below — precise, and the only place slots (meal, day,
+   role, course code, name, date) are extracted;
+3. intents.predict — a semantic nearest-neighbour classifier over concept
+   tokens, consulted when no rule recognised the question, so a paraphrase
+   ("who are the teachers here?", "what's the dining hall serving?") reaches
+   the right data instead of falling through to document search.
+
 No LLM call here by design — this stage is independently testable and the
 router must "not blindly send every question to vector search" (AGENTS.md
 §4). Rule-based intent classification is cheap, auditable, and — unlike an
@@ -10,11 +23,14 @@ without changing this module's contract (it still returns a QueryPlan).
 
 from __future__ import annotations
 
+import dataclasses
 import random
 import re
 from datetime import datetime
 
-from . import tempo
+from datetime import date
+
+from . import intents, lexicon, tempo
 from .types import QueryPlan, RouteType, StructuredIntent
 
 # ------------------------------------------------------------- structured
@@ -31,7 +47,8 @@ _WEEK_WORD_RE = re.compile(r"\b(this week|weekly|week.s)\b", re.IGNORECASE)
 _TIMETABLE_WORD_RE = re.compile(r"\b(class|classes|timetable|schedule)\b", re.IGNORECASE)
 _WEEKDAY_RE = re.compile(r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b", re.IGNORECASE)
 _WHO_TEACHES_RE = re.compile(
-    r"\bwho\s+teaches\b|\bfaculty\s+(for|teaching)\b|\binstructor\s+for\b", re.IGNORECASE
+    r"\bwho\s+(is\s+|'s\s+)?(teach(es|ing)?|tak(es|ing)|handl(es|ing))\b|\bfaculty\s+(for|teaching)\b|"
+    r"\binstructor\s+for\b", re.IGNORECASE
 )
 _COURSE_CODE_RE = re.compile(r"\b([IUE][A-Z]{2}\s?\d{3}|[A-Z]{2,4}\s?\d{3})\b")
 _COURSE_INFO_WORD_RE = re.compile(
@@ -58,7 +75,9 @@ _FACULTY_ABOUT_RE = re.compile(
 # "office"/"office hours"/"office location" plus the common institute
 # synonyms "cabin"/"room" — found live: "Where is cabin of Dr. X?" fell
 # through everything since "cabin" wasn't recognized as meaning "office".
-_FACULTY_ATTR_WORDS = r"email|e-mail|office\s+hours|office\s+location|office|cabin|room"
+_FACULTY_ATTR_WORDS = (r"email|e-mail|office\s+hours|office\s+location|office|cabin|room|"
+                       r"research(?:\s+(?:area|areas|interests?|field|topics?|work))?|position|designation|role|"
+                       r"department|phone(?:\s+number)?|contact(?:\s+details)?|details|profile|expertise|specialization")
 _FACULTY_POSSESSIVE_RE = re.compile(
     r"\b(?:(?i:dr|prof|professor|mr|ms|mrs)\.?\s+)?"
     r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3})'s\s+"
@@ -100,7 +119,19 @@ _FACULTY_WHERE_RE = re.compile(
     re.IGNORECASE,
 )
 _MESS_WORD_RE = re.compile(
-    r"\b(mess|canteen|cafeteria|food|menu|breakfast|lunch|dinner|snacks?)\b", re.IGNORECASE
+    r"\b(mess|canteen|cafeteria|food|menu|breakfast|lunch|dinner|snacks?|dining\s+hall|meal\s+choices|meals?|"
+    r"dish(es)?)\b"
+    # "what's cooking today" is the mess; "is cooking allowed in the hostel" is a hostel rule.
+    r"|\bwhat'?s\s+cooking\b|\bcooking\s+(today|tonight|tomorrow)\b"
+    r"|\bwhat\s+(are|r|is)\s+(we|they)\s+(having|eating|serving|getting)\b|\b(they|mess|dining\s+hall|canteen)\s+serv\w*"
+    r"|\bwhat\s+(can|do|will|shall)\s+(i|we)\s+eat\b",
+    re.IGNORECASE,
+)
+# A dish asked about by name: "is chicken there today?", "any paneer for dinner?".
+_DISH_RE = re.compile(
+    r"\b(chicken|paneer|mutton|beef|fish|eggs?|egg\s+curry|biryani|non[\s-]?veg|dessert|sweets?|payasam|"
+    r"ice\s*cream|dosa|idli|poori|puri|chapati|pulao|fried\s+rice|noodles|pasta|kheer)\b",
+    re.IGNORECASE,
 )
 _MEAL_RE = re.compile(r"\b(breakfast|lunch|dinner|snacks?)\b", re.IGNORECASE)
 _YESTERDAY_RE = re.compile(r"\byesterday\b", re.IGNORECASE)
@@ -250,13 +281,31 @@ _ANNOUNCEMENT_RE = re.compile(
 
 _WARDEN_RE = re.compile(
     r"\b(wardens?|chief\s+warden|hostel\s+manager|security\s+officer)\b|"
-    r"\bhostel\b[^?]*\b(contact|phone|number|in[\s-]?charge|call)\b",
+    r"\bhostel\b[^?]*\b(contact|phone|number|in[\s-]?charge|call)\b"
+    r"|\b(in[\s-]?charge|head|responsible)\s+(of|for)\s+(the\s+)?hostels?\b",
     re.IGNORECASE,
 )
 
 # Institutional roles held in faculty.designation.
+_DEPT_WORDS = (r"cse|ece|eee|csy|computer\s+science(?:\s+(?:and|&)\s+engineering)?|electronics|electrical|"
+               r"communication|cyber\s*security|cyber|humanities|mathematics|maths|computational\s+science|department|dept")
+# "handles/looks after/in charge of <office>" -> the associate dean for it.
+_OFFICE_AREA_RE = re.compile(
+    r"\b(students?\s+welfare|academic\s+affairs|academics|hostel\s+affairs|student\s+events|alumni|"
+    r"international\s+(affairs|relations)|industrial\s+relations|industry\s+relations|funding|"
+    r"continuing\s+education|consultancy|career(\s+development)?|placements?)\b",
+    re.IGNORECASE,
+)
+_HANDLES_RE = re.compile(
+    r"\b(handles?|handling|in[\s-]charge\s+of|responsible\s+for|looks?\s+after|takes?\s+care\s+of|manages?|"
+    r"oversees?|heads?|leads?|runs?)\b",
+    re.IGNORECASE,
+)
 _ROLE_TERMS: list[tuple[str, str]] = [
-    (r"\b(hod|h\.o\.d|head\s+of\s+(the\s+)?(department|dept))\b", "hod"),
+    (r"\b(hods?|h\.o\.d|heads?\s+of\s+(the\s+)?(department|dept)s?)\b", "hod"),
+    (rf"\b(heads?|heading|headed|leads?|leading|in[\s-]charge\s+of|chairs?|runs?|running|manages?|managing)\b"
+     rf"[^?]{{0,30}}\b({_DEPT_WORDS})\b", "hod"),
+    (rf"\bhead\s+of\s+(the\s+)?({_DEPT_WORDS})\b", "hod"),
     (r"\bregistrar\b", "registrar"),
     (r"\bdirector\b", "director"),
     (r"\b(associate\s+)?dean\b", "dean"),
@@ -299,6 +348,85 @@ _CALENDAR_TIMED_RE = re.compile(
     r"\b(semester|classes|course\s+drop|drop\s+a\s+course|fee\s+payment|fees?|results?|reporting|review)\b",
     re.IGNORECASE,
 )
+_MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10,
+           "nov": 11, "dec": 12}
+_MONTH_WORD = r"(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+_EXPLICIT_DATE_RE = re.compile(
+    rf"\b{_MONTH_WORD}\.?\s+(\d{{1,2}})(?:st|nd|rd|th)?(?:,?\s+(\d{{4}}))?\b"
+    rf"|\b(\d{{1,2}})(?:st|nd|rd|th)?\s+(?:of\s+)?{_MONTH_WORD}\.?(?:,?\s+(\d{{4}}))?\b"
+    r"|\b(\d{4})-(\d{2})-(\d{2})\b",
+    re.IGNORECASE,
+)
+_ON_DATE_RE = re.compile(
+    r"\b(happen\w*|going\s+on|scheduled|planned|events?|anything|what'?s\s+on|what\s+is\s+on|on\s+the\s+calendar|"
+    r"special|occasion|deadline|what\s+was\s+on)\b", re.IGNORECASE)
+_CAL_GAP_RE = re.compile(
+    r"\bhow\s+many\s+days\b|\b(gap|difference|days)\s+(between|from)\b|\bdays\s+(left|remaining)\b|"
+    r"\bhow\s+long\s+(until|till|before|after|between)\b", re.IGNORECASE)
+_CAL_AFTER_RE = re.compile(
+    r"\b(next|first)\s+(event|thing|deadline|exam)\s+(after|following)\s+(?P<anchor>.+?)\s*\??$|"
+    r"\bwhat\s+(comes|happens|is)\s+(next\s+)?after\s+(?P<anchor2>.+?)\s*\??$", re.IGNORECASE)
+_CAL_EXAMS_RE = re.compile(
+    r"^\s*(show|list|give\s+me|tell\s+me|what\s+are)?\s*(me\s+)?(all\s+)?(the\s+)?(exams|examinations|exam\s+(dates|schedule|list|calendar))\s*[?.!]*\s*$|"
+    r"\b(all|list\s+(of\s+)?(the\s+)?|show\s+(me\s+)?(all\s+)?(the\s+)?)(exams|examinations)\b|\bexam\s+(dates|calendar|list)\b",
+    re.IGNORECASE)
+_CAL_LIST_RE = re.compile(
+    r"\b(events?|occasions?|functions?|happenings?)\b[^?]*\b(future|upcoming|coming(\s+up)?|next|later|ahead)\b|"
+    r"\b(future|upcoming|coming)\s+(events?|dates|deadlines)\b|"
+    r"\b(events?|occasions?)\b[^?]*\b(past|over|done|completed|finished|happened|already)\b|"
+    r"\b(past|previous|completed|earlier)\s+events?\b|\bwhich\s+events?\b|\blist\s+(all\s+)?(the\s+)?events\b|"
+    r"\ball\s+(the\s+)?events\b", re.IGNORECASE)
+_CAL_PAST_RE = re.compile(r"\b(past|over|done|completed|finished|happened|already|previous|earlier)\b", re.IGNORECASE)
+_TODAY_OVERVIEW_RE = re.compile(
+    r"^\s*(what'?s|what\s+is|anything|is\s+there\s+anything|any\s*thing)\s+(happening|going\s+on|on|special|planned)"
+    r"(\s+(on\s+)?(campus|here))?\s+(today|tonight)\s*[?.!]*\s*$|^\s*(any\s+)?events?\s+today\s*[?.!]*\s*$",
+    re.IGNORECASE)
+_WHATS_NEXT_RE = re.compile(r"^\s*(so\s+)?(what'?s|what\s+is|whats)\s+(next|up\s+next|coming\s+up)\s*[?.!]*\s*$", re.IGNORECASE)
+
+# ---- faculty directory: the faculty as a group, not one person
+_FACULTY_GROUP_RE = re.compile(
+    r"\b(teachers|professors|profs|lecturers|instructors|faculty|faculties|teaching\s+(staff|team)|"
+    r"academic\s+(staff|employees|administration)|faculty\s+(members|people|list|directory)|staff\s+members|"
+    r"lab\s+(faculty|teaching\s+staff|instructors|staff)|adjuncts?(\s+(faculty|professors?))?|"
+    r"assistant\s+professors?|associate\s+professors?|visiting\s+(faculty|professors?)|"
+    r"administrative\s+(positions?|roles?|faculty|duties|posts?|staff))\b",
+    re.IGNORECASE,
+)
+_DIRECTORY_ASK_RE = re.compile(
+    r"^\s*(who|which|list|show|name|how\s+many|are\s+there|is\s+there|give|tell|find|all|any|what)\b|"
+    r"\b(who\s+(are|r|works?|holds?|has)|members\s+of|people\s+(in|are)|included|part\s+of)\b",
+    re.IGNORECASE,
+)
+_NAMED_RE = re.compile(
+    r"\b(?:named|called|by\s+the\s+name(?:\s+of)?)\s+(?:dr\.?\s*|prof\.?\s*)?(?P<name>[A-Za-z][A-Za-z.\s]{1,40}?)\s*[?.!]*\s*$",
+    re.IGNORECASE,
+)
+
+# ---- conversation and manipulation
+_META_SOURCE_RE = re.compile(
+    r"\b(which|what)\s+(source|sources|document|documents|reference)\b|\bwhat'?s\s+(your|the)\s+source\b|"
+    r"\bwhere\s+did\s+(you|that|this|it)\s+(get|come|came)\b|\bwhere\s+(is|was|does)\s+(this|that|it)\s+(from|come\s+from)\b|"
+    r"^\s*(source|sources|cite|citation|reference)s?\s*(please|pls)?\s*[?.!]*\s*$|\bcite\s+(the\s+|your\s+)?source\b",
+    re.IGNORECASE,
+)
+_META_HISTORY_RE = re.compile(
+    r"\b(first|previous|last|earlier|initial)\s+(question|message|thing)\s+(i|that\s+i)\s+(asked|said|sent|typed)\b|"
+    r"\bwhat\s+did\s+i\s+(just\s+)?(ask|say)\b|\bwhat\s+was\s+my\s+(first|previous|last|earlier)\s+(question|message)\b|"
+    r"\brepeat\s+my\s+(previous|last|first)\s+question\b",
+    re.IGNORECASE,
+)
+# Requests to invent or override campus facts. The question underneath is
+# still answered — from the real data — with a line saying ORION won't make
+# things up. "make up" needs a determiner after it: "make-up exam rules" is
+# a real regulation question, "make up an attendance policy" is not.
+_GUARD_RE = re.compile(
+    r"\bignore\s+(all|any|the|your|previous|every)?\s*(of\s+the\s+)?(college|campus|institute|previous|prior)?\s*"
+    r"(rules|instructions|regulations|guidelines|policies)\s*(and|,)?\s*|"
+    r"\bmake\s+up\s+(a|an|some|the|new|your\s+own|fake)\b\s*|\b(invent|fabricate)\s+(a|an|some|the|new)?\s*|"
+    r"\bpretend\s+(that\s+)?|\bact\s+as\s+if\s+",
+    re.IGNORECASE,
+)
+
 _MY_TIMETABLE_CONTEXT_RE = re.compile(
     r"\b(today|tomorrow|tonight|my\s+(first|last|next)\s+class|right\s+now)\b", re.IGNORECASE
 )
@@ -375,7 +503,9 @@ _REGULATION_TOPIC_RE = re.compile(
     r"\b(attendance|condonation|cgpa|sgpa|grade\s*points?|grading|grades?\s+system|credits?|graduat\w*|degree|"
     r"drop(ping)?\s+(a\s+)?course|withdraw\w*|backlogs?|fail\w*|repeat\w*|make[\s-]?up|supplementary|incomplete|"
     r"dual\s+degree|b\.?tech[\s-]*ms|honou?rs|minor|probation|terminat\w*|maximum\s+duration|duration|"
-    r"summer\s+term|registration\s+requirement|continuation|debarred|detained|eligib\w*|end[\s-]?sem\w*\s+exam\w*\s+eligib\w*)\b",
+    r"summer\s+term|registration\s+requirement|continuation|debarred|detained|eligib\w*|end[\s-]?sem\w*\s+exam\w*\s+eligib\w*|"
+    r"exam(ination)?\s+hall|malpractice|unfair\s+means|invigilat\w*|disciplin\w*|misconduct|conduct|dress\s+code|"
+    r"library|btp|b\.?\s?tech\s+project|major\s+project|project\s+(rules|guidelines|evaluation))\b",
     re.IGNORECASE,
 )
 
@@ -530,11 +660,40 @@ def _role_key(q: str) -> str | None:
     for pattern, key in _ROLE_TERMS:
         if re.search(pattern, q, re.IGNORECASE):
             return key
+    # "Who handles student welfare?", "who looks after academic affairs?" —
+    # an office, not a course: the associate dean for it.
+    if _OFFICE_AREA_RE.search(q) and (_HANDLES_RE.search(q) or re.search(r"\bwho\b", q, re.IGNORECASE)):
+        return "dean"
     return None
 
 
 def classify(query: str) -> QueryPlan:
-    """Classify a raw user query into a QueryPlan. Pure function, no I/O."""
+    """Classify a raw user query into a QueryPlan. Pure function, no I/O.
+
+    The returned plan's `raw_query` is the spelling-corrected question (and,
+    for "pretend/make up ..." requests, the real question underneath), so
+    every later stage reads the same text the router understood."""
+    q = (query or "").strip()
+    if not q:
+        return QueryPlan(raw_query=query, route=RouteType.UNSUPPORTED, reasoning="empty query")
+    corrected, fixes = lexicon.correct_spelling(q)
+    core = corrected
+    guarded = bool(_GUARD_RE.search(corrected))
+    if guarded:
+        core = re.sub(r"\s+", " ", _GUARD_RE.sub(" ", corrected)).strip(" ,.;:") or corrected
+    plan = _classify(core)
+    hints = dict(plan.hints)
+    if fixes:
+        hints["spelling"] = ", ".join(f"{a}->{b}" for a, b in fixes)
+    if guarded:
+        hints["guard"] = "yes"
+    reasoning = plan.reasoning
+    if fixes:
+        reasoning = f"[spelling: {hints['spelling']}] {reasoning}"
+    return dataclasses.replace(plan, raw_query=core, hints=hints, reasoning=reasoning)
+
+
+def _classify(query: str) -> QueryPlan:
     q = (query or "").strip()
     if not q:
         return QueryPlan(raw_query=query, route=RouteType.UNSUPPORTED, reasoning="empty query")
@@ -559,8 +718,30 @@ def classify(query: str) -> QueryPlan:
         return plan(RouteType.SMALL_TALK, topic_text=random.choice(_HOW_ARE_YOU_REPLIES),
                     reasoning="matched 'how are you' -> canned reply, no retrieval or LLM call")
 
+    # --- about this conversation: answered from the history, never from campus data -------
+    if _META_SOURCE_RE.search(q) and len(q.split()) <= 12:
+        return plan(RouteType.STRUCTURED, StructuredIntent.CONVERSATION, hints={"meta": "source"},
+                    reasoning="asks where the previous answer came from -> its source line")
+    if _META_HISTORY_RE.search(q):
+        which = "first" if re.search(r"\bfirst|initial\b", q, re.IGNORECASE) else "previous"
+        return plan(RouteType.STRUCTURED, StructuredIntent.CONVERSATION, hints={"meta": "history", "which": which},
+                    reasoning=f"asks about the {which} question in this conversation")
+
+    if _WHATS_NEXT_RE.match(q):
+        return plan(RouteType.STRUCTURED, StructuredIntent.NEXT_CLASS, hints={"with_event": "yes"},
+                    reasoning="bare 'what's next' -> next class, plus the next calendar event")
+    if _TODAY_OVERVIEW_RE.match(q):
+        return plan(RouteType.STRUCTURED, StructuredIntent.ACADEMIC_CALENDAR, topic_text=q,
+                    hints={"cal_mode": "today"}, resolved_date=_resolved_date("today"),
+                    reasoning="what's happening today -> today's calendar events + classes")
+
     course_code = _course_code(q)
     timed = bool(_TIMING_WORD_RE.search(q))
+
+    # --- the academic calendar as something to reason over ------------------------
+    cal = _calendar_plan(q, plan, course_code)
+    if cal is not None:
+        return cal
 
     # --- academic calendar / exam dates (before "my records": "when will results be published") ----
     exam_word = bool(_EXAM_WORD_RE.search(q))
@@ -610,23 +791,23 @@ def classify(query: str) -> QueryPlan:
                     reasoning=f"institutional role ({role}) -> faculty.designation")
 
     # --- structured: mess menu ---------------------------------------------------
-    if _MESS_WORD_RE.search(q):
-        meal_m = _MEAL_RE.search(q)
-        meal = None
-        if meal_m:
-            raw_meal = meal_m.group(1).lower()
-            meal = "snacks" if raw_meal.startswith("snack") else raw_meal
-        if _WEEK_WORD_RE.search(q):
-            return plan(RouteType.STRUCTURED, StructuredIntent.MESS_WEEK, meal=meal,
-                        reasoning="matched mess/food + week pattern -> mess_week (live mess_menus)")
-        day_ref = _day_reference(q)
-        if day_ref and day_ref != "today":
-            return plan(RouteType.STRUCTURED, StructuredIntent.MESS_ON_DAY, topic_text=day_ref, meal=meal,
-                        resolved_date=_resolved_date(day_ref),
-                        reasoning=f"matched mess/food + day reference ({day_ref} = {_resolved_date(day_ref)}) -> mess_on_day (live mess_menus)")
-        return plan(RouteType.STRUCTURED, StructuredIntent.MESS_TODAY, meal=meal,
-                    resolved_date=_resolved_date("today"),
-                    reasoning="matched mess/food pattern -> mess_today (live mess_menus)")
+    dish_m = _DISH_RE.search(q)
+    dish_question = bool(dish_m) and not _HOSTEL_TOPIC_RE.search(q) and not re.search(
+        r"\b(allowed|permitted|rules?|policy|banned|prohibited)\b", q, re.IGNORECASE)
+    if _MESS_WORD_RE.search(q) or dish_question:
+        return _mess_plan(q, plan)
+
+    # --- faculty by name, when the question says "named"/"called" --------------------
+    named_m = _NAMED_RE.search(q)
+    if named_m and not course_code:
+        name = named_m.group("name").strip()
+        return plan(RouteType.STRUCTURED, StructuredIntent.FACULTY_LOOKUP, topic_text=name,
+                    reasoning=f"'faculty named <name>' ({name}) -> faculty lookup")
+
+    # --- the faculty directory as a whole -----------------------------------------------
+    if _is_directory_question(q, course_code):
+        return plan(RouteType.STRUCTURED, StructuredIntent.FACULTY_DIRECTORY, topic_text=q,
+                    reasoning="asks about the faculty as a group -> faculty directory (by designation/category)")
 
     # --- my courses / free time / classroom -----------------------------------------
     if _MY_COURSES_RE.search(q) and not course_code and not _WHO_TEACHES_RE.search(q):
@@ -762,7 +943,17 @@ def classify(query: str) -> QueryPlan:
         return plan(RouteType.SEMANTIC, topic_text=q, hints=cohort_hint,
                     reasoning="matched a regulations/policy/procedure topic -> document_chunks")
 
-    # --- nothing specific matched --------------------------------------------------
+    # --- nothing specific matched: ask what it MEANS --------------------------------
+    # No rule recognised the wording, so compare the question's meaning with
+    # the example bank (intents.py) before giving up on structured data —
+    # "what's the dining hall serving?" is a mess question whatever its words.
+    semantic = _semantic_plan(q, plan, course_code, cohort_hint)
+    if semantic is not None:
+        # Marked so a terse follow-up ("what about the next day?") can still
+        # prefer the conversation's context over a meaning-based guess
+        # (backend/app/api/ai.py, _is_unresolved).
+        return dataclasses.replace(semantic, hints={**semantic.hints, "via": "semantic"})
+
     # A real question still gets a real attempt: the service first tries to
     # recognise a course or faculty name in it, then searches the documents.
     # Statements and gibberish stay UNSUPPORTED (nothing to search for).
@@ -772,6 +963,174 @@ def classify(query: str) -> QueryPlan:
 
     return plan(RouteType.UNSUPPORTED,
                 reasoning="no structured/semantic/hybrid pattern matched — ambiguous or out of scope")
+
+
+# ------------------------------------------------------------------- builders
+
+def _mess_plan(q: str, plan) -> QueryPlan:
+    meal_m = _MEAL_RE.search(q)
+    meal = None
+    if meal_m:
+        raw_meal = meal_m.group(1).lower()
+        meal = "snacks" if raw_meal.startswith("snack") else raw_meal
+    dish_m = _DISH_RE.search(q)
+    hints = {"dish": dish_m.group(1).lower()} if dish_m else {}
+    if _WEEK_WORD_RE.search(q):
+        return plan(RouteType.STRUCTURED, StructuredIntent.MESS_WEEK, meal=meal, hints=hints,
+                    reasoning="matched mess/food + week pattern -> mess_week (live mess_menus)")
+    day_ref = _day_reference(q)
+    if day_ref and day_ref != "today":
+        return plan(RouteType.STRUCTURED, StructuredIntent.MESS_ON_DAY, topic_text=day_ref, meal=meal, hints=hints,
+                    resolved_date=_resolved_date(day_ref),
+                    reasoning=f"matched mess/food + day reference ({day_ref} = {_resolved_date(day_ref)}) -> mess_on_day (live mess_menus)")
+    return plan(RouteType.STRUCTURED, StructuredIntent.MESS_TODAY, meal=meal, hints=hints,
+                resolved_date=_resolved_date("today"),
+                reasoning="matched mess/food pattern -> mess_today (live mess_menus)"
+                          + (f", looking for {hints['dish']}" if hints else ""))
+
+
+def explicit_date(q: str, today: date | None = None) -> date | None:
+    """"September 24", "24th Sept", "January 4, 2027", "2026-10-26" -> a date.
+    With no year, the date inside the current academic year (July-June) is
+    meant: in September 2026, "January 4" is January 2027."""
+    m = _EXPLICIT_DATE_RE.search(q or "")
+    if not m:
+        return None
+    today = today or tempo.today_ist()
+    try:
+        if m.group(1):
+            month, day, year = _MONTHS[m.group(1)[:3].lower()], int(m.group(2)), m.group(3)
+        elif m.group(5):
+            day, month, year = int(m.group(4)), _MONTHS[m.group(5)[:3].lower()], m.group(6)
+        else:
+            return date(int(m.group(7)), int(m.group(8)), int(m.group(9)))
+        if year:
+            return date(int(year), month, day)
+        term_start = today.year if today.month >= 7 else today.year - 1
+        return date(term_start if month >= 7 else term_start + 1, month, day)
+    except (ValueError, KeyError):
+        return None
+
+
+# Words that mark a question as being about calendar events (not a rule).
+_CAL_EVENT_WORDS_RE = re.compile(
+    r"\b(exams?|examinations?|end[\s-]?sem\w*|mid[\s-]?sem\w*|class(es)?\s+(end|start|begin)\w*|classes|"
+    r"semester|sports\s+meet|registration|results?|review|deadline|fee\s+payment|course\s+drop|"
+    r"instructional\s+day|committee|evaluation|events?|holiday|vacation)\b", re.IGNORECASE)
+
+
+def _calendar_plan(q: str, plan, course_code: str | None) -> QueryPlan | None:
+    """Calendar questions that need reasoning over events, not one lookup:
+    a specific date, the gap between two events, the event after another,
+    all exams, upcoming/past events."""
+    def cal(mode: str, reasoning: str, **hints: str) -> QueryPlan:
+        return plan(RouteType.STRUCTURED, StructuredIntent.ACADEMIC_CALENDAR, topic_text=q,
+                    hints={"cal_mode": mode, **hints}, reasoning=reasoning)
+
+    food_or_class = _MESS_WORD_RE.search(q) or _DISH_RE.search(q) or (
+        _TIMETABLE_WORD_RE.search(q) and not _CAL_EVENT_WORDS_RE.search(q))
+    on = explicit_date(q)
+    if on and not food_or_class and not course_code and (_ON_DATE_RE.search(q) or not _REGULATION_TOPIC_RE.search(q)):
+        return cal("on_date", f"a specific date ({on}) -> academic calendar events on/around it", date=on.isoformat())
+    if _CAL_GAP_RE.search(q) and _CAL_EVENT_WORDS_RE.search(q) and not re.search(
+            r"\b(leave|attendance|condon\w*|absent|medical)\b", q, re.IGNORECASE):
+        return cal("gap", "how many days between calendar events -> computed from the academic calendar")
+    after_m = _CAL_AFTER_RE.search(q)
+    if after_m and _CAL_EVENT_WORDS_RE.search(q + " event"):
+        anchor = (after_m.group("anchor") or after_m.group("anchor2") or "").strip()
+        return cal("after_event", f"the event after '{anchor}' -> academic calendar", anchor=anchor)
+    if _CAL_EXAMS_RE.search(q) and not course_code:
+        return cal("exams", "list the exams -> every exam on the academic calendar")
+    if _CAL_LIST_RE.search(q) and not _MESS_WORD_RE.search(q):
+        mode = "past" if _CAL_PAST_RE.search(q) else "upcoming"
+        return cal(mode, f"{mode} events -> academic calendar")
+    return None
+
+
+# "Who are the X" is a directory question unless X is really a topic, a
+# course, a person, or a rule.
+_NOT_DIRECTORY_RE = re.compile(
+    r"\b(advis[eo]r|rules?|regulations?|polic(y|ies)|guidelines?|allowed|attendance|feedback|evaluation|"
+    r"meeting|office\s+hours|email|cabin|research\w*|speciali[sz]\w*|expert\w*|interested)\b", re.IGNORECASE)
+_TITLED_NAME_RE = re.compile(r"\b(dr|prof|mr|mrs|ms)\.?\s*[A-Z][a-z]+", re.IGNORECASE)
+_FILLER_TOPIC_RE = re.compile(
+    r"^(here|there|now|today|campus|college|institute|iiit\w*|as\s+.*|at\s+.*|in\s+(this|the|our)\b.*)$", re.IGNORECASE)
+
+
+def _is_directory_question(q: str, course_code: str | None) -> bool:
+    if course_code or not _FACULTY_GROUP_RE.search(q) or not _DIRECTORY_ASK_RE.search(q):
+        return False
+    if _NOT_DIRECTORY_RE.search(q) or _TITLED_NAME_RE.search(q):
+        return False
+    topic = _research_topic(q)
+    if topic and _RESEARCH_VERB_RE.search(q) and not _FILLER_TOPIC_RE.match(topic):
+        return False
+    # "who teaches <course>" is about a course, not the directory
+    if _WHO_TEACHES_NAME_RE.search(q) and not re.search(r"\bwho\s+teach(es)?\s+(here|at\b|in\s+(this|the))", q, re.IGNORECASE):
+        return False
+    return True
+
+
+def _semantic_plan(q: str, plan, course_code: str | None, cohort_hint: dict[str, str]) -> QueryPlan | None:
+    """A plan chosen by meaning (intents.py), for a question no rule matched.
+    Only a confident prediction is used; entity-bearing intents (a named
+    person, a named course) stay on the entity-linking path, which checks
+    the name against the real directory instead of trusting a guess."""
+    pred = intents.predict(q)
+    if not pred.confident:
+        return None
+    label = pred.label
+    why = f"semantic match -> {label} (similarity {pred.score:.2f}, next best {pred.runner_up})"
+    if label == "faculty_directory" and not course_code:
+        return plan(RouteType.STRUCTURED, StructuredIntent.FACULTY_DIRECTORY, topic_text=q, reasoning=why)
+    if label == "faculty_role":
+        # A role answer needs a role, department or office actually named —
+        # "who leads the lab sessions?" names none, and a list of deans
+        # would be a confident answer to a question nobody asked.
+        role = _role_key(q)
+        if role is None and re.search(rf"\b({_DEPT_WORDS})\b", q, re.IGNORECASE) and re.search(
+                r"\b(head|heads|heading|leads?|in[\s-]charge)\b", q, re.IGNORECASE):
+            role = "hod"
+        if role is None:
+            return None
+        return plan(RouteType.STRUCTURED, StructuredIntent.FACULTY_ROLE, topic_text=q, hints={"role": role}, reasoning=why)
+    if label == "faculty_research":
+        topic = _research_topic(q) or _extract_topic(q)
+        return plan(RouteType.HYBRID, StructuredIntent.FACULTY_RESEARCH, topic_text=topic,
+                    hints={"meet": "yes"} if _MEET_AVAILABILITY_RE.search(q) else {}, reasoning=why)
+    if label == "mess":
+        return dataclasses.replace(_mess_plan(q, plan), reasoning=why)
+    if label == "calendar":
+        return _calendar_plan(q, plan, course_code) or plan(
+            RouteType.STRUCTURED, StructuredIntent.ACADEMIC_CALENDAR, topic_text=q, reasoning=why)
+    if label == "timetable":
+        day_ref = _day_reference(q)
+        if day_ref and day_ref != "today":
+            return plan(RouteType.STRUCTURED, StructuredIntent.DAY_OF_WEEK_TIMETABLE, topic_text=day_ref,
+                        resolved_date=_resolved_date(day_ref), hints=_timetable_hints(q), reasoning=why)
+        if re.search(r"\btoday\b", q, re.IGNORECASE):
+            return plan(RouteType.STRUCTURED, StructuredIntent.DAY_TIMETABLE, resolved_date=_resolved_date("today"),
+                        hints=_timetable_hints(q), reasoning=why)
+        return plan(RouteType.STRUCTURED, StructuredIntent.NEXT_CLASS, hints=_timetable_hints(q), reasoning=why)
+    if label == "free_time":
+        free_day = _day_reference(q) or "today"
+        return plan(RouteType.STRUCTURED, StructuredIntent.FREE_TIME, topic_text=free_day,
+                    resolved_date=_resolved_date(free_day), reasoning=why)
+    simple = {"announcements": StructuredIntent.ANNOUNCEMENTS, "wardens": StructuredIntent.HOSTEL_WARDENS,
+              "profile": StructuredIntent.MY_PROFILE, "my_courses": StructuredIntent.MY_COURSES}
+    if label in simple:
+        return plan(RouteType.STRUCTURED, simple[label], topic_text=q, reasoning=why)
+    if label in {"meta_source", "meta_history"}:
+        meta = "source" if label == "meta_source" else "history"
+        return plan(RouteType.STRUCTURED, StructuredIntent.CONVERSATION, hints={"meta": meta, "which": "previous"},
+                    reasoning=why)
+    if label == "out_of_scope":
+        return plan(RouteType.UNSUPPORTED, StructuredIntent.OUT_OF_SCOPE, hints={"kind": "general"}, reasoning=why)
+    if label == "documents":
+        # Confirmed by meaning to be a rules/procedures question: search the
+        # documents with the document-question relevance floor.
+        return plan(RouteType.SEMANTIC, topic_text=q, hints={"semantic": "documents", **cohort_hint}, reasoning=why)
+    return None
 
 
 _STOPWORDS = {

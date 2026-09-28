@@ -50,9 +50,16 @@ switch to `ORION_EMBEDDING_PROVIDER=minilm`** — `render.yaml` deliberately
 keeps this service torch-free, and the rollback path is no longer needed
 even as a stopgap.
 
-Not yet decided: whether/how to combine vector ranking with the full-text
-results that already answer these questions correctly on their own
-(`todo.md` §C).
+**Decided 2026-09-28: hybrid.** `documents.search()` now fuses full-text
+rank with vector similarity from `search_document_chunks_semantic`
+(migration `20260928120000_document_search_semantic.sql`, same cohort and
+validity filters as the full-text RPC), and uses the similarity as a meaning
+check before a passage is quoted. Calibrated on this corpus: passages that
+answer the question score 0.64–0.78; unrelated text 0.55–0.63. Floors:
+`_VEC_FLOOR=0.55` for ranking, reject < 0.62 / accept ≥ 0.70 for quoting.
+One query embed per new document question (cached), computed in parallel
+with full-text search; `ORION_VECTOR_SEARCH=off` turns it off. Details:
+`docs/query-router.md` (top).
 
 ## Measurements (2026-09-22, dev laptop; clean venvs from old/new requirements)
 

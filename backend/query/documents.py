@@ -1,8 +1,14 @@
-"""Document answers without an LLM or embeddings.
+"""Document answers, grounded in approved documents.
 
-1. `search`: Postgres full-text search over document_chunks
-   (`search_document_chunks` RPC, migration 20260922100000) — no model, no
-   API key, no quota. Cohort isolation (CLAUDE.md §20) happens in SQL.
+1. `search`: hybrid retrieval over document_chunks — Postgres full-text
+   search (`search_document_chunks`, migration 20260922100000; no model, no
+   quota) fused with semantic search over the Gemini vectors
+   (`search_document_chunks_semantic`, migration 20260928120000), so a
+   question is matched by meaning as well as by shared words ("examination
+   hall rules" should not match a textbook by Prentice Hall). Cohort
+   isolation (CLAUDE.md §20) happens in SQL, identically, in both. Vector
+   search is optional: with no Gemini key, a quota error (circuit breaker)
+   or ORION_VECTOR_SEARCH=off, full-text search answers on its own.
 2. `best_passages`: picks the specific clauses inside the retrieved chunks
    that answer the question (chunks are ~2,200 characters; the answer is
    usually one numbered rule), so the reply can quote the rule itself.
@@ -15,10 +21,16 @@ from __future__ import annotations
 
 import logging
 import math
+import os
 import re
+import threading
+import time
+from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from . import embeddings
 from .types import SemanticSnippet
 
 logger = logging.getLogger("orion.documents")
@@ -54,6 +66,12 @@ _SYNONYMS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bsummer\b", re.I), "summer term"),
     (re.compile(r"\b(requirements?|required|need\s+to|have\s+to|minimum|at\s+least)\b", re.I), "minimum should must"),
     (re.compile(r"\b(dual\s+degree|b\.?tech[\s-]*ms)\b", re.I), "B.Tech-MS dual degree eligibility"),
+    (re.compile(r"\bexam(ination)?\s+hall|\bexam(ination)?\s+(rules|conduct)|\bmalpractice|\bunfair\s+means|\binvigilat", re.I),
+     "examination seating invigilator answer booklet malpractice hall ticket ID card"),
+    (re.compile(r"\bbtp\b|\bb\.?\s?tech\s+project|\bmajor\s+project|\bproject\s+(rules|work|evaluation|guidelines)", re.I),
+     "project B.Tech project BTP evaluation review credits"),
+    (re.compile(r"\bdisciplin\w*|\bmisconduct|\bcode\s+of\s+conduct", re.I),
+     "conduct discipline disciplinary code of conduct DWC action"),
     (re.compile(r"\btranscripts?\b", re.I), "transcript request fee academic office"),
     (re.compile(r"\bcertificates?\b", re.I), "certificate verification fee"),
 ]
@@ -67,6 +85,9 @@ _STOP = {
     # Describe the kind of question, not its topic (the synonym table maps
     # them to what documents actually say: "minimum", "should", "must").
     "requirement", "requirements", "required",
+    # "an attendance policy", "the hostel regulations": the kind of text
+    # wanted, not its subject — like "rule"/"rules" above.
+    "policy", "policies", "regulation", "regulations", "guideline", "guidelines", "say", "says",
 }
 
 
@@ -91,6 +112,74 @@ def expand_query(query: str) -> tuple[str, list[str]]:
     return (f"{query} {' '.join(extra)}".strip(), extra)
 
 
+# ------------------------------------------------------------ semantic side
+
+_POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="orion-docsearch")
+# embed (3 s timeout) + one vector query; past this, answer from full text.
+_VECTOR_WAIT_S = 4.5
+_VECTOR_CACHE: "OrderedDict[str, list[float]]" = OrderedDict()
+_VECTOR_CACHE_SIZE = 512
+_VECTOR_LOCK = threading.Lock()  # query_vector runs on _POOL threads
+_vector_off_until = 0.0
+_VECTOR_BREAKER_S = 600.0  # after a quota/API error, full-text only for 10 minutes
+_VECTOR_BLIP_S = 60.0  # after a timeout / 5xx, just a minute
+
+
+def vector_search_enabled() -> bool:
+    return (os.environ.get("ORION_VECTOR_SEARCH", "on").strip().lower() not in {"off", "0", "false", "no"}
+            and embeddings.is_configured() and time.monotonic() >= _vector_off_until)
+
+
+def query_vector(text: str) -> Optional[list[float]]:
+    """The question's Gemini vector — cached (students ask the same things),
+    and never allowed to fail an answer: any embedding error trips a breaker
+    and the question is answered from full-text search alone."""
+    global _vector_off_until
+    if not vector_search_enabled():
+        return None
+    key = re.sub(r"\s+", " ", text.strip().lower())
+    with _VECTOR_LOCK:
+        if key in _VECTOR_CACHE:
+            _VECTOR_CACHE.move_to_end(key)
+            return _VECTOR_CACHE[key]
+    try:
+        vec = embeddings.embed_query(text, timeout_s=3.0, max_attempts=1, max_wait_s=0.0)
+    except embeddings.EmbeddingError as exc:
+        pause = _VECTOR_BLIP_S if isinstance(exc, embeddings.EmbeddingUnavailable) else _VECTOR_BREAKER_S
+        _vector_off_until = time.monotonic() + pause
+        logger.warning("vector search off for %.0fs (%s: %s)", pause, exc.__class__.__name__, exc)
+        return None
+    with _VECTOR_LOCK:
+        _VECTOR_CACHE[key] = vec
+        if len(_VECTOR_CACHE) > _VECTOR_CACHE_SIZE:
+            _VECTOR_CACHE.popitem(last=False)
+    return vec
+
+
+# Gemini cosine similarities on this corpus: unrelated text still scores
+# ~0.55-0.63, real matches ~0.68+ (docs/embeddings.md). Normalised onto 0..1
+# before fusing with the full-text rank.
+_VEC_FLOOR, _VEC_SPAN = 0.55, 0.30
+_W_LEXICAL, _W_VECTOR = 0.55, 0.45
+
+
+def _vector_rows(client: Any, vec: list[float], cohort_family: Optional[str], cat: Optional[str],
+                 dtype: Optional[str], k: int) -> Optional[list[dict]]:
+    """None when the query failed or returned nothing — "no opinion", NOT
+    "nothing is relevant": search() reads a missing chunk as evidence of
+    irrelevance only when the vector search actually ran."""
+    try:
+        res = client.rpc(
+            "search_document_chunks_semantic",
+            {"query_embedding": vec, "match_count": k, "cohort_family": cohort_family,
+             "filter_category": cat, "filter_document_type": dtype},
+        ).execute()
+    except Exception as exc:  # noqa: BLE001 - semantic search is an enhancement, never a failure
+        logger.warning("semantic document search failed: %s: %s", exc.__class__.__name__, exc)
+        return None
+    return res.data or None
+
+
 def search(
     client: Any,
     query: str,
@@ -99,9 +188,20 @@ def search(
     document_type: Optional[str] = None,
     top_k: int = 6,
 ) -> list[SemanticSnippet]:
-    """Lexical search, preferring the source the router expects (hostel
+    """Hybrid search, preferring the source the router expects (hostel
     rules, the student's regulations, ...) but never limited to it."""
     text, _ = expand_query(query)
+
+    # Semantic side: the same filters, ranked by meaning. The SQL itself is
+    # ~15 ms; the cost is the Gemini call plus a round trip, so the whole
+    # embed -> vector query chain runs alongside the full-text queries
+    # instead of after them. One unfiltered query, with the source the
+    # question is about preferred in Python below.
+    def semantic_side() -> Optional[list[dict]]:
+        vec = query_vector(query)
+        return None if vec is None else _vector_rows(client, vec, cohort_family, None, None, top_k + 6)
+
+    vec_future = _POOL.submit(semantic_side) if vector_search_enabled() else None
 
     def run(cat: Optional[str], dtype: Optional[str], k: int) -> list[dict]:
         res = client.rpc(
@@ -117,12 +217,41 @@ def search(
         return res.data or []
 
     rows: dict[int, dict] = {}
-    if category or document_type:
-        for r in run(category, document_type, 5):
+    focused = _POOL.submit(run, category, document_type, 5) if (category or document_type) else None
+    broad = run(None, None, top_k)
+    if focused is not None:
+        for r in focused.result():
             r["rank"] = float(r["rank"]) * 1.6  # the source the question is about
             rows[r["chunk_id"]] = r
-    for r in run(None, None, top_k):
+    for r in broad:
         rows.setdefault(r["chunk_id"], r)
+
+    # A chunk found only by meaning still competes; a chunk found both ways
+    # gets both signals.
+    vec_rows = None
+    if vec_future is not None:
+        try:
+            vec_rows = vec_future.result(timeout=_VECTOR_WAIT_S)
+        except Exception as exc:  # noqa: BLE001 - full-text alone still answers
+            logger.warning("semantic document search skipped: %s", exc.__class__.__name__)
+    if vec_rows:
+        max_lex = max((float(r["rank"]) for r in rows.values()), default=0.0) or 1.0
+        sims: dict[int, float] = {}
+        for r in vec_rows:
+            sim = float(r["similarity"])
+            if (category and r.get("category") == category) or (document_type and r.get("document_type") == document_type):
+                sim += 0.02
+            sims[r["chunk_id"]] = max(sims.get(r["chunk_id"], 0.0), sim)
+            rows.setdefault(r["chunk_id"], {**r, "rank": 0.0})
+        for cid, r in rows.items():
+            lex = float(r.get("rank") or 0.0) / max_lex
+            # 0.0 = "semantic search ran and did not return this chunk", which
+            # is evidence it isn't about the question — distinct from None,
+            # "semantic search didn't run" (no opinion).
+            sim = sims.get(cid, 0.0)
+            r["_vector_similarity"] = sim
+            semantic = min(1.0, max(0.0, (sim - _VEC_FLOOR) / _VEC_SPAN))
+            r["rank"] = _W_LEXICAL * min(lex, 1.6) + _W_VECTOR * semantic
 
     ordered = sorted(rows.values(), key=lambda r: -float(r["rank"]))[:top_k]
     for r in ordered[:3]:
@@ -148,6 +277,7 @@ def search(
             document_type=r.get("document_type"),
             valid_from=str(r["valid_from"]) if r.get("valid_from") else None,
             valid_until=str(r["valid_until"]) if r.get("valid_until") else None,
+            vector_similarity=r.get("_vector_similarity"),
         )
         for r in ordered
     ]
@@ -177,6 +307,7 @@ class Passage:
     cohort: Optional[str]
     document_type: Optional[str]
     score: float
+    vector_similarity: Optional[float] = None
 
 
 def clean_text(text: str) -> str:
@@ -267,6 +398,11 @@ def best_passages(query: str, snippets: list[SemanticSnippet], max_units: int = 
         bigrams = set(zip(seq, seq[1:]))
         s += 0.6 * sum(idf(a) + idf(b) for a, b in q_bigrams & bigrams)  # the student's exact phrase
         s *= 0.75 + 0.5 * (snippets[si].similarity / max_rank)
+        # Meaning: a chunk the semantic side ranks close to the question is
+        # preferred over one that merely shares its words (and vice versa).
+        vs = snippets[si].vector_similarity
+        if vs is not None:  # 0.0 = semantic search ran and didn't return this chunk
+            s *= 0.6 if vs == 0.0 else 0.7 + 0.9 * min(1.0, max(0.0, (vs - 0.60) / 0.20))
         if len(unit) < 40:
             s *= 0.4  # a bare heading
         if re.search(r"\d", unit) and re.search(r"\d|%|\bpm\b|\bam\b|\bhow\s+(many|much|long)\b|\bwhen\b|\btime\b|\bfee\b", query, re.I):
@@ -336,6 +472,7 @@ def best_passages(query: str, snippets: list[SemanticSnippet], max_units: int = 
         cohort=snip.cohort,
         document_type=snip.document_type,
         score=best_score,
+        vector_similarity=snip.vector_similarity,
     )
     return [passage], round(confidence, 3)
 

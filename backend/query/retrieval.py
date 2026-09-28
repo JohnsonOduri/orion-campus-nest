@@ -28,7 +28,7 @@ import re
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 from typing import Any, Optional
 
-from . import embeddings, tempo
+from . import embeddings, lexicon, tempo
 from .types import QueryPlan, RetrievalResult, SemanticSnippet, StructuredFact, StructuredIntent
 
 logger = logging.getLogger("orion.retrieval")
@@ -474,8 +474,11 @@ def fuzzy_faculty_names(client: Any, name_text: str, limit: int = 3, cutoff: flo
         ratio = difflib.SequenceMatcher(None, cleaned, candidate).ratio()
         c_tokens = [t for t in candidate.split() if len(t) > 2]
         if n_tokens and c_tokens:
+            # Best of difflib and the transposition-aware distance: "Jhon" /
+            # "John" is a swapped pair (0.875), which difflib scores 0.75.
             token_ratio = sum(
-                max((difflib.SequenceMatcher(None, nt, ct).ratio() for ct in c_tokens), default=0.0)
+                max((max(difflib.SequenceMatcher(None, nt, ct).ratio(), lexicon.similarity(nt, ct))
+                     for ct in c_tokens), default=0.0)
                 for nt in n_tokens
             ) / len(n_tokens)
             ratio = max(ratio, token_ratio)

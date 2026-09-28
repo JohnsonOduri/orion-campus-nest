@@ -60,13 +60,13 @@ A few 429s hit mid-run (the daily embedding quota was still recovering) but the 
 
 - [x] `docs/embeddings.md` Status section updated to "complete".
 
-- [ ] **Not done yet — separate decision:** whether/how to combine the now- fully-populated vector ranking (`retrieval.semantic_search`, `faculty_topic_and_schedule`) with the full-text search that already answers these questions correctly on its own. Compare the two before changing `backend/query/documents.py`/`campus.py`'s routing.
+- [x] **Decided 2026-09-28: hybrid** — `documents.search()` fuses full-text with vector search (`search_document_chunks_semantic`) and uses vector similarity as a relevance check before quoting. See `docs/embeddings.md` and `docs/query-router.md`.
 
 - [ ] Run backend tests + typecheck/build and commit the `FACULTY_MIN_SIMILARITY` change and doc updates (not yet committed as of this writing).
 
 ## C. Later (only after B's routing decision above is made)
 
-- [ ] Decide on Gemini billing — the free tier's daily quota is shared between the backfill and real embedding calls, once anything depends on them again.
+- [ ] Decide on Gemini billing — **now relevant**: every document question not already in the in-process cache costs one embedding call, and the free tier allows ~1000/day. Past the quota, vector search pauses itself and answers fall back to full-text only (still correct, less good at word-only false matches).
 
 - [ ] Write a migration dropping the MiniLM rollback path: `document_chunks.embedding`, `chunks_embedding_hnsw_idx`, `match_document_chunks`.
 

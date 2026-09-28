@@ -42,3 +42,4 @@ backend/.venv/
 
 # Supabase CLI local state
 supabase/.temp/
+AI-Tests
