@@ -6,12 +6,22 @@ import { PageHeader, SectionCard } from "@/components/shared/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PixelBadge } from "@/components/pixel/pixel-art";
+import { Link } from "@tanstack/react-router";
 import { DiffSummary, IssueList, TimetableEditor } from "@/components/cr/timetable-editor";
-import { CheckCircle2, EyeOff, FileText, XCircle } from "lucide-react";
+import { ExamDiffSummary, ExamEditor } from "@/components/cr/exam-editor";
+import { CheckCircle2, EyeOff, FileText, Search, Upload, UserCog, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { requireRole } from "@/lib/route-guards";
-import { CATEGORY_LABELS, type ClassKey, type DraftEntry, type DraftIssue, type TimetableDiff } from "@/lib/cr";
+import {
+  CATEGORY_LABELS,
+  type ClassKey,
+  type DraftEntry,
+  type DraftIssue,
+  type ExamDiff,
+  type ExamEntry,
+  type TimetableDiff,
+} from "@/lib/cr";
 
 export const Route = createFileRoute("/admin")({
   beforeLoad: requireRole(["ADMIN"]),
@@ -46,6 +56,147 @@ type PendingAnnouncement = {
 };
 
 type Person = { id: string; full_name?: string | null; email?: string | null };
+
+type ExamSubmission = {
+  id: number;
+  submitted_by: Person;
+  note: string | null;
+  created_at: string;
+  scope_label: string;
+  exam_type_label: string;
+  entries: ExamEntry[];
+  issues: DraftIssue[];
+  diff: ExamDiff;
+  current_count: number;
+  source_file_path: string | null;
+};
+
+type UserRow = {
+  id: string;
+  full_name: string | null;
+  email: string;
+  role: "STUDENT" | "CR" | "ADMIN" | "FACULTY";
+  student: { semester: number; department: string; section: string | null; roll_number: string | null } | null;
+};
+
+type RoleGrant = { email: string; role: string; created_at: string };
+
+const DEFAULT_ADMIN = "oduri.johnson@gmail.com";
+
+function PeopleAndRoles() {
+  const queryClient = useQueryClient();
+  const [q, setQ] = useState("");
+  const [search, setSearch] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("CR");
+  const users = useQuery({
+    queryKey: ["admin", "users", search],
+    queryFn: () => apiGet<UserRow[]>(`/admin/users?q=${encodeURIComponent(search)}`),
+  });
+  const grants = useQuery({ queryKey: ["admin", "role-grants"], queryFn: () => apiGet<RoleGrant[]>("/admin/role-grants") });
+  const setUserRole = useMutation({
+    mutationFn: (v: { email: string; role: string }) =>
+      apiPost<{ role: string; pending_sign_in?: boolean }>("/admin/roles", v),
+    onSuccess: (r, v) => {
+      toast.success(
+        r.pending_sign_in
+          ? `${v.email} will be ${v.role} when they first sign in`
+          : `${v.email} is now ${v.role}`,
+      );
+      setEmail("");
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "role-grants"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "cr-requests"] });
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Couldn't change the role"),
+  });
+  const selectClass = "h-8 rounded-md border border-input bg-background px-2 text-xs";
+  return (
+    <SectionCard title="People & roles" description="Give or remove CR / admin access — also to someone who hasn't signed in yet">
+      <div className="space-y-4">
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (email.trim()) setUserRole.mutate({ email: email.trim(), role });
+          }}
+        >
+          <div className="min-w-56 flex-1 space-y-1">
+            <label className="text-xs font-medium" htmlFor="grant-email">
+              Email
+            </label>
+            <Input id="grant-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@iiitkottayam.ac.in" className="h-8 text-xs" />
+          </div>
+          <select className={selectClass} value={role} onChange={(e) => setRole(e.target.value)} aria-label="Role">
+            <option value="CR">Class Representative</option>
+            <option value="ADMIN">Administrator</option>
+            <option value="STUDENT">Student (remove access)</option>
+          </select>
+          <Button size="sm" type="submit" disabled={setUserRole.isPending || !email.trim()}>
+            <UserCog className="size-4" /> Set role
+          </Button>
+        </form>
+
+        {grants.data?.length ? (
+          <div className="rounded-md bg-muted/40 p-2 text-xs">
+            <p className="mb-1 font-medium">Waiting for first sign-in</p>
+            {grants.data.map((g) => (
+              <p key={g.email} className="font-mono">
+                {g.email} → {g.role}
+              </p>
+            ))}
+          </div>
+        ) : null}
+
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setSearch(q);
+          }}
+        >
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or email" className="h-8 text-xs" />
+          <Button size="sm" variant="outline" type="submit">
+            <Search className="size-4" /> Search
+          </Button>
+        </form>
+        <ul className="divide-y divide-border rounded-md border border-border">
+          {(users.data ?? []).map((u) => (
+            <li key={u.id} className="flex flex-wrap items-center gap-3 p-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{u.full_name || u.email}</p>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {u.email}
+                  {u.student
+                    ? ` · Sem ${u.student.semester} ${u.student.department}${u.student.section ? ` Sec ${u.student.section}` : ""}`
+                    : ""}
+                  {u.student?.roll_number ? ` · ${u.student.roll_number}` : ""}
+                </p>
+              </div>
+              <PixelBadge tone={u.role === "ADMIN" ? "danger" : u.role === "CR" ? "warning" : "muted"}>{u.role}</PixelBadge>
+              {u.email.toLowerCase() === DEFAULT_ADMIN ? (
+                <span className="text-[11px] text-muted-foreground">default admin</span>
+              ) : (
+                <select
+                  className={selectClass}
+                  value={u.role}
+                  disabled={setUserRole.isPending}
+                  aria-label={`Role for ${u.email}`}
+                  onChange={(e) => setUserRole.mutate({ email: u.email, role: e.target.value })}
+                >
+                  <option value="STUDENT">Student</option>
+                  <option value="CR">CR</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              )}
+            </li>
+          ))}
+          {users.data && users.data.length === 0 ? <li className="p-3 text-xs text-muted-foreground">No one matches.</li> : null}
+        </ul>
+      </div>
+    </SectionCard>
+  );
+}
 
 type TimetableSubmission = {
   id: number;
@@ -178,6 +329,25 @@ function AdminPage() {
     queryFn: () => apiGet<LiveAnnouncement[]>("/admin/announcements/live"),
   });
 
+  const examQuery = useQuery({
+    queryKey: ["admin", "exam-submissions"],
+    queryFn: () => apiGet<ExamSubmission[]>("/admin/exam-submissions"),
+  });
+  const reviewExams = useMutation({
+    mutationFn: ({ id, approve, rejection_reason }: { id: number; approve: boolean; rejection_reason?: string }) =>
+      apiPost<{ inserted?: number; superseded?: number }>(`/admin/exam-submissions/${id}/review`, { approve, rejection_reason }),
+    onSuccess: (data, vars) => {
+      toast.success(
+        vars.approve
+          ? `Exam schedule published: ${data.inserted ?? 0} exams (${data.superseded ?? 0} older ones replaced)`
+          : "Exam schedule rejected",
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin", "exam-submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["exams"] });
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Review failed"),
+  });
+
   const reviewTimetable = useMutation({
     mutationFn: ({ id, approve, rejection_reason }: { id: number; approve: boolean; rejection_reason?: string }) =>
       apiPost<{ inserted?: number; closed?: number; valid_from?: string }>(`/admin/timetable-submissions/${id}/review`, {
@@ -223,7 +393,14 @@ function AdminPage() {
         <PageHeader
           badge="Administrator"
           title="Admin Portal"
-          subtitle="Approval queues for CR access, timetable changes and announcements."
+          subtitle="Approval queues, roles, and everything live on campus."
+          actions={
+            <Button asChild size="sm">
+              <Link to="/cr">
+                <Upload className="size-4" /> Publish & uploads
+              </Link>
+            </Button>
+          }
         />
 
         <SectionCard
@@ -339,6 +516,61 @@ function AdminPage() {
             </ul>
           )}
         </SectionCard>
+
+        <SectionCard
+          title="Exam schedules"
+          description={`${examQuery.data?.length ?? 0} pending · approving replaces that scope's current exam schedule`}
+          contentClassName="p-0"
+        >
+          {examQuery.isLoading ? (
+            <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+          ) : !examQuery.data?.length ? (
+            <p className="p-4 text-sm text-muted-foreground">No pending exam schedules.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {examQuery.data.map((x) => {
+                const blocking = x.issues.filter((i) => i.severity === "error").length;
+                return (
+                  <ReviewRow
+                    key={x.id}
+                    pending={reviewExams.isPending}
+                    onApprove={() => reviewExams.mutate({ id: x.id, approve: true })}
+                    onReject={(reason) => reviewExams.mutate({ id: x.id, approve: false, rejection_reason: reason })}
+                  >
+                    <p className="text-sm font-medium">
+                      {x.exam_type_label} exams · {x.scope_label}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {who(x.submitted_by)} · {new Date(x.created_at).toLocaleString()} · {x.entries.length} exams
+                    </p>
+                    {x.note ? <p className="mt-1 text-xs italic">“{x.note}”</p> : null}
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <ExamDiffSummary diff={x.diff} currentCount={x.current_count} />
+                      {x.source_file_path ? (
+                        <Button size="sm" variant="outline" className="h-7" onClick={() => openOriginal(x.source_file_path!)}>
+                          <FileText className="size-3.5" /> Original file
+                        </Button>
+                      ) : null}
+                    </div>
+                    {blocking ? (
+                      <p className="mt-2 text-xs text-destructive">
+                        {blocking} problem{blocking > 1 ? "s" : ""} — approving will fail. Reject with a reason instead.
+                      </p>
+                    ) : null}
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs font-medium text-primary">Show exams</summary>
+                      <div className="mt-2">
+                        <ExamEditor entries={x.entries} issues={x.issues} readOnly showDepartment />
+                      </div>
+                    </details>
+                  </ReviewRow>
+                );
+              })}
+            </ul>
+          )}
+        </SectionCard>
+
+        <PeopleAndRoles />
 
         <SectionCard
           title="Live announcements"

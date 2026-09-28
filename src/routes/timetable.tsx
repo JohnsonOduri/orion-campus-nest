@@ -42,7 +42,7 @@ function TimetablePage() {
 
   const now = new Date();
   const dayEntries = todaysEntries(dayQuery.data?.entries ?? [], now);
-  const withStatus = dayEntries.map((e) => ({ entry: e, status: deriveStatus(e, now) }));
+  const withStatus = dayEntries.map((e) => ({ entry: e, status: e._cancelled ? null : deriveStatus(e, now) }));
   const live = withStatus.find((x) => x.status === "live")?.entry;
   const next = withStatus.find((x) => x.status === "upcoming")?.entry;
 
@@ -105,9 +105,18 @@ function TimetablePage() {
                         {formatTime(c.start_time)}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
+                        <p className={`truncate text-sm font-medium ${c._cancelled ? "text-muted-foreground line-through" : ""}`}>
                           {entryLabel(c)} {c.course_name && <span className="text-xs text-muted-foreground">{c.course_name}</span>}
                         </p>
+                        {c._cancelled || c._extra || c._moved_from ? (
+                          <p className="text-[11px] font-medium text-warning-foreground">
+                            {c._cancelled
+                              ? `Cancelled${c._change_note ? ` — ${c._change_note}` : ""}`
+                              : c._moved_from
+                                ? `Rescheduled here from ${c._moved_from}`
+                                : "Extra class"}
+                          </p>
+                        ) : null}
                         <p className="truncate text-xs text-muted-foreground">
                           {(c.faculty_names ?? []).join(", ") || "—"} · <MapPin className="inline size-3" /> {c.room ?? "—"}
                         </p>
@@ -162,9 +171,17 @@ function TimetablePage() {
                                     {cellEntries.map((e) => (
                                       <span
                                         key={e.id}
-                                        className="inline-block rounded-md border border-border bg-secondary/50 px-2 py-1.5 font-mono text-[11px] font-medium"
+                                        title={e._cancelled ? "Cancelled this week" : e._extra ? "Extra class" : e._moved_from ? `Moved from ${e._moved_from}` : undefined}
+                                        className={`inline-block rounded-md border px-2 py-1.5 font-mono text-[11px] font-medium ${
+                                          e._cancelled
+                                            ? "border-destructive/40 bg-destructive/5 text-muted-foreground line-through"
+                                            : e._extra || e._moved_from
+                                              ? "border-warning bg-warning/10"
+                                              : "border-border bg-secondary/50"
+                                        }`}
                                       >
                                         {entryLabel(e)}
+                                        {e._extra ? " +" : ""}
                                       </span>
                                     ))}
                                   </div>

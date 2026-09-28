@@ -17,7 +17,7 @@ from fastapi import APIRouter, Request
 from query import campus as campus_data
 from query import retrieval
 
-from .deps import get_current_client
+from .deps import get_current_client, get_current_profile
 
 router = APIRouter(tags=["campus"])
 
@@ -30,16 +30,10 @@ def calendar(request: Request):
 
 @router.get("/exams")
 def exams(request: Request):
-    client = get_current_client(request)
-    rows = (
-        client.table("exams")
-        .select("id,exam_type,exam_date,start_time,end_time,semester,batch,status,courses(course_code,course_name),rooms(room_no)")
-        .eq("status", "active")
-        .order("exam_date")
-        .execute()
-        .data
-        or []
-    )
+    client, profile = get_current_profile(request)
+    rows = campus_data.my_exams(client, None if profile.get("role") == "ADMIN" else profile)
+    for r in rows:
+        r["courses"] = {"course_code": r.get("course_code"), "course_name": r.get("course_name")}
     windows = [e for e in campus_data.calendar_events(client) if e["event_type"] == "exam"]
     return {"exams": rows, "calendar": windows}
 

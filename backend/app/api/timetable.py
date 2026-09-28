@@ -19,6 +19,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
+from datetime import timedelta
+
+from query import schedule
 from query.campus import today_ist
 
 from .deps import get_current_client
@@ -34,16 +37,29 @@ def _student_context(client) -> dict | None:
 def day_timetable(request: Request):
     client = get_current_client(request)
     ctx = _student_context(client)
-    entries = client.rpc("orion_day_timetable", {"p_on_date": today_ist().isoformat()}).execute().data
-    return {"student": ctx, "entries": entries or []}
+    today = today_ist()
+    entries = client.rpc("orion_day_timetable", {"p_on_date": today.isoformat()}).execute().data or []
+    changes = schedule.fetch(client, today, today, ctx)
+    return {"student": ctx, "entries": schedule.apply(entries, changes, today) if changes else entries}
 
 
 @router.get("/week")
 def week_timetable(request: Request):
+    """This week's timetable with the week's one-off class changes applied
+    (cancelled periods flagged `_cancelled`, extra/moved ones added)."""
     client = get_current_client(request)
     ctx = _student_context(client)
-    entries = client.rpc("orion_week_timetable", {"p_on_date": today_ist().isoformat()}).execute().data
-    return {"student": ctx, "entries": entries or []}
+    today = today_ist()
+    entries = client.rpc("orion_week_timetable", {"p_on_date": today.isoformat()}).execute().data or []
+    start, end = schedule.week_dates(today)
+    changes = schedule.fetch(client, start, end, ctx)
+    if not changes:
+        return {"student": ctx, "entries": entries}
+    out = []
+    for offset in range(7):
+        day = start + timedelta(days=offset)
+        out += schedule.apply([e for e in entries if e.get("day_of_week") == day.isoweekday()], changes, day)
+    return {"student": ctx, "entries": out, "changes": changes}
 
 
 @router.get("/next")

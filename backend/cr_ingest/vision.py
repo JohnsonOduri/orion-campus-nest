@@ -63,13 +63,24 @@ _ENTRY = {
 RESPONSE_SCHEMA = {
     "type": "OBJECT",
     "properties": {
-        "kind": {"type": "STRING", "enum": ["timetable", "announcement", "other"]},
+        "kind": {"type": "STRING", "enum": ["timetable", "exam_timetable", "announcement", "other"]},
         "confidence": {"type": "NUMBER", "description": "0-1: how legible and complete the transcription is"},
         "text": {"type": "STRING", "description": "All readable text, in reading order"},
         "announcement_title": {"type": "STRING"},
         "announcement_body": {"type": "STRING"},
         "class_label": {"type": "STRING", "description": "Semester/branch/section the timetable is for, as printed"},
         "entries": {"type": "ARRAY", "items": _ENTRY},
+        "exam_title": {"type": "STRING", "description": "Heading of an exam timetable, as printed"},
+        "exams": {
+            "type": "ARRAY",
+            "items": {"type": "OBJECT", "properties": {
+                "date": {"type": "STRING", "description": "YYYY-MM-DD"},
+                "start_time": {"type": "STRING", "description": "24-hour HH:MM"},
+                "end_time": {"type": "STRING", "description": "24-hour HH:MM"},
+                "course_code": {"type": "STRING"}, "course_name": {"type": "STRING"},
+                "department": {"type": "STRING", "description": "Department/branch column the exam is listed under, if any"},
+            }},
+        },
         "legend": {
             "type": "ARRAY",
             "items": {"type": "OBJECT", "properties": {
@@ -89,6 +100,7 @@ def _prompt(class_hint: Optional[str]) -> str:
     return (
         "You are transcribing a document uploaded by a college class representative. Decide what it is:\n"
         "- \"timetable\": a weekly class schedule grid;\n"
+        "- \"exam_timetable\": a schedule of exams (dates with courses and times);\n"
         "- \"announcement\": a notice/message (quiz, exam, assignment, class change, event, circular...);\n"
         "- \"other\": anything else.\n\n"
         "Rules: transcribe ONLY what is visible. Never guess or complete a course code, name, initials, time or "
@@ -98,6 +110,8 @@ def _prompt(class_hint: Optional[str]) -> str:
         "initials printed in the cell (e.g. \"ATS\"); a marker like (T) means tutorial, not initials; "
         "\"(EC LAB I)\" is a room, not initials. Skip empty cells and lunch/break columns. Copy the "
         f"course legend if the page has one.{target}\n\n"
+        "For an exam timetable: one item in `exams` per course per date (a cell listing two alternative courses "
+        "gives two items), with the department column it sits under; put the heading in `exam_title`.\n\n"
         "For an announcement: `announcement_title` is its heading or first line; `announcement_body` the full "
         "message text.\n\nAlways put all readable text in `text`."
     )
@@ -145,6 +159,6 @@ def extract(data: bytes, mime_type: str, *, class_hint: Optional[str] = None) ->
     except json.JSONDecodeError as exc:
         # maxOutputTokens hit mid-JSON on a very dense page
         raise VisionUnavailable("response was cut off") from exc
-    if not isinstance(out, dict) or out.get("kind") not in {"timetable", "announcement", "other"}:
+    if not isinstance(out, dict) or out.get("kind") not in {"timetable", "exam_timetable", "announcement", "other"}:
         raise VisionUnavailable("unexpected response shape")
     return out

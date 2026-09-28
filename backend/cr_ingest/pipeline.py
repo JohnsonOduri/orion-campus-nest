@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Optional
 
-from . import rules, timetable_draft as td, vision
+from . import exam_draft as ed, rules, timetable_draft as td, vision
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,10 @@ def sniff(data: bytes) -> str:
 def class_of(profile: dict) -> Optional[dict]:
     if not profile.get("semester") or not profile.get("department"):
         return None
-    return {k: profile.get(k) for k in ("semester", "programme", "department", "batch", "section")}
+    cls = {k: profile.get(k) for k in ("semester", "programme", "department", "batch", "section")}
+    cls["batch"] = cls.get("batch") or cls.get("section")
+    cls["programme"] = cls.get("programme") or "B.Tech"
+    return cls
 
 
 def pdf_text(data: bytes, max_pages: int = 6) -> str:
@@ -70,18 +73,19 @@ def pdf_text(data: bytes, max_pages: int = 6) -> str:
 
 @dataclass
 class Draft:
-    kind: str  # "timetable" | "announcement" | "other"
+    kind: str  # "timetable" | "exam_timetable" | "announcement" | "other"
     method: str  # "layout" | "text" | "vision" | "manual"
     confidence: float
     text: str = ""
     announcement: Optional[dict] = None
     timetable: Optional[dict] = None
     warnings: Optional[list[str]] = None
+    exams: Optional[dict] = None
 
     def to_dict(self) -> dict:
         return {"kind": self.kind, "method": self.method, "confidence": round(self.confidence, 2),
                 "text": self.text[:6000], "announcement": self.announcement, "timetable": self.timetable,
-                "warnings": self.warnings or []}
+                "exams": self.exams, "warnings": self.warnings or []}
 
 
 def timetable_payload(client: Any, cls: dict, entries: list[dict], directory: td.Directory,
@@ -100,11 +104,82 @@ def timetable_payload(client: Any, cls: dict, entries: list[dict], directory: td
     }
 
 
-def process(client: Any, profile: dict, data: bytes, today: date) -> Draft:
+def semester_departments(client: Any, semester: Optional[int]) -> list[str]:
+    try:
+        options = client.rpc("orion_class_options").execute().data or []
+    except Exception:  # noqa: BLE001
+        return []
+    return sorted({o["department"] for o in options if not semester or o.get("semester") == semester})
+
+
+def exam_payload(client: Any, scope: dict, entries: list[dict], exam_type: str, today: date,
+                 notes: Optional[list[str]] = None, title_semester: Optional[int] = None) -> dict:
+    """An editable exam schedule: rows checked, compared with what's live.
+    `scope` = {"semester", "department" (None = every department: admin)}."""
+    directory = td.Directory.load(client)
+    checked, issues = ed.check(entries, directory, today)
+    if title_semester and scope.get("semester") and title_semester != scope["semester"]:
+        issues.insert(0, td.Issue(-1, "semester", f"This exam schedule is for semester {title_semester}, but it would be "
+                                                  f"saved for semester {scope['semester']}."))
+    current = ed.current_exams(client, scope["semester"], exam_type, scope.get("department"))
+    departments = sorted({e["department"] for e in checked if e.get("department")})
+    return {
+        "scope": scope,
+        "scope_label": (f"Semester {scope['semester']} · " + (scope["department"] or "all departments")),
+        "exam_type": exam_type,
+        "exam_type_label": ed.EXAM_TYPE_LABELS.get(exam_type, exam_type),
+        "entries": checked,
+        "issues": [i.to_dict() for i in issues],
+        "can_submit": not td.blocking(issues),
+        "diff": ed.diff(current, checked),
+        "current_count": len(current),
+        "departments": departments,
+        "notes": notes or [],
+    }
+
+
+def exam_scope(client: Any, cls: Optional[dict], is_admin: bool, target: Optional[dict],
+               title_semester: Optional[int]) -> dict:
+    """A CR's exams: their semester + department. An admin's: the semester
+    and (optionally) department they picked, else the file's semester and
+    every department."""
+    if not is_admin:
+        if not cls:
+            raise UploadRejected("Complete your academic profile first — exams are submitted for your own department.")
+        return {"semester": cls["semester"], "department": cls["department"], "programme": cls.get("programme")}
+    target = target or {}
+    sem = target.get("semester") or title_semester
+    if not sem:
+        raise UploadRejected("Pick the semester this exam schedule is for.")
+    return {"semester": int(sem), "department": target.get("department"), "programme": target.get("programme")}
+
+
+def _exam_draft(client: Any, entries: list[dict], notes: list[str], title: dict, cls: Optional[dict],
+                is_admin: bool, target: Optional[dict], today: date, method: str, conf: float, text: str) -> Draft:
+    scope = exam_scope(client, cls, is_admin, target, title.get("semester"))
+    kept, scope_notes = ed.scope_entries(entries, scope.get("department"),
+                                         semester_departments(client, scope["semester"]))
+    return Draft("exam_timetable", method, conf, text,
+                 exams=exam_payload(client, scope, kept, title.get("exam_type") or "end_sem", today,
+                                    notes + scope_notes, title.get("semester")))
+
+
+def process(client: Any, profile: dict, data: bytes, today: date, target: Optional[dict] = None) -> Draft:
+    """`target`: the class an ADMIN is uploading for (a CR's class always
+    comes from their profile; a CR's target is ignored)."""
     mime = sniff(data)
-    cls = class_of(profile)
+    is_admin = profile.get("role") == "ADMIN"
+    cls = class_of(target) if is_admin and target else class_of(profile)
     warnings: list[str] = []
     text = pdf_text(data) if mime == "application/pdf" else ""
+
+    # 0. An exam timetable (before the class timetable check: exam PDFs have
+    #    weekdays and time ranges too).
+    if mime == "application/pdf" and ed.looks_like_exam_schedule(text):
+        entries, notes, _ = ed.from_pdf(data, today)
+        if entries:
+            return _exam_draft(client, entries, notes, ed.parse_title(text), cls, is_admin, target, today,
+                               "layout", 0.95, text)
 
     # 1. The institute's own timetable PDF: deterministic, no model.
     if mime == "application/pdf" and cls and rules.looks_like_timetable(text):
@@ -144,6 +219,10 @@ def process(client: Any, profile: dict, data: bytes, today: date) -> Draft:
     ocr_text = out.get("text") or ""
     if conf < 0.5:
         warnings.append("The image was hard to read — check every value carefully before submitting.")
+
+    if out["kind"] == "exam_timetable":
+        title = ed.parse_title(out.get("exam_title") or ocr_text)
+        return _exam_draft(client, ed.from_vision(out), [], title, cls, is_admin, target, today, "vision", conf, ocr_text)
 
     if out["kind"] == "timetable":
         if not cls:

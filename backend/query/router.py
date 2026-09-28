@@ -835,6 +835,14 @@ def _classify(query: str) -> QueryPlan:
                     hints={"notice": notice},
                     reasoning=f"{notice.lower()} question -> class announcements posted by the CR")
 
+    # --- classes on a specific calendar date ("classes on 11 October") ------------------
+    exact = explicit_date(q)
+    if exact and _TIMETABLE_WORD_RE.search(q) and re.search(r"\b(my|i|do\s+i|have)\b", q, re.IGNORECASE) \
+            and not _EXAM_WORD_RE.search(q):
+        return plan(RouteType.STRUCTURED, StructuredIntent.DAY_OF_WEEK_TIMETABLE, topic_text=exact.strftime("%A"),
+                    resolved_date=exact.isoformat(), hints=_timetable_hints(q),
+                    reasoning=f"classes on a calendar date ({exact}) -> that date's timetable")
+
     # --- is it a working day / do I have class on a date ----------------------------
     if _WORKING_DAY_RE.search(q):
         on = _date_asked(q)
@@ -852,6 +860,11 @@ def _classify(query: str) -> QueryPlan:
 
     # --- academic calendar / exam dates (before "my records": "when will results be published") ----
     exam_word = bool(_EXAM_WORD_RE.search(q))
+    if exam_word and (re.search(r"\bmy\s+(\w+\s+){0,3}exams?\b|\bexam\s*(schedule|time\s*table|dates?|routine)\b|"
+                                r"\b(next|upcoming|first|last)\s+exam\b", q, re.IGNORECASE)
+                      or (timed and course_code)) and not _REGULATION_TOPIC_RE.search(q):
+        return plan(RouteType.STRUCTURED, StructuredIntent.EXAM_SCHEDULE, topic_text=q, course_code=course_code,
+                    reasoning="the caller's exams -> approved exam schedule (calendar window if none)")
     if exam_word and timed and (course_code or re.search(r"\bmy\s+[a-z].*\bexam", q, re.IGNORECASE)):
         return plan(RouteType.STRUCTURED, StructuredIntent.EXAM_SCHEDULE, topic_text=q,
                     course_code=course_code,

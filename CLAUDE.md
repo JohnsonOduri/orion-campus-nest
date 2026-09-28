@@ -79,7 +79,14 @@ One deliberate exception (decided 2026-09-28, `docs/cr-workflow.md`): an
 that a CR posts for **their own class** goes live without review. The rule
 is enforced in the `announcements` insert policy (not only the API), capped
 at ~2 months, blocked when sensitive data is detected, audit-logged, and an
-admin can take it down. Timetable changes still always need admin approval.
+admin can take it down. One-off class changes (cancelled / rescheduled /
+extra class on a date) are academic notices too and apply to every schedule
+answer (`backend/query/schedule.py`). Weekly timetable changes and exam
+schedules always need admin approval; an admin's own submissions are
+approved immediately through the same RPCs. Every CR notice, pending or
+live, is locked to the CR's own class (RLS). Roles are granted by admins
+(`admin_set_role`, also pre-authorising an email);
+`oduri.johnson@gmail.com` stays ADMIN.
 
 ### ADMIN
 Trusted data manager. Can approve/reject submissions, manage authoritative data, users/roles, faculty, announcements, documents, OCR verification, lifecycle, and audit logs.
@@ -704,7 +711,9 @@ oauth          /auth/oauth/google/set-session   (frontend-driven; browser
 registration   /auth/register                     -> complete_registration
 cr             /cr/access-request [+ /status]  /cr/announcements [GET, POST, /preview]
                /cr/uploads [+ /url]  /cr/timetable/{current,check,submit,submissions}
+               /cr/exams/{current,check,submit,submissions}  /cr/class-changes/preview  /cr/classes
 admin          /admin/cr-requests [+ /{id}/review]
+               /admin/exam-submissions [+ /{id}/review]  /admin/users  /admin/roles  /admin/role-grants
                /admin/announcements [+ /{id}/review, /live, /{id}/archive]
                /admin/timetable-submissions [+ /{id}/review]
 timetable      /timetable/day  /timetable/week  /timetable/next
@@ -821,7 +830,7 @@ Do not claim the system is finished. As of 2026-09-21:
   CRs, and clean-up of abandoned uploads.
 
 ### Structured data
-- `exams` = 0 (no source document exists at all).
+- `exams` = 0 rows until an exam schedule is approved — the upload/review flow exists (docs/cr-workflow.md round 3); the sample Semester V end-sem PDF reads correctly but hasn't been published.
 - `departments` = 0; `faculty.department_id` unlinked.
 - `mess_menus` covers August 2026 only — that month has passed.
 - `timetable_entries.room_id` NULL for all 1,263 rows.

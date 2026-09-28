@@ -28,7 +28,7 @@ import re
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 from typing import Any, Optional
 
-from . import embeddings, lexicon, tempo
+from . import embeddings, lexicon, schedule, tempo
 from .types import QueryPlan, RetrievalResult, SemanticSnippet, StructuredFact, StructuredIntent
 
 logger = logging.getLogger("orion.retrieval")
@@ -151,6 +151,9 @@ def next_class(
     "what class do I have at 3pm?") pass a label naming that time instead,
     since it isn't actually the current moment."""
     at = at or datetime.now(timezone.utc)
+    changed = _next_class_with_changes(client, at, include_activities, ongoing_label)
+    if changed is not None:
+        return changed
     data = _fetch_next_class_raw(client, at, include_activities)
     if not data:
         return RetrievalResult(
@@ -202,6 +205,52 @@ def next_class(
         source_id=data.get("source_id"),
     )
     return RetrievalResult(plan=_plan(StructuredIntent.NEXT_CLASS), facts=[fact])
+
+
+_TEACHING_TYPES = {"class", "lab", "tutorial", "seminar", "project", "other"}
+
+
+def _next_class_with_changes(client: Any, at: datetime, include_activities: bool,
+                             ongoing_label: str) -> Optional[RetrievalResult]:
+    """When a class change (cancelled / moved / extra class) falls in the
+    coming week, work the next class out day by day with the changes
+    applied — the orion_next_class RPC only knows the weekly timetable.
+    None when there are no changes (the RPC answer stands)."""
+    at_ist = at + _IST_OFFSET
+    today = at_ist.date()
+    changes = schedule.fetch(client, today, today + timedelta(days=7))
+    if not changes:
+        return None
+    now = at_ist.strftime("%H:%M:%S")
+    for offset in range(0, 8):
+        day = today + timedelta(days=offset)
+        res = client.rpc("orion_day_timetable", {"p_user_id": None, "p_on_date": day.isoformat()}).execute()
+        entries = schedule.active(schedule.apply(res.data or [], changes, day))
+        entries = [e for e in entries if include_activities or (e.get("entry_type") or "class") in _TEACHING_TYPES]
+        if offset == 0:
+            entries = [e for e in entries if (e.get("end_time") or "") > now]
+        if not entries:
+            continue
+        e = entries[0]
+        e.setdefault("day_of_week", day.isoweekday())
+        ongoing = offset == 0 and (e.get("start_time") or "") <= now
+        name = _day_name(day.isoweekday())
+        when = (ongoing_label if ongoing else f"today ({name})" if offset == 0 else
+                f"tomorrow ({name})" if offset == 1 else f"{name} ({day.strftime('%-d %B')})")
+        gap = "" if offset == 0 else ("you have no more classes today" if offset == 1 else
+                                      f"no classes are scheduled between now and then — {offset} days away")
+        data = {**e, "_role": "ongoing" if ongoing else "next", "_when": when, "_gap": gap}
+        claim = f"{'Currently ongoing' if ongoing else 'Next class'}: {_entry_label(e)} {when}, {e.get('start_time')}-{e.get('end_time')}"
+        return RetrievalResult(plan=_plan(StructuredIntent.NEXT_CLASS),
+                               facts=[StructuredFact(claim=claim, data=data, source="live timetable + class changes")])
+    return RetrievalResult(plan=_plan(StructuredIntent.NEXT_CLASS),
+                           warnings=["no upcoming class found in the resolved student's active, valid timetable"])
+
+
+def _with_changes(client: Any, entries: list[dict], on: date) -> list[dict]:
+    """The day's entries with that date's class changes applied."""
+    changes = schedule.fetch(client, on, on)
+    return schedule.apply(entries, changes, on) if changes else entries
 
 
 _TIME_TEXT_RE = re.compile(
@@ -276,7 +325,7 @@ def _date_rpc_args(on_date: Optional[str]) -> dict:
 
 def day_timetable(client: Any, on_date: Optional[str] = None) -> RetrievalResult:
     res = client.rpc("orion_day_timetable", _date_rpc_args(on_date)).execute()
-    entries = res.data or []
+    entries = _with_changes(client, res.data or [], date.fromisoformat(on_date) if on_date else _today_ist())
     facts = [
         StructuredFact(
             claim=f"{_entry_label(e)} {e.get('start_time')}-{e.get('end_time')}",
@@ -346,7 +395,7 @@ def day_of_week_timetable(client: Any, day_ref: str, on_date: Optional[date] = N
     target_date = target.isoformat()
 
     res = client.rpc("orion_day_timetable", {"p_user_id": None, "p_on_date": target_date}).execute()
-    entries = res.data or []
+    entries = _with_changes(client, res.data or [], target)
     facts = [
         StructuredFact(
             claim=f"{_entry_label(e)} {e.get('start_time')}-{e.get('end_time')} "

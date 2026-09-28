@@ -357,33 +357,65 @@ def academic_calendar(client: Any, query: str, hints: Optional[dict[str, str]] =
     return RetrievalResult(plan=_plan(StructuredIntent.ACADEMIC_CALENDAR), facts=facts, warnings=warnings)
 
 
-def exam_schedule(client: Any, query: str, course_code: Optional[str]) -> RetrievalResult:
+def _dept_key(name: Optional[str]) -> str:
+    from cr_ingest.exam_draft import dept_key  # lazy: cr_ingest is optional for pure query use
+    return dept_key(name)
+
+
+def my_exams(client: Any, profile: Optional[dict]) -> list[dict]:
+    """Active exams for the caller's semester + department (approved exam
+    schedules, public.exams). Admin / no profile: every active exam."""
+    rows = (client.table("exams")
+            .select("id,exam_type,exam_date,start_time,end_time,semester,department,course_code,course_name,alt_group,"
+                    "courses(course_code,course_name)")
+            .eq("status", "active").order("exam_date").order("start_time").execute().data or [])
+    p = profile or {}
+    if p.get("semester") and p.get("department"):
+        rows = [r for r in rows if r.get("semester") == p["semester"]
+                and (not r.get("department") or _dept_key(r["department"]) == _dept_key(p["department"]))]
+    for r in rows:
+        c = r.pop("courses", None) or {}
+        r["course_code"] = r.get("course_code") or c.get("course_code")
+        r["course_name"] = r.get("course_name") or c.get("course_name")
+    return rows
+
+
+def _exam_matches(query: str, course_code: Optional[str], rows: list[dict]) -> list[dict]:
+    if course_code:
+        code = re.sub(r"\s+", "", course_code.upper())
+        return [r for r in rows if re.sub(r"\s+", "", (r.get("course_code") or "").upper()) == code]
+    q = f" {_norm(query)} "
+    skip = {"and", "of", "for", "the", "in", "to", "with", "a", "an"}
+    hits = []
+    for r in rows:
+        name = _norm(r.get("course_name") or "")
+        words = [w for w in name.split() if w not in skip]
+        acro = "".join(w[0] for w in words)
+        if (len(name) > 5 and f" {name} " in q) or (len(acro) >= 2 and f" {acro} " in q) or \
+                (words and sum(1 for w in words if len(w) > 3 and f" {w} " in q) >= max(1, min(2, len(words)))):
+            hits.append(r)
+    return hits
+
+
+def exam_schedule(client: Any, query: str, course_code: Optional[str], profile: Optional[dict] = None) -> RetrievalResult:
+    """The caller's exams: one course's ("when is my AI exam?") or the whole
+    schedule ("my exam timetable", "next exam"). Falls back to the academic
+    calendar's exam window when no schedule has been approved yet."""
+    rows = my_exams(client, profile)
+    wanted = _exam_matches(query, course_code, rows) if rows else []
+    asked_course = bool(course_code) or bool(wanted)
+    chosen = wanted if asked_course else rows
     course = resolve_course(client, code=course_code) if course_code else None
-    rows: list[dict] = []
-    if course:
-        rows = (
-            client.table("exams")
-            .select("exam_type,exam_date,start_time,end_time,semester,batch,status")
-            .eq("course_id", course["id"])
-            .eq("status", "active")
-            .order("exam_date")
-            .execute()
-            .data
-            or []
-        )
-    facts = [
-        StructuredFact(claim=f"{course['course_code']} {r['exam_type']} on {r['exam_date']}",
-                       data={**r, "course": course}, source="exams (live)")
-        for r in rows
-    ]
-    # The per-course exam timetable isn't published in ORION yet; the exam
-    # WINDOW from the academic calendar is the honest next-best answer.
+    facts = [StructuredFact(claim=f"{r.get('course_code')} exam on {r['exam_date']}",
+                            data={**r, "_exam": True, "_asked_course": asked_course, "course": course},
+                            source="exam schedule (approved)")
+             for r in chosen]
     window = [e for e in calendar_events(client) if e["event_type"] == "exam"]
     for e in window:
         facts.append(StructuredFact(claim=f"{e['event_name']}: {e['event_date']}",
                                     data={**e, "_window": True, "course": course},
                                     source=f"academic_calendar ({e.get('source_id') or 'live'})"))
-    warnings = [] if rows else ["no per-course exam schedule has been published in ORION"]
+    warnings = [] if chosen else ["no per-course exam schedule has been published in ORION"]
     return RetrievalResult(plan=_plan(StructuredIntent.EXAM_SCHEDULE), facts=facts, warnings=warnings)
 
 

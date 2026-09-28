@@ -7,12 +7,15 @@ policies/RPCs) does the actual enforcement.
 
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, Request
 
-from cr_ingest import timetable_draft as td
+from cr_ingest import exam_draft as ed, timetable_draft as td
+from query.tempo import today_ist
 
 from .deps import require_role
-from ..schemas import ArchiveRequest, ReviewDecisionRequest
+from ..schemas import ArchiveRequest, ReviewDecisionRequest, RoleRequest
 from ..services.supabase_clients import rpc
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -133,6 +136,95 @@ def review_timetable_submission(request_id: int, body: ReviewDecisionRequest, re
         "p_approve": body.approve,
         "p_rejection_reason": body.rejection_reason,
     })
+
+
+@router.get("/exam-submissions")
+def pending_exam_submissions(request: Request):
+    """Pending exam schedules, re-checked and compared with what's live."""
+    client, _ = require_role(request, {"ADMIN"})
+    rows = (
+        client.table("approval_requests")
+        .select("id,submitted_by,submitter_note,created_at,payload,source_file_path")
+        .eq("submission_type", "exam_schedule")
+        .eq("approval_status", "pending")
+        .order("created_at")
+        .execute()
+        .data
+    ) or []
+    if not rows:
+        return []
+    directory = td.Directory.load(client)
+    people = _people(client, {r["submitted_by"] for r in rows})
+    today = today_ist()
+    out = []
+    for r in rows:
+        payload = r.get("payload") or {}
+        cls = payload.get("class") or {}
+        exam_type = payload.get("exam_type") or "end_sem"
+        dept = None if payload.get("all_departments") else cls.get("department")
+        entries, issues = ed.check(payload.get("entries") or [], directory, today)
+        current = ed.current_exams(client, cls.get("semester"), exam_type, dept)
+        out.append({
+            "id": r["id"],
+            "submitted_by": people.get(r["submitted_by"]) or {"id": r["submitted_by"]},
+            "note": r.get("submitter_note"),
+            "created_at": r["created_at"],
+            "scope_label": f"Semester {cls.get('semester')} · {dept or 'all departments'}",
+            "exam_type": exam_type,
+            "exam_type_label": ed.EXAM_TYPE_LABELS.get(exam_type, exam_type),
+            "entries": entries,
+            "issues": [i.to_dict() for i in issues],
+            "diff": ed.diff(current, entries),
+            "current_count": len(current),
+            "source_file_path": r.get("source_file_path"),
+        })
+    return out
+
+
+@router.post("/exam-submissions/{request_id}/review")
+def review_exam_submission(request_id: int, body: ReviewDecisionRequest, request: Request):
+    client, _ = require_role(request, {"ADMIN"})
+    return rpc(client, "review_exam_schedule", {
+        "p_request_id": request_id, "p_approve": body.approve, "p_rejection_reason": body.rejection_reason,
+    })
+
+
+# ------------------------------------------------------------------ roles
+
+@router.get("/users")
+def users(request: Request, q: str = "", role: str | None = None):
+    """Find people to give or take a role (by name, email or roll number)."""
+    client, _ = require_role(request, {"ADMIN"})
+    query = client.table("profiles").select("id,full_name,email,role,created_at").order("created_at", desc=True).limit(40)
+    term = re.sub(r"[^A-Za-z0-9@._ -]", "", q).strip()
+    if term:
+        query = query.or_(f"email.ilike.%{term}%,full_name.ilike.%{term}%")
+    if role:
+        query = query.eq("role", role.upper())
+    rows = query.execute().data or []
+    if rows:
+        students = {s["user_id"]: s for s in (client.table("student_profiles")
+                    .select("user_id,semester,department,section,roll_number")
+                    .in_("user_id", [r["id"] for r in rows]).execute().data or [])}
+        for r in rows:
+            r["student"] = students.get(r["id"])
+    return rows
+
+
+@router.get("/role-grants")
+def role_grants(request: Request):
+    """Emails given a role before they've signed in."""
+    client, _ = require_role(request, {"ADMIN"})
+    return client.table("role_grants").select("email,role,created_at").order("created_at", desc=True).execute().data or []
+
+
+@router.post("/roles")
+def set_role(body: RoleRequest, request: Request):
+    """Make someone a CR / admin / student. Works for an email that hasn't
+    signed in yet (applied on first sign-in). The default admin can't be
+    demoted, and the last admin can't be removed (enforced in SQL)."""
+    client, _ = require_role(request, {"ADMIN"})
+    return rpc(client, "admin_set_role", {"p_email": body.email, "p_role": body.role})
 
 
 @router.get("/announcements/live")

@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { User } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Hash, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PixelClouds, PixelParticles, PixelSkyline, PixelMascot } from "@/components/pixel/pixel-art";
-import { apiPost, ApiError } from "@/lib/api-client";
+import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { profileQueryOptions, useProfile } from "@/hooks/use-profile";
 import { RedirectOverlay } from "@/components/shared/redirect-overlay";
 
@@ -30,15 +30,40 @@ export const Route = createFileRoute("/register")({
 // src/routes/auth.callback.tsx) — this page only ever completes the academic
 // profile for an already-authenticated, not-yet-onboarded account. There is
 // no separate email/password signup path anymore.
+const CURRENT_YEAR = new Date().getFullYear();
+
+// Batch and section are the same thing on this campus ("Section III") — one field.
 const schema = z.object({
   full_name: z.string().min(2, "Enter your full name"),
+  roll_number: z
+    .string()
+    .trim()
+    .transform((v) => v.toUpperCase())
+    .pipe(z.string().regex(/^[A-Z0-9]{6,15}$/, "6–15 letters and digits, e.g. 2024BCS0066")),
+  programme: z.string().min(1, "Required"),
   semester: z.coerce.number({ invalid_type_error: "Required" }).int().min(1, "Required").max(8),
   department: z.string().min(1, "Required"),
-  batch: z.string().min(1, "Required"),
   section: z.string().min(1, "Required"),
-  admission_year: z.coerce.number({ invalid_type_error: "Required" }).int().min(2015, "Invalid year").max(2035, "Invalid year"),
-  programme: z.string().min(1, "Required"),
+  admission_year: z.coerce
+    .number({ invalid_type_error: "Required" })
+    .int()
+    .min(2015, "Invalid year")
+    .max(CURRENT_YEAR, "Can't be in the future"),
 });
+
+type ClassOption = { programme: string; semester: number; department: string; section: string };
+type Options = { classes: ClassOption[]; admission_years: number[] };
+
+function titleCaseDept(d: string) {
+  return d
+    .toLowerCase()
+    .replace(/\b(\w)/g, (m) => m.toUpperCase())
+    .replace(/\bAi\b/g, "AI")
+    .replace(/\bCse\b/g, "CSE")
+    .replace(/ And /g, " and ")
+    .replace(/ In /g, " in ")
+    .replace(/ With /g, " with ");
+}
 
 type FormValues = z.infer<typeof schema>;
 
@@ -69,14 +94,53 @@ function RegisterPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       full_name: "",
+      roll_number: "",
       semester: "" as any,
       department: "",
-      batch: "",
       section: "",
       admission_year: "" as any,
-      programme: "",
+      programme: "B.Tech",
     },
   });
+
+  const options = useQuery({
+    queryKey: ["register", "options"],
+    queryFn: () => apiGet<Options>("/auth/register/options"),
+    enabled: Boolean(profile && !profile.onboarded),
+    staleTime: 10 * 60 * 1000,
+  });
+  const programme = form.watch("programme");
+  const semester = form.watch("semester");
+  const department = form.watch("department");
+  const roll = form.watch("roll_number");
+  const classes = options.data?.classes ?? [];
+  const programmes = useMemo(() => [...new Set(classes.map((c) => c.programme))].sort(), [classes]);
+  const semesters = useMemo(
+    () => [...new Set(classes.filter((c) => c.programme === programme).map((c) => c.semester))].sort((a, b) => a - b),
+    [classes, programme],
+  );
+  const departments = useMemo(
+    () =>
+      [...new Set(classes.filter((c) => c.programme === programme && c.semester === Number(semester)).map((c) => c.department))].sort(),
+    [classes, programme, semester],
+  );
+  const sections = useMemo(
+    () =>
+      classes
+        .filter((c) => c.programme === programme && c.semester === Number(semester) && c.department === department)
+        .map((c) => c.section),
+    [classes, programme, semester, department],
+  );
+  const years = options.data?.admission_years ?? Array.from({ length: 8 }, (_, i) => CURRENT_YEAR - i);
+
+  // "2024BCS0066": suggest the admission year from the roll number's prefix.
+  useEffect(() => {
+    const m = /^(20\d\d)/.exec((roll || "").trim());
+    if (m && !form.getValues("admission_year")) {
+      const y = Number(m[1]);
+      if (y <= CURRENT_YEAR && y >= 2015) form.setValue("admission_year", y as any);
+    }
+  }, [roll, form]);
 
   useEffect(() => {
     if (profile?.full_name && !form.getValues("full_name")) {
@@ -96,9 +160,10 @@ function RegisterPage() {
     try {
       await apiPost<RegisterResponse>("/auth/register", {
         full_name: values.full_name,
+        roll_number: values.roll_number,
         semester: values.semester,
         department: values.department,
-        batch: values.batch,
+        batch: values.section,
         section: values.section,
         admission_year: values.admission_year,
         programme: values.programme,
@@ -161,6 +226,23 @@ function RegisterPage() {
               )}
             </div>
 
+            <div className="space-y-1.5">
+              <Label htmlFor="roll_number">Roll number</Label>
+              <div className="relative">
+                <Hash className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="roll_number"
+                  className="pl-9 font-mono uppercase"
+                  placeholder="e.g. 2024BCS0066"
+                  autoComplete="off"
+                  {...form.register("roll_number")}
+                />
+              </div>
+              {form.formState.errors.roll_number && (
+                <p className="text-xs text-destructive">{form.formState.errors.roll_number.message}</p>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="programme">Programme</Label>
@@ -168,80 +250,145 @@ function RegisterPage() {
                   control={form.control}
                   name="programme"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={(v) => {
+                        field.onChange(v);
+                        form.setValue("semester", "" as any);
+                        form.setValue("department", "");
+                        form.setValue("section", "");
+                      }}
+                    >
                       <SelectTrigger id="programme">
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="B.Tech">B.Tech</SelectItem>
-                        <SelectItem value="M.Tech">M.Tech</SelectItem>
-                        <SelectItem value="Ph.D">Ph.D</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {form.formState.errors.programme && (
-                  <p className="text-xs text-destructive">{form.formState.errors.programme.message}</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="department">Department</Label>
-                <Input id="department" placeholder="e.g. CSE" {...form.register("department")} />
-                {form.formState.errors.department && (
-                  <p className="text-xs text-destructive">{form.formState.errors.department.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="semester">Semester</Label>
-                <Controller
-                  control={form.control}
-                  name="semester"
-                  render={({ field }) => (
-                    <Select value={field.value ? String(field.value) : ""} onValueChange={(v) => field.onChange(Number(v))}>
-                      <SelectTrigger id="semester">
-                        <SelectValue placeholder="Select..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 8 }, (_, i) => i + 1).map((s) => (
-                          <SelectItem key={s} value={String(s)}>
-                            Semester {s}
+                        {(programmes.length ? programmes : ["B.Tech"]).map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {p}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   )}
                 />
-                {form.formState.errors.semester && (
-                  <p className="text-xs text-destructive">{form.formState.errors.semester.message}</p>
-                )}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="admission_year">Admission Year</Label>
-                <Input id="admission_year" type="number" placeholder="e.g. 2024" {...form.register("admission_year")} />
+                <Label htmlFor="admission_year">Admission year</Label>
+                <Controller
+                  control={form.control}
+                  name="admission_year"
+                  render={({ field }) => (
+                    <Select value={field.value ? String(field.value) : ""} onValueChange={(v) => field.onChange(Number(v))}>
+                      <SelectTrigger id="admission_year">
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((y) => (
+                          <SelectItem key={y} value={String(y)}>
+                            {y}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {form.formState.errors.admission_year && (
                   <p className="text-xs text-destructive">{form.formState.errors.admission_year.message}</p>
                 )}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="batch">Batch</Label>
-                <Input id="batch" placeholder="e.g. 2024" {...form.register("batch")} />
-                {form.formState.errors.batch && (
-                  <p className="text-xs text-destructive">{form.formState.errors.batch.message}</p>
+            <div className="space-y-1.5">
+              <Label htmlFor="semester">Semester</Label>
+              <Controller
+                control={form.control}
+                name="semester"
+                render={({ field }) => (
+                  <Select
+                    value={field.value ? String(field.value) : ""}
+                    onValueChange={(v) => {
+                      field.onChange(Number(v));
+                      form.setValue("department", "");
+                      form.setValue("section", "");
+                    }}
+                  >
+                    <SelectTrigger id="semester">
+                      <SelectValue placeholder={options.isLoading ? "Loading…" : "Select..."} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {semesters.map((s) => (
+                        <SelectItem key={s} value={String(s)}>
+                          Semester {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="section">Section</Label>
-                <Input id="section" placeholder="e.g. C" {...form.register("section")} />
-                {form.formState.errors.section && (
-                  <p className="text-xs text-destructive">{form.formState.errors.section.message}</p>
+              />
+              {form.formState.errors.semester && (
+                <p className="text-xs text-destructive">{form.formState.errors.semester.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="department">Department</Label>
+              <Controller
+                control={form.control}
+                name="department"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    disabled={!semester}
+                    onValueChange={(v) => {
+                      field.onChange(v);
+                      form.setValue("section", "");
+                    }}
+                  >
+                    <SelectTrigger id="department">
+                      <SelectValue placeholder={semester ? "Select..." : "Pick a semester first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {titleCaseDept(d)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
-              </div>
+              />
+              {form.formState.errors.department && (
+                <p className="text-xs text-destructive">{form.formState.errors.department.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="section">Batch / section</Label>
+              <Controller
+                control={form.control}
+                name="section"
+                render={({ field }) => (
+                  <Select value={field.value} disabled={!department} onValueChange={field.onChange}>
+                    <SelectTrigger id="section">
+                      <SelectValue placeholder={department ? "Select..." : "Pick a department first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sections.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          Section {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {form.formState.errors.section && (
+                <p className="text-xs text-destructive">{form.formState.errors.section.message}</p>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Only classes with a published timetable are listed, so ORION can show yours.
+              </p>
             </div>
 
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>

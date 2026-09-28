@@ -262,7 +262,7 @@ def _dispatch(client: Any, plan: QueryPlan, profile: Optional[dict]) -> Retrieva
         # nothing to retrieve from campus data.
         return RetrievalResult(plan=plan, warnings=["conversation question"])
     if intent == StructuredIntent.EXAM_SCHEDULE:
-        return campus.exam_schedule(client, plan.raw_query, plan.course_code)
+        return campus.exam_schedule(client, plan.raw_query, plan.course_code, profile)
     if intent == StructuredIntent.ANNOUNCEMENTS:
         return campus.announcements(client, profile, (plan.hints or {}).get("notice"), plan.course_code)
     if intent == StructuredIntent.HOSTEL_WARDENS:

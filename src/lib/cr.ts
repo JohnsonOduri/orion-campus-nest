@@ -89,13 +89,90 @@ export type AnnouncementDraft = {
   decision?: { publish_now: boolean; reason: string };
 };
 
+export type ExamEntry = {
+  exam_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  course_code: string | null;
+  course_name: string | null;
+  department: string | null;
+  alt_group: string | null;
+  notes?: string | null;
+  in_catalogue?: boolean;
+};
+
+export type ExamDiff = {
+  added: ExamEntry[];
+  removed: ExamEntry[];
+  changed: { before: ExamEntry; after: ExamEntry }[];
+  unchanged: number;
+};
+
+export type ExamPayload = {
+  scope: { semester: number; department: string | null; programme?: string | null };
+  scope_label: string;
+  exam_type: string;
+  exam_type_label: string;
+  entries: ExamEntry[];
+  issues: DraftIssue[];
+  can_submit: boolean;
+  diff: ExamDiff;
+  current_count: number;
+  departments: string[];
+  notes: string[];
+};
+
+export const EXAM_TYPES: { value: string; label: string }[] = [
+  { value: "end_sem", label: "End semester" },
+  { value: "mid_sem", label: "Mid semester" },
+  { value: "repeat", label: "Repeat / supplementary" },
+  { value: "quiz", label: "Quiz / class test" },
+  { value: "other", label: "Other" },
+];
+
+export type ClassChange = {
+  change_type: "cancel" | "reschedule" | "extra" | string;
+  change_date: string | null;
+  course_code: string | null;
+  course_name?: string | null;
+  original_start?: string | null;
+  original_end?: string | null;
+  new_date?: string | null;
+  new_start?: string | null;
+  new_end?: string | null;
+  note?: string | null;
+};
+
+export type ClassChangePreview = {
+  permanent: boolean;
+  changes: ClassChange[];
+  notes: string[];
+  issues: DraftIssue[];
+  can_post: boolean;
+  courses: { course_code: string; course_name: string | null }[];
+  class_label: string;
+};
+
+export type ClassOption = { programme: string; semester: number; department: string; section: string };
+
+export type TargetClass = { semester: number; department?: string | null; section?: string | null; programme?: string };
+
+export function targetQuery(t: TargetClass | null | undefined): string {
+  if (!t) return "";
+  const q = new URLSearchParams({ semester: String(t.semester) });
+  if (t.department) q.set("department", t.department);
+  if (t.section) q.set("section", t.section);
+  return `?${q.toString()}`;
+}
+
 export type UploadResult = {
-  kind: "timetable" | "announcement" | "other";
+  kind: "timetable" | "exam_timetable" | "announcement" | "other";
   method: "layout" | "text" | "vision" | "manual";
   confidence: number;
   text: string;
   announcement: AnnouncementDraft | null;
   timetable: TimetablePayload | null;
+  exams: ExamPayload | null;
   warnings: string[];
   upload_path: string | null;
 };

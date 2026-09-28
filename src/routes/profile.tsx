@@ -82,6 +82,8 @@ function ProfilePage() {
                 </div>
               </div>
               <dl className="divide-y divide-border border-t border-border">
+                <Row label="Roll number" value={profile.roll_number ? <span className="font-mono">{profile.roll_number}</span> : null} />
+                <Row label="Admission year" value={profile.admission_year} />
                 <Row label="Programme" value={profile.programme} />
                 <Row label="Department" value={titleCase(profile.department)} />
                 <Row label="Semester" value={profile.semester} />

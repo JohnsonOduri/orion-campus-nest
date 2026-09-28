@@ -17,6 +17,8 @@ export type Profile = {
   display_name: string | null;
   programme: string | null;
   cohort: string | null;
+  roll_number?: string | null;
+  admission_year?: number | null;
 };
 
 // Shared between useProfile() and the route `beforeLoad` guards (see

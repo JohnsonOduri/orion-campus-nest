@@ -15,6 +15,11 @@ export type TimetableEntry = {
   start_time: string | null; // "HH:MM:SS"
   end_time: string | null;
   entry_type: "class" | "lab" | "tutorial" | "seminar" | "project" | "club_activity" | "sports" | "break" | "other";
+  // One-off changes your CR announced for this date (backend/query/schedule.py)
+  _cancelled?: boolean;
+  _extra?: boolean;
+  _moved_from?: string | null;
+  _change_note?: string | null;
 };
 
 export type StudentContext = {

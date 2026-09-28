@@ -144,7 +144,8 @@ def _merge_slots(entries: list[dict]) -> list[dict]:
     """Lab batches share a slot as separate rows — show one line per slot."""
     merged: dict[tuple, dict] = {}
     for e in sorted(entries, key=lambda e: (e.get("day_of_week") or 0, e.get("start_time") or "")):
-        key = (e.get("day_of_week"), e.get("start_time"), e.get("end_time"), e.get("course_code") or e.get("source_text"), e.get("entry_type"))
+        key = (e.get("day_of_week"), e.get("start_time"), e.get("end_time"), e.get("course_code") or e.get("source_text"),
+               e.get("entry_type"), bool(e.get("_cancelled")))
         if key in merged:
             m = merged[key]
             m["faculty_names"] = list(dict.fromkeys((m.get("faculty_names") or []) + (e.get("faculty_names") or [])))
@@ -155,8 +156,20 @@ def _merge_slots(entries: list[dict]) -> list[dict]:
     return list(merged.values())
 
 
+def _change_tag(e: dict) -> str:
+    if e.get("_cancelled"):
+        return f" — ~~cancelled~~ *({e.get('_change_note') or 'cancelled'})*"
+    if e.get("_moved_from"):
+        return f" — *rescheduled here from {e['_moved_from']}*"
+    if e.get("_extra"):
+        return " — *extra class*"
+    return ""
+
+
 def _entry_line(e: dict, today: bool = False) -> str:
     status = ""
+    if e.get("_cancelled") or e.get("_extra") or e.get("_moved_from"):
+        return f"- **{fmt_range(e.get('start_time'), e.get('end_time'))}** · {entry_label(e)}{entry_extras(e)}{_change_tag(e)}"
     if today:
         now = now_ist().strftime("%H:%M:%S")
         if (e.get("end_time") or "") <= now:
@@ -175,7 +188,10 @@ def _day_phrase(day_ref: Optional[str], on: Optional[str]) -> str:
 
 
 def compose_day(ctx: GroundedContext, day_ref: Optional[str]) -> str:
-    entries = _merge_slots([f.data for f in ctx.facts if f.data.get("start_time")])
+    listed = _merge_slots([f.data for f in ctx.facts if f.data.get("start_time")])
+    cancelled = [e for e in listed if e.get("_cancelled")]
+    changed = [e for e in listed if e.get("_extra") or e.get("_moved_from")] + cancelled
+    entries = [e for e in listed if not e.get("_cancelled")]
     hints = ctx.plan.hints if ctx.plan else {}
     on_date = None
     m = re.search(r"\((?:\w+ )?(\d{4}-\d{2}-\d{2})\)", ctx.facts[0].claim) if ctx.facts else None
@@ -188,6 +204,9 @@ def compose_day(ctx: GroundedContext, day_ref: Optional[str]) -> str:
     if not entries:
         if hints.get("entry_type") == "lab":
             return f"You have no labs {phrase}."
+        if cancelled:
+            return (f"Your classes {phrase} have been cancelled:\n\n" + "\n".join(_entry_line(e) for e in cancelled)
+                    + source_line("your live timetable", "class updates from your CR"))
         weekend = day_ref in {"Sunday", "Saturday"}
         return f"You have no classes {phrase}." + (" Enjoy the weekend!" if weekend and day_ref == "Sunday" else "")
     src = source_line("your live timetable")
@@ -221,7 +240,11 @@ def compose_day(ctx: GroundedContext, day_ref: Optional[str]) -> str:
     n = len(entries)
     head = (f"You have **{n} {'class' if n == 1 else 'classes'}** {phrase}:" if focus == "count"
             else f"Here's your timetable {phrase}:")
-    lines = "\n".join(_entry_line(e, today=is_today) for e in entries)
+    if changed:
+        head += f" *(includes {len(changed)} change{'s' if len(changed) != 1 else ''} announced by your CR)*"
+        src = source_line("your live timetable", "class updates from your CR")
+    shown = sorted(entries + cancelled, key=lambda e: e.get("start_time") or "")
+    lines = "\n".join(_entry_line(e, today=is_today) for e in shown)
     return f"{head}\n\n{lines}{src}"
 
 
@@ -334,7 +357,7 @@ def compose_free(ctx: GroundedContext, day_ref: str) -> str:
     ask = timeq.TimeAsk.from_hints((ctx.plan.hints or {}) if ctx.plan else {})
     if facts and facts[0].get("_empty"):
         return f"You have no classes {phrase}, so you're free all day." + source_line("your live timetable")
-    entries = _merge_slots([e for e in facts if e.get("start_time")])
+    entries = _merge_slots([e for e in facts if e.get("start_time") and not e.get("_cancelled")])
     blocks = timeq.busy_blocks(entries, entry_label)
     now = now_ist()
     on = facts[0].get("_date") if facts else None
@@ -349,7 +372,9 @@ def compose_working_day(ctx: GroundedContext) -> str:
     on = date.fromisoformat(meta["date"])
     rel = relative_day(on)
     label = f"**{fmt_date(on)}**" + (f" ({rel})" if rel in {"today", "tomorrow", "yesterday"} else "")
-    entries = _merge_slots([f.data for f in ctx.facts if f.data.get("start_time")])
+    listed = _merge_slots([f.data for f in ctx.facts if f.data.get("start_time")])
+    entries = [e for e in listed if not e.get("_cancelled")]
+    cancelled = [e for e in listed if e.get("_cancelled")]
     teaching = [e for e in entries if (e.get("entry_type") or "class") in {"class", "lab", "tutorial"}]
     events = meta.get("events") or []
     src = source_line("your live timetable", "academic calendar, Odd semester 2026-27")
@@ -368,11 +393,14 @@ def compose_working_day(ctx: GroundedContext) -> str:
     elif teaching:
         text = (f"Yes — {label} is a working day. You have **{len(teaching)} class{'es' if len(teaching) != 1 else ''}**, "
                 f"from {fmt_time(teaching[0]['start_time'])} to {fmt_time(max(e['end_time'] for e in teaching))}:\n\n"
-                + "\n".join(f"- {fmt_range(e['start_time'], e['end_time'])} · {entry_label(e)}" for e in teaching))
+                + "\n".join(f"- {fmt_range(e['start_time'], e['end_time'])} · {entry_label(e)}{_change_tag(e)}" for e in teaching))
     elif entries:
         text = (f"{label} has no classes in your timetable, only " + ", ".join(entry_label(e) for e in entries) + ".")
     else:
         text = f"You have no classes on {label}."
+    if cancelled:
+        text += "\n\nCancelled that day (from your CR): " + "; ".join(
+            f"**{entry_label(e)}** {fmt_range(e['start_time'], e['end_time'])}" for e in cancelled) + "."
     if events:
         text += "\n\nOn the academic calendar that day: " + "; ".join(f"**{event_name(e)}**" for e in events) + "."
     if not meta.get("holidays_listed") and re.search(r"\b(holiday|working|off)\b", ctx.query, re.I):
@@ -924,26 +952,53 @@ def compose_calendar(ctx: GroundedContext) -> str:
     return f"**{event_name(e)}** is on **{fmt_date(d)}** ({relative_day(d)})." + src
 
 
+_EXAM_TYPE_WORDS = {"end_sem": "end-semester", "mid_sem": "mid-semester", "repeat": "repeat", "quiz": "quiz",
+                    "other": ""}
+
+
+def _exam_line(r: dict) -> str:
+    alt = f" *(or {r['alt_group'].replace('/', ' / ')} — your elective)*" if r.get("alt_group") else ""
+    return (f"- **{fmt_date(r['exam_date'])}** · {fmt_range(r.get('start_time'), r.get('end_time'))} · "
+            f"{nice_title(r.get('course_name')) or ''} ({r.get('course_code')})".replace(" ()", "") + alt)
+
+
 def compose_exam(ctx: GroundedContext) -> str:
-    rows = [f.data for f in ctx.facts if not f.data.get("_window")]
+    rows = [f.data for f in ctx.facts if f.data.get("_exam")]
     window = [f.data for f in ctx.facts if f.data.get("_window")]
-    course = (ctx.facts[0].data.get("course") if ctx.facts else None) or {}
-    label = f"**{nice_title(course.get('course_name'))}** ({course.get('course_code')})" if course else "that course"
-    src = source_line("exams" if rows else None, "academic calendar, Odd semester 2026-27")
-    if rows:
-        lines = [f"- **{fmt_date(r['exam_date'])}** — {r['exam_type']}"
-                 + (f", {fmt_range(r.get('start_time'), r.get('end_time'))}" if r.get("start_time") else "") for r in rows]
-        return f"Exams for {label}:\n\n" + "\n".join(lines) + src
+    course = next((f.data.get("course") for f in ctx.facts if f.data.get("course")), None) or {}
     today = now_ist().date()
+    if rows:
+        src = source_line("exam schedule (approved by the admin)")
+        upcoming = [r for r in rows if r["exam_date"] >= today.isoformat()]
+        if rows[0].get("_asked_course"):
+            r = (upcoming or rows)[0]
+            kind = _EXAM_TYPE_WORDS.get(r.get("exam_type"), "")
+            rel = relative_day(r["exam_date"])
+            when = f"**{fmt_date(r['exam_date'])}**" + (f" ({rel})" if rel in {"today", "tomorrow"} else "")
+            text = (f"Your **{nice_title(r.get('course_name')) or r.get('course_code')}** ({r.get('course_code')}) "
+                    f"{kind + ' ' if kind else ''}exam is on {when}, {fmt_range(r.get('start_time'), r.get('end_time'))}.")
+            if r.get("alt_group"):
+                text += f" It's in the same slot as {r['alt_group'].replace('/', ' / ')} — sit the one you're registered for."
+            return text + src
+        if re.search(r"\b(next|upcoming|first)\s+exam\b", ctx.query, re.I) and upcoming:
+            r = upcoming[0]
+            return (f"Your next exam is **{nice_title(r.get('course_name'))}** ({r.get('course_code')}) on "
+                    f"**{fmt_date(r['exam_date'])}**, {fmt_range(r.get('start_time'), r.get('end_time'))}." + src)
+        shown = upcoming or rows
+        kind = _EXAM_TYPE_WORDS.get(shown[0].get("exam_type"), "")
+        return (f"Your {kind + ' ' if kind else ''}exam schedule ({len(shown)} exam{'s' if len(shown) != 1 else ''}):\n\n"
+                + "\n".join(_exam_line(r) for r in shown) + src)
+    label = f"**{nice_title(course.get('course_name'))}** ({course.get('course_code')})" if course else "your courses"
+    src = source_line("academic calendar, Odd semester 2026-27")
     end_start = next((e for e in window if re.search(r"end semester examination starts", e["event_name"], re.I)), None)
     end_end = next((e for e in window if re.search(r"end semester exam ends", e["event_name"], re.I)), None)
-    text = f"The exam timetable for {label} hasn't been published yet."
+    text = f"The exam timetable for {label} hasn't been published in ORION yet."
     if end_start and date.fromisoformat(end_start["event_date"]) >= today:
         text += (f" From the academic calendar, the end semester exams run from **{fmt_date(end_start['event_date'])}**"
-                 + (f" to **{fmt_date(end_end['event_date'])}**" if end_end else "") + ", so it will fall in that window.")
-    upcoming = [e for e in window if date.fromisoformat(e["event_date"]) >= today and e is not end_start and e is not end_end][:2]
-    if upcoming:
-        text += "\n\nOther exam dates:\n\n" + "\n".join(_event_line(e) for e in upcoming)
+                 + (f" to **{fmt_date(end_end['event_date'])}**" if end_end else "") + ".")
+    upcoming_ev = [e for e in window if date.fromisoformat(e["event_date"]) >= today and e is not end_start and e is not end_end][:2]
+    if upcoming_ev:
+        text += "\n\nOther exam dates:\n\n" + "\n".join(_event_line(e) for e in upcoming_ev)
     return text + src
 
 

@@ -343,7 +343,8 @@ def test_cr_event_or_sensitive_notice_waits_for_an_admin(monkeypatch):
     assert cr_api.submit_announcement(_post(title="Hackathon", content="Hackathon on Friday", category="EVENT"),
                                       request=None)["status"] == "pending"
     assert cr_api.submit_announcement(_post(content="Quiz tomorrow, call 9876543210"), request=None)["status"] == "pending"
-    assert all(r["status"] == "pending" and "section" not in r for _, r in db.inserted)
+    # pending notices are still locked to the CR's own class (batch-specific)
+    assert all(r["status"] == "pending" and r["section"] == "III" and r["semester"] == 5 for _, r in db.inserted)
 
 
 def test_cr_cannot_claim_someone_elses_upload(monkeypatch):

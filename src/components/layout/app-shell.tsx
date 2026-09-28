@@ -195,7 +195,8 @@ export function AppShell({ children, fill = false }: { children: ReactNode; fill
 
   const workspaceItems = workspaceNav.filter((item) => {
     if (!profile) return false;
-    if (item.to === "/cr") return profile.role === "CR";
+    // Admins publish through the same workspace (with a class picker).
+    if (item.to === "/cr") return profile.role === "CR" || profile.role === "ADMIN";
     if (item.to === "/admin") return profile.role === "ADMIN";
     return false;
   });

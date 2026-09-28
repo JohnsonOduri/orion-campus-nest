@@ -141,3 +141,134 @@ regulations.
   It's private, but there is no clean-up job yet.
 - CRs can't edit or withdraw a live announcement themselves; an admin can
   take it down.
+
+---
+
+# Round 3 — exams, class changes, admin publishing, roles, registration
+
+Migration `20260928190000_exams_class_changes_roles_registration.sql` (applied
+to the live project, recorded as `exams_class_changes_roles_registration`).
+
+## Exam timetables
+
+- Recognised before class timetables (`exam_draft.looks_like_exam_schedule`):
+  exam words + several dates + course codes. Before this change, an exam PDF
+  was treated as an announcement.
+- Read without a model when the PDF has a text layer
+  (`backend/cr_ingest/exam_draft.py`):
+  - **Grid layout** — dates × departments, as in
+    `AI-Tests/END_EXAM SEM V-OCT_ODD_2026.pdf`. All 33 exams read correctly.
+  - **List layout** — date / time / course columns.
+  - **Plain text** lines.
+  - Photos and scans go through vision (`kind: "exam_timetable"`).
+- Quirks handled, never silently:
+  - An impossible end time ("09.30 AM-12.30 AM") is read as 12:30 PM, with
+    a visible note.
+  - "A / B" in one cell becomes alternative exams (`alt_group`).
+  - "FN"/"AN" sessions are read as 9:30–12:30 / 2:00–5:00.
+  - Printed department names are mapped to ORION's spelling for that
+    semester (`dept_key`).
+- Scope:
+  - A CR's upload keeps their own department's rows.
+  - A file for another semester can't be submitted.
+  - An admin picks the semester, and optionally a department; with no
+    department, every department is included.
+- Checks:
+  - **Errors (block submitting):** missing date, time or course code;
+    end before start.
+  - **Warnings (don't block):**
+    - past dates;
+    - codes not in the catalogue (saved with the name as printed);
+    - duplicates;
+    - clashes within a department (alternatives excepted).
+- `submit_exam_schedule` → `approval_requests` (`exam_schedule`) →
+  `review_exam_schedule` (admin). On approval, that semester + exam type +
+  department's earlier exams are superseded, the new rows are inserted, and
+  an audit row is written. Exam rows expire after their date.
+- Students: `/exams` and the AI ("my exam schedule", "when is my AI exam",
+  "next exam") read the approved rows for their semester + department. If
+  none exist, they show the calendar's exam window.
+
+## Class changes
+
+- **One-off** (cancelled, rescheduled or extra class on a date):
+  - A class-update notice carries structured changes.
+    `class_changes.extract` reads them from the text (course by code, name
+    or acronym, e.g. "DAA", "TOC").
+  - The CR confirms them in the Announcement tab.
+  - They're checked against the class's weekly timetable (e.g. "your
+    timetable has no ICS 211 on Tuesday").
+  - They're posted atomically with the notice (`post_class_update`,
+    SECURITY INVOKER). RLS allows only the CR's own class, dates within 90
+    days, and admin-only edits. They're audit-logged, and they're withdrawn
+    if the admin takes the notice down.
+- **Applied everywhere:** `backend/query/schedule.py` applies them to:
+  - today / a day / a date;
+  - free time;
+  - the working-day check;
+  - next class (worked out day by day when a change is in the coming week);
+  - the `/timetable` day and week views (cancelled periods struck through,
+    extra/moved classes marked).
+- **Permanent** ("from now on…", "every Tuesday", "revised timetable"):
+  - Not a class change. The composer says so and opens the timetable editor
+    pre-filled with the current timetable.
+  - A CR's edit goes to the admin as before.
+
+## Admin publishing
+
+- Admins use the same page (`/cr`, titled "Publish & uploads") with a class
+  picker.
+- Timetable and exam submissions by an admin are approved immediately
+  through the same RPCs, so the audit trail is identical.
+- Admin notices can go to everyone or to one class.
+- `orion_submission_class(p_target)` uses the target only for an ADMIN.
+  A CR's target is ignored (verified live: a CR sending another class's
+  target was saved for their own class).
+
+## Roles
+
+- Admin page → People & roles:
+  - search users;
+  - set STUDENT / CR / ADMIN (`admin_set_role`);
+  - grant a role to an email that hasn't signed in yet (`role_grants`,
+    applied by `handle_new_user` on first sign-in).
+- `oduri.johnson@gmail.com` is always ADMIN and can't be changed. The last
+  admin can't be removed. A pending CR request is settled by the grant.
+
+## Registration and profile
+
+- Dropdowns from `orion_class_options()` (the classes that have a
+  timetable): programme → semester → department → section. "Batch" and
+  "section" are one field.
+- Admission year: a dropdown up to the current year, also enforced in SQL.
+- Roll number: required, 6–15 letters/digits, unique. The admission year is
+  suggested from its prefix.
+- The profile shows the roll number and admission year.
+
+## CR notices are batch-specific
+
+Every CR notice — pending or live — must carry exactly the CR's own
+semester / department / batch / section (RLS). Only admins post campus-wide.
+
+## Verification (2026-09-28)
+
+- Live, rolled back: 18 checks.
+  - CR pending notice without a class, or for another section: blocked.
+    Own class: allowed.
+  - Class update for another section: blocked. A CR editing a change:
+    0 rows.
+  - CR exams for another department: blocked. CR approving: blocked.
+    CR granting admin: blocked.
+  - A CR's target ignored; an admin's target used.
+  - Admin approval writes linked exam rows.
+  - Pre-authorising an email and promoting a student both work. Demoting
+    the default admin is blocked.
+  - Admin archiving works. Audit rows written.
+- Registration, live and rolled back: a future year, a bad roll number and
+  a duplicate roll number are all rejected; a valid registration stores
+  both new fields.
+- A temporary extra class, inserted and then deleted, showed up in "classes
+  on 11 October" and "do I have class on the 11th?".
+- A student is refused (403) on every new CR/admin endpoint.
+- `tests/test_exams_changes_roles.py` (32 tests). Suite: 537 passing.
+  Evaluation 142/142. Broad bank: 0 errors, the same 7 flags.
