@@ -15,6 +15,7 @@ import { PixelClouds, PixelParticles, PixelSkyline, PixelMascot } from "@/compon
 import { apiGet, apiPost, ApiError } from "@/lib/api-client";
 import { profileQueryOptions, useProfile } from "@/hooks/use-profile";
 import { RedirectOverlay } from "@/components/shared/redirect-overlay";
+import { parseRoll, rollContradictsEmail, rollFromEmail } from "@/lib/roll";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -33,23 +34,36 @@ export const Route = createFileRoute("/register")({
 const CURRENT_YEAR = new Date().getFullYear();
 
 // Batch and section are the same thing on this campus ("Section III") — one field.
-const schema = z.object({
-  full_name: z.string().min(2, "Enter your full name"),
-  roll_number: z
-    .string()
-    .trim()
-    .transform((v) => v.toUpperCase())
-    .pipe(z.string().regex(/^[A-Z0-9]{6,15}$/, "6–15 letters and digits, e.g. 2024BCS0066")),
-  programme: z.string().min(1, "Required"),
-  semester: z.coerce.number({ invalid_type_error: "Required" }).int().min(1, "Required").max(8),
-  department: z.string().min(1, "Required"),
-  section: z.string().min(1, "Required"),
-  admission_year: z.coerce
-    .number({ invalid_type_error: "Required" })
-    .int()
-    .min(2015, "Invalid year")
-    .max(CURRENT_YEAR, "Can't be in the future"),
-});
+const schema = z
+  .object({
+    full_name: z.string().min(2, "Enter your full name"),
+    roll_number: z
+      .string()
+      .trim()
+      .transform((v) => v.toUpperCase())
+      .pipe(z.string().regex(/^[A-Z0-9]{6,15}$/, "6–15 letters and digits, e.g. 2024BCS0066")),
+    programme: z.string().min(1, "Required"),
+    semester: z.coerce.number({ invalid_type_error: "Required" }).int().min(1, "Required").max(8),
+    department: z.string(),
+    section: z.string(),
+    admission_year: z.coerce
+      .number({ invalid_type_error: "Required" })
+      .int()
+      .min(2015, "Invalid year")
+      .max(CURRENT_YEAR, "Can't be in the future"),
+  })
+  // Department and section are only *asked for* when the roll number can't
+  // supply them. Requiring them unconditionally made the form impossible to
+  // submit once the roll number was recognised: their inputs aren't rendered
+  // in that case, so the cascade handlers below could blank them and the
+  // "Required" error had nowhere to show — the button just did nothing.
+  .superRefine((v, ctx) => {
+    if (parseRoll(v.roll_number)) return;
+    if (!v.department)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["department"], message: "Required" });
+    if (!v.section)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["section"], message: "Required" });
+  });
 
 type ClassOption = { programme: string; semester: number; department: string; section: string };
 type Options = { classes: ClassOption[]; admission_years: number[] };
@@ -133,14 +147,30 @@ function RegisterPage() {
   );
   const years = options.data?.admission_years ?? Array.from({ length: 8 }, (_, i) => CURRENT_YEAR - i);
 
-  // "2024BCS0066": suggest the admission year from the roll number's prefix.
+  // "2024BCS0086" already says which branch and batch a student is in, so the
+  // roll number fills those in rather than asking them to find themselves in a
+  // dropdown. complete_registration re-derives the same values server-side and
+  // ignores what we post, so this is purely so they can see it before saving.
+  const derived = useMemo(() => parseRoll(roll), [roll]);
+  // A one-letter slip in the branch code (BCS -> BCD) silently registers a
+  // student into another department's timetable, and their institute address
+  // already carries the same roll number — so cross-check the two. A warning,
+  // not a block: not every address follows the pattern, and the Academic
+  // Office is the authority on a genuine mismatch, not this form.
+  const emailRoll = useMemo(() => rollFromEmail(profile?.email), [profile?.email]);
+  const mismatch = useMemo(
+    () => (rollContradictsEmail(roll, profile?.email) ? emailRoll : null),
+    [roll, profile?.email, emailRoll],
+  );
+
   useEffect(() => {
-    const m = /^(20\d\d)/.exec((roll || "").trim());
-    if (m && !form.getValues("admission_year")) {
-      const y = Number(m[1]);
-      if (y <= CURRENT_YEAR && y >= 2015) form.setValue("admission_year", y as any);
+    if (!derived) return;
+    if (derived.admissionYear <= CURRENT_YEAR && derived.admissionYear >= 2015) {
+      form.setValue("admission_year", derived.admissionYear as any);
     }
-  }, [roll, form]);
+    form.setValue("department", derived.department);
+    form.setValue("section", derived.section);
+  }, [derived, form]);
 
   useEffect(() => {
     if (profile?.full_name && !form.getValues("full_name")) {
@@ -157,14 +187,20 @@ function RegisterPage() {
   }
 
   async function onSubmit(values: FormValues) {
+    // complete_registration re-derives these server-side and ignores what we
+    // send when the roll number parses; sending the derived values anyway
+    // keeps the request honest about what the student was shown.
+    const fromRoll = parseRoll(values.roll_number);
+    const department = fromRoll?.department ?? values.department;
+    const section = fromRoll?.section ?? values.section;
     try {
       await apiPost<RegisterResponse>("/auth/register", {
         full_name: values.full_name,
         roll_number: values.roll_number,
         semester: values.semester,
-        department: values.department,
-        batch: values.section,
-        section: values.section,
+        department,
+        batch: section,
+        section,
         admission_year: values.admission_year,
         programme: values.programme,
       });
@@ -241,6 +277,23 @@ function RegisterPage() {
               {form.formState.errors.roll_number && (
                 <p className="text-xs text-destructive">{form.formState.errors.roll_number.message}</p>
               )}
+              {mismatch && (
+                <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs">
+                  <p className="font-medium text-amber-700 dark:text-amber-400">
+                    This doesn't match your email
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    {profile?.email} suggests{" "}
+                    <span className="font-mono">
+                      {mismatch.admissionYear}
+                      {mismatch.branchCode}
+                      {String(mismatch.serial).padStart(4, "0")}
+                    </span>{" "}
+                    ({mismatch.shortDepartment}, batch {mismatch.batchNo}). Double-check the roll
+                    number — you can still continue if it's genuinely different.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -255,8 +308,13 @@ function RegisterPage() {
                       onValueChange={(v) => {
                         field.onChange(v);
                         form.setValue("semester", "" as any);
-                        form.setValue("department", "");
-                        form.setValue("section", "");
+                        // Only reset the dependent dropdowns when they're the
+                        // ones in use — when the roll number supplied the
+                        // class, clearing it here left the form unsubmittable.
+                        if (!derived) {
+                          form.setValue("department", "");
+                          form.setValue("section", "");
+                        }
                       }}
                     >
                       <SelectTrigger id="programme">
@@ -309,8 +367,10 @@ function RegisterPage() {
                     value={field.value ? String(field.value) : ""}
                     onValueChange={(v) => {
                       field.onChange(Number(v));
-                      form.setValue("department", "");
-                      form.setValue("section", "");
+                      if (!derived) {
+                        form.setValue("department", "");
+                        form.setValue("section", "");
+                      }
                     }}
                   >
                     <SelectTrigger id="semester">
@@ -331,65 +391,102 @@ function RegisterPage() {
               )}
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="department">Department</Label>
-              <Controller
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    disabled={!semester}
-                    onValueChange={(v) => {
-                      field.onChange(v);
-                      form.setValue("section", "");
-                    }}
-                  >
-                    <SelectTrigger id="department">
-                      <SelectValue placeholder={semester ? "Select..." : "Pick a semester first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments.map((d) => (
-                        <SelectItem key={d} value={d}>
-                          {titleCaseDept(d)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {form.formState.errors.department && (
-                <p className="text-xs text-destructive">{form.formState.errors.department.message}</p>
-              )}
-            </div>
+            {derived ? (
+              <div className="space-y-1.5">
+                <Label>Department and batch</Label>
+                <div className="rounded-lg border border-border bg-muted/40 p-3">
+                  <dl className="space-y-1.5 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-muted-foreground">Department</dt>
+                      <dd className="text-right font-medium">{derived.shortDepartment}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-muted-foreground">Batch</dt>
+                      <dd className="text-right font-medium">
+                        Batch {derived.batchNo} · Section {derived.section}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="mt-2 font-mono text-[11px] text-muted-foreground">
+                    from {derived.branchCode} · roll no. {derived.serial}
+                  </p>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Taken from your roll number. If this looks wrong, check the roll number above —
+                  contact the Academic Office if it still doesn't match.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="department">Department</Label>
+                  <Controller
+                    control={form.control}
+                    name="department"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        disabled={!semester}
+                        onValueChange={(v) => {
+                          field.onChange(v);
+                          form.setValue("section", "");
+                        }}
+                      >
+                        <SelectTrigger id="department">
+                          <SelectValue placeholder={semester ? "Select..." : "Pick a semester first"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departments.map((d) => (
+                            <SelectItem key={d} value={d}>
+                              {titleCaseDept(d)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {form.formState.errors.department && (
+                    <p className="text-xs text-destructive">{form.formState.errors.department.message}</p>
+                  )}
+                </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="section">Batch / section</Label>
-              <Controller
-                control={form.control}
-                name="section"
-                render={({ field }) => (
-                  <Select value={field.value} disabled={!department} onValueChange={field.onChange}>
-                    <SelectTrigger id="section">
-                      <SelectValue placeholder={department ? "Select..." : "Pick a department first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sections.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          Section {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {form.formState.errors.section && (
-                <p className="text-xs text-destructive">{form.formState.errors.section.message}</p>
-              )}
-              <p className="text-[11px] text-muted-foreground">
-                Only classes with a published timetable are listed, so ORION can show yours.
+                <div className="space-y-1.5">
+                  <Label htmlFor="section">Batch / section</Label>
+                  <Controller
+                    control={form.control}
+                    name="section"
+                    render={({ field }) => (
+                      <Select value={field.value} disabled={!department} onValueChange={field.onChange}>
+                        <SelectTrigger id="section">
+                          <SelectValue placeholder={department ? "Select..." : "Pick a department first"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sections.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              Section {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {form.formState.errors.section && (
+                    <p className="text-xs text-destructive">{form.formState.errors.section.message}</p>
+                  )}
+                  <p className="text-[11px] text-muted-foreground">
+                    Only classes with a published timetable are listed, so ORION can show yours.
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* A validation error on a field that isn't currently rendered
+                would otherwise make the button look broken — say so instead. */}
+            {form.formState.isSubmitted && !form.formState.isValid && (
+              <p className="text-xs text-destructive">
+                Some details are still missing or invalid — check the fields above.
               </p>
-            </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Saving…" : "Save and continue"}

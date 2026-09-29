@@ -622,6 +622,31 @@ handshake only" rather than "for as long as the tab stays open" — but it
 does not eliminate it. Do not extend this pattern to any other auth path
 without the same tradeoff being explicit.
 
+## Session refresh (added 2026-09-29)
+
+Supabase access tokens last an hour. Until this was built nothing ever read
+`orion_refresh_token` back, so an hour into a session every call failed and
+the user read the literal string **"JWT expired"** in the AI chat. Two
+things were wrong and both are fixed:
+
+- `backend/main.py` mapped *every* PostgREST `APIError` to **400**, so an
+  expired token was indistinguishable from a validation error and nothing
+  downstream could react. PGRST300/301/302 (and any message mentioning JWT)
+  now return **401**. `42501` is deliberately excluded — that is an RLS
+  privilege denial where refreshing changes nothing.
+- `POST /auth/refresh` trades the refresh cookie for a new pair via GoTrue.
+  `src/lib/api-client.ts` calls it once on a 401 and replays the request; a
+  401 means Supabase rejected the JWT before executing anything, so the
+  replay is safe even for a POST.
+
+Supabase **rotates** the refresh token on every use, so concurrent refreshes
+would spend the rotation on one of them and sign the user out — api-client
+funnels all callers through a single in-flight promise. Refresh is
+browser-only: during SSR there is no cookie jar to write the new pair back
+into, so a 401 there falls through to the route guards. Session cookies also
+now carry a 30-day `max_age` (they were session cookies, so closing the
+browser ended a session whose refresh token was still valid).
+
 ## Identity rule
 
 For normal callers:
@@ -650,6 +675,66 @@ Do not add `SECURITY DEFINER` merely to bypass a permission error.
 Never use user-editable `user_metadata` for authorization decisions.
 
 ---
+
+## Department matching and roll numbers (added 2026-09-29)
+
+Every semester's PDF spelled the same department differently — measured
+live: sem 3 `CSE WITH SPECIALISATION IN AI AND DATA SCIENCE`, sem 5 `AI AND
+DATA SCIENCE`, sem 7 `CSE WITH SPECIALIZATION IN AI & DATA SCIENCE` — and
+the timetable RPCs compared `student_profiles.department` to
+`timetable_entries.department` with exact `=`. A student therefore matched
+their own semester and got a silently **empty** timetable in the next one.
+
+Fixed by matching on a key, not a string: `orion_dept_key()` /
+`orion_section_key()` (with `orion_dept_label()` / `orion_section_label()`
+for display), mirroring `dept_key()` in `backend/cr_ingest/exam_draft.py`.
+`orion_active_entries`, `orion_next_class`, `orion_day_timetable` and
+`orion_week_timetable` all use them, and `orion_class_options` returns one
+canonical name per department.
+
+**`timetable_entries.department` is deliberately NOT rewritten**:
+`source_uid` (`backend/timetable/model.py`) embeds the branch string, so
+rewriting the column would change every natural key and a re-import of the
+same PDF would insert duplicates instead of upserting.
+
+`orion_parse_roll()` reads the institute's own encoding —
+`2024BCS0086` = 2024 intake, `BCS` branch, serial 86 — where
+`BCS`→CSE, `BCD`→AI&DS, `BCY`→Cyber Security, `BEC`→ECE, and
+**batch = serial % 4 + 1** (86 % 4 = 2 → batch 3 → section `III`).
+`complete_registration` derives department, section and admission year from
+it and **ignores what the form posted**, because the roll number is a record
+and a dropdown is a guess; it falls back to the posted values only when the
+roll number doesn't parse. `src/lib/roll.ts` mirrors this for display only —
+keep the two in step.
+
+Institute addresses carry the same roll number
+(`asharani24bcs86@iiitkottayam.ac.in` → `2024BCS0086`, serial not
+zero-padded), so `rollContradictsEmail()` warns when the typed roll and the
+signed-in address disagree on branch or serial — a real one-letter slip
+(`BCD` for `BCS`) otherwise registers a student into another department's
+timetable silently.
+
+**Email parsing is advisory only and must stay that way.** It is a warning,
+never a gate, and it is confined to `src/lib/roll.ts` + `register.tsx` — the
+login path (`login.tsx`, `auth.callback.tsx`, `supabase-browser.ts`,
+`/auth/oauth/google/set-session`) never parses an address, so no identity can
+be locked out by it. Most institute addresses carry no roll number at all:
+**0 of 125 faculty addresses** do (they are name-based, e.g. `amenon@`, `rkrishnan@`),
+nor do admins (`oduri.johnson@gmail.com`, `orion-test-admin@`), nor students
+whose address was renamed. Both helpers return null/false whenever either
+side is unreadable, so "can't tell" means "stay quiet" — locked in by
+`src/lib/roll.test.ts`'s "identities that carry no roll number" block.
+Likewise a non-B.Tech or legacy roll (`MT24CS001`, `PHD2024001`) simply
+parses to null and `complete_registration` keeps whatever the dropdowns
+picked (`derived_from_roll: false`) — verified end-to-end. Do not turn either
+check into a hard requirement.
+
+Registration gotcha worth keeping: department/section are only *required* of
+the form when the roll number can't supply them (`superRefine` in
+`register.tsx`). They were unconditionally required once, which made the form
+unsubmittable — their inputs aren't rendered in the derived case, so the
+semester dropdown's cascade-reset blanked them and the "Required" error had
+nowhere to appear. The button simply did nothing.
 
 # 14. Timetable RPC behavior
 
@@ -703,8 +788,9 @@ The implementation pins relevant day/time behavior consistently to UTC.
 TanStack Start route handler. Routers:
 
 ```text
-auth           /auth/logout /auth/me   (Google is the only sign-in method;
-               no /auth/signup or /auth/login — removed 2026-09-22)
+auth           /auth/logout /auth/me /auth/refresh   (Google is the only
+               sign-in method; no /auth/signup or /auth/login — removed
+               2026-09-22. /auth/refresh added 2026-09-29 — see §13)
 oauth          /auth/oauth/google/set-session   (frontend-driven; browser
                drives the Google/PKCE handshake via supabase-js, POSTs the
                resulting tokens here once — see §13)

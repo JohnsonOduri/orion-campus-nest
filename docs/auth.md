@@ -74,7 +74,7 @@ it bypasses RLS):
 | Email | Result |
 |---|---|
 | `blocked-random@gmail.com` | `403` — rejected with the institute-email message |
-| `odurijohnson24bcs66@iiitkottayam.ac.in` | `200` — accepted |
+| `<student>24bcs66@iiitkottayam.ac.in` | `200` — accepted |
 | `oduri.johnson@gmail.com` | `200` — accepted (test exception) |
 
 ### Role assignment on signup
@@ -257,7 +257,7 @@ verified directly.
   Configuration, or the same Management API call used to set the dev
   value).
 - **Test accounts left live** on the project from verification:
-  `odurijohnson24bcs66@iiitkottayam.ac.in` (now role `CR`, from the
+  `<student>24bcs66@iiitkottayam.ac.in` (now role `CR`, from the
   approval-flow test), `oduri.johnson@gmail.com` (role `ADMIN`, the
   intended test account), `freshstudent25bcs01@iiitkottayam.ac.in` (role
   `STUDENT`, complete profile, from the onboarding test). None are

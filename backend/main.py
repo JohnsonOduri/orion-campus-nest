@@ -43,12 +43,28 @@ app.add_middleware(
 )
 
 
+# PostgREST's codes for "this JWT is no good any more". These have to come
+# back as 401, not 400: the frontend decides whether to refresh the session
+# purely from the status, and while these were lumped in with validation
+# errors an expired token was indistinguishable from a bad request — so
+# nothing refreshed, nothing redirected to /login, and the raw string "JWT
+# expired" was rendered straight into the AI chat transcript.
+# PGRST300/301/302 = JWT secret missing / expired-or-invalid / anonymous
+# access disabled. Deliberately NOT 42501: that is an RLS privilege denial,
+# where the token is fine and refreshing it would change nothing.
+_AUTH_ERROR_CODES = {"PGRST300", "PGRST301", "PGRST302"}
+
+
 @app.exception_handler(APIError)
 def handle_postgrest_error(_request, exc: APIError):
     # RPC-level `raise exception ...` (role checks, validation, etc.) surface
     # here as PostgREST errors, not Python exceptions — turn them into a
     # clean 400 instead of an opaque 500.
-    return JSONResponse(status_code=400, content={"detail": exc.message})
+    code = getattr(exc, "code", None)
+    message = exc.message or ""
+    if code in _AUTH_ERROR_CODES or "JWT" in message.upper():
+        return JSONResponse(status_code=401, content={"detail": message or "Session expired"})
+    return JSONResponse(status_code=400, content={"detail": message})
 
 
 app.include_router(auth.router)
