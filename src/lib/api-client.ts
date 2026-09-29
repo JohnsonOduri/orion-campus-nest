@@ -63,8 +63,54 @@ async function send(path: string, init?: RequestInit): Promise<Response> {
   return res;
 }
 
+// Only the browser can refresh: during SSR there is no cookie jar to write
+// the rotated pair back into, so a 401 there is left to the route guards.
+const isBrowser = createIsomorphicFn()
+  .server(() => false)
+  .client(() => true);
+
+// Supabase rotates the refresh token on every use, so two concurrent
+// refreshes would spend the rotation on one of them and sign the user out.
+// A dashboard fires half a dozen queries at once and they all 401 together,
+// so every caller has to share one in-flight refresh.
+let refreshInFlight: Promise<boolean> | null = null;
+
+function refreshSession(): Promise<boolean> {
+  refreshInFlight ??= fetch(`${API_BASE_URL()}/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  })
+    .then((r) => r.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await send(path, init);
+  let res: Response;
+  try {
+    res = await send(path, init);
+  } catch (err) {
+    // An expired access token comes back as 401 (backend/main.py maps
+    // PostgREST's PGRST301 "JWT expired" to 401 rather than lumping it in
+    // with validation errors). A 401 means Supabase rejected the JWT before
+    // running anything, so nothing was written and replaying the request is
+    // safe. One attempt only — if the refreshed token still 401s the session
+    // is genuinely over and the error propagates to the route guards.
+    if (
+      !(err instanceof ApiError) ||
+      err.status !== 401 ||
+      !isBrowser() ||
+      path === "/auth/refresh"
+    ) {
+      throw err;
+    }
+    if (!(await refreshSession())) throw err;
+    res = await send(path, init);
+  }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
